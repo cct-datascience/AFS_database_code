@@ -5,7 +5,9 @@
 
 #Simulate data from normal distribution
 x <- rnorm(n = 100)
-y <- 2 * x + rnorm(n = 100, sd= 0.1)
+y <- 2 * x + rnorm(n = 100, sd= 0.2)
 
 #plot simulated data
 plot(x = x, y = y)
+#save file, add by clicking box in github tab, 
+#click commit, write a commit message and commit, push (green arrow) to github
