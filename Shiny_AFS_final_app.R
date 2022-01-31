@@ -5,7 +5,7 @@ library(dplyr)
 library(rsconnect)
 library(rmarkdown)
 
-setwd("C:/Users/etracy1/Desktop/Backup/R_directory/StandardMethods/AFS_shiny_app")
+setwd("")
 metrics=read.csv('Final_AFSaverages_results_ALL_Ngreaterthanorequalto5.csv',as.is=T)
 colnames(metrics)[1] <- "method"
 uni.spp=c('All',sort(unique(metrics$common_name)))
@@ -259,9 +259,3 @@ server <- function(input, output) {
 
 
 shinyApp(ui, server)
-
-#shinyapps.io
-#rsconnect::setAccountInfo(name='erintracy', token='8A83DF5483B3D101A7CB8E4A87FB86D6', secret='Y02HzDjjdLtSCaYrAFk2pYLISOZKGh/OrSDdFiFX')
-#rsconnect::deployApp(appDir = "C:/Users/etracy1/Desktop/Backup/R_directory/StandardMethods/AFS_shiny_app", appFiles = c("AFS_tables_shiny.R", "shiny_app_test_dataoutput.csv"))
-
-
