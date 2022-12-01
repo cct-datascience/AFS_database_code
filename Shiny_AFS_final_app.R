@@ -7,11 +7,11 @@ library(rmarkdown)
 library(DT)
 
 metrics=read.csv('Full_results_112122.csv',as.is=T)
-#colnames(metrics)[1] <- "method"
+colnames(metrics)[1] <- "area"
 uni.spp=c('All',sort(unique(metrics$common_name)))
 uni.method=c("All",sort(unique(metrics$method)))
 uni.watertype=c("All",sort(unique(metrics$waterbody_type)))
-uni.area=c("All",sort(unique(metrics$region)))
+uni.area=c("All",sort(unique(metrics$area)))
 
 `%nin%` <- negate(`%in%`)
 
@@ -47,7 +47,7 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                                           label = "Select a fish species",
                                           choices = uni.spp,
                                           multiple=T,
-                                          selected='Spotted Gar'),
+                                          selected='Bluegill'),
                               selectInput(inputId = "gearchoice",
                                           label = "Select a gear type",
                                           choices = uni.method,
@@ -114,7 +114,7 @@ server <- function(input, output) {
       # sort by common name
       arrange(common_name) %>%
       # keep our preferred columns
-      select(area, common_name, method, waterbody_type, N, mean, 
+      select(area, common_name, method, waterbody_type, mean, # remove N
              se, X5., X25., X50., X75., X95.) 
     
   })
@@ -145,7 +145,7 @@ server <- function(input, output) {
                         case_when("All" %in% input$watertypechoice ~ waterbody_type %in% uni.watertype,
                                   "All" %nin% input$watertypechoice ~ waterbody_type %in% input$watertypechoice)) %>%
       arrange(common_name) %>%
-      select(area, common_name, method, waterbody_type, gcat, N, mean, 
+      select(area, common_name, method, waterbody_type, gcat, mean, # remove N
              se, X5., X25., X50., X75., X95.) 
   })
   
@@ -176,7 +176,7 @@ server <- function(input, output) {
                                     "All" %nin% input$watertypechoice ~ waterbody_type %in% input$watertypechoice)) %>%
       
       arrange(common_name) %>%
-      select(area, common_name, method, waterbody_type, gcat, N, mean, se) 
+      select(area, common_name, method, waterbody_type, gcat, mean, se) # remove N
   })
   
   output$psddownload <- downloadHandler(
@@ -200,7 +200,7 @@ server <- function(input, output) {
       dplyr::rename("Common Name" = common_name,
                     "Method" = method,
                     "Waterbody Type" = waterbody_type,
-                    "N" = N,
+                    #"N" = N,
                     "Mean" = mean,
                     "Standard Error" = se,
                     "5%" = X5.,
@@ -221,7 +221,7 @@ server <- function(input, output) {
                     "Method" = method,
                     "Waterbody Type" = waterbody_type,
                     "PSD category" = gcat,
-                    "N" = N,
+                    #"N" = N,
                     "Mean" = mean,
                     "Standard Error" = se,
                     "5%" = X5.,
@@ -242,7 +242,7 @@ server <- function(input, output) {
                     "Method" = method,
                     "PSD category" = gcat,
                     "Waterbody Type" = waterbody_type,
-                    "N" = N,
+                    #"N" = N,
                     "Mean%" = mean,
                     "Standard Error" = se,
                     "Area" = area, )
