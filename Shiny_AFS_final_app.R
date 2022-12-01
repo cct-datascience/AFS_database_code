@@ -4,14 +4,14 @@ library(data.table)
 library(dplyr)
 library(rsconnect)
 library(rmarkdown)
+library(DT)
 
-setwd("")
-metrics=read.csv('Final_AFSaverages_results_ALL_Ngreaterthanorequalto5.csv',as.is=T)
-colnames(metrics)[1] <- "method"
+metrics=read.csv('Full_results_112122.csv',as.is=T)
+#colnames(metrics)[1] <- "method"
 uni.spp=c('All',sort(unique(metrics$common_name)))
 uni.method=c("All",sort(unique(metrics$method)))
 uni.watertype=c("All",sort(unique(metrics$waterbody_type)))
-uni.area=c("All",sort(unique(metrics$area)))
+uni.area=c("All",sort(unique(metrics$region)))
 
 `%nin%` <- negate(`%in%`)
 
@@ -42,22 +42,22 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                                           label = "Select North America, a State or an Ecoregion",
                                           choices = uni.area,
                                           multiple=T,
-                                          selected='All'),
+                                          selected='Arizona'),
                               selectInput(inputId = "fishchoice",
                                           label = "Select a fish species",
                                           choices = uni.spp,
                                           multiple=T,
-                                          selected='All'),
+                                          selected='Spotted Gar'),
                               selectInput(inputId = "gearchoice",
                                           label = "Select a gear type",
                                           choices = uni.method,
                                           multiple = T,
-                                          selected = "All"),
+                                          selected = "boat_electrofishing"),
                               selectInput(inputId = "watertypechoice",
                                           label = "Select a waterbody type",
                                           choices = uni.watertype,
                                           multiple = T,
-                                          selected = "All"),
+                                          selected = "large_standing_waters"),
                               downloadButton("cpuedownload", "Download CPUE summary"),
                               downloadButton("wrdownload", "Download Relative Weight summary"),
                               downloadButton("psddownload", "Download Length Frequency summary")
@@ -75,12 +75,14 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                               )
                             )
                           )
+                 ), 
+                 tabPanel(title = "Compare Your Data",
+                          fileInput("upload", NULL, 
+                                    buttonLabel =  "Upload Your Data", 
+                                    multiple = FALSE, accept = (".csv")),
+                          tableOutput("user_table"), 
+                          dataTableOutput("view_user_table")
                  )
-                 #tabPanel(title = "Compare Your Data",
-                          #fileInput("upload", NULL, buttonLabel =  "Upload Your Data", multiple = FALSE, accept = (".csv")),
-                          #tableOutput("user_table")
-                          
-                 #)
 )
 
 
@@ -246,6 +248,14 @@ server <- function(input, output) {
                     "Area" = area, )
   },
   digits = 2) 
+  
+  output$user_table <- renderTable({
+    inFile <- input$upload
+    data <- read.csv(inFile$datapath)
+    output$view_user_table <- renderDataTable({
+      datatable(data)
+  })
+  })
   
   #user.results <- reactive({
    # req(input$upload)
