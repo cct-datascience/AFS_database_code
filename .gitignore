@@ -1,0 +1,8 @@
+#AFS_database_code.Rproj
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# Mac-specific file
+.DS_Store
