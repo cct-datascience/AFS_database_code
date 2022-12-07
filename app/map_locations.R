@@ -26,4 +26,6 @@ factpal <- colorFactor(rainbow(length(unique(ecoregions_trans$NA_L1CODE))),
 
 leaflet() %>% 
   addTiles() %>% 
-  addPolygons(data = ecoregions_trans, color = ~factpal(NA_L1CODE), fillOpacity = 1)
+  addPolygons(data = ecoregions_trans, color = ~factpal(NA_L1CODE), 
+              fillOpacity = 0.5, popup = ~htmltools::htmlEscape(NA_L1NAME), 
+              stroke = FALSE)
