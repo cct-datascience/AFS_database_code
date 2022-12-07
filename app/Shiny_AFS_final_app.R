@@ -1,4 +1,5 @@
 library(shiny)
+library(shinyWidgets)
 library(tidyverse)
 # library(data.table)
 # library(dplyr)
@@ -9,13 +10,22 @@ library(tidyverse)
 metrics <- read_csv('Full_results_112122.csv') %>%
   rename(area = region,
          N = count)
-uni.area <- c("All", sort(unique(metrics$area)))
+uni.type <- c("North America", "Ecoregion", "State/Province")
+uni.area <- sort(unique(metrics$area))
 uni.spp <- c('All', sort(unique(metrics$common_name)))
 uni.method <- c("All", sort(unique(metrics$method)))
 uni.watertype <- c("All", sort(unique(metrics$waterbody_type)))
-uni.metric <- c("CPUE", "Relative Weight", "Length Frequency") # CPUE_distance not needed?
+uni.metric <- c("Length Frequency", "Relative Weight", "CPUE") 
 
 `%nin%` <- negate(`%in%`)
+
+# Test data
+
+foo <- metrics %>%
+  filter(area == "Arizona",
+         common_name == "Bluegill",
+         method == "boat_electrofishing",
+         waterbody_type == "large_standing_waters")
 
 #Shiny App
 ui <- navbarPage("AFS Standard Sampling App",
@@ -39,11 +49,12 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                           sidebarLayout(
                             sidebarPanel(
                               "Welcome to the American Fisheries Society Standard Sampling Database App!", br(), br(),
-                              selectInput(inputId = "areachoice",
-                                          label = "Select North America, State(s) or Ecoregion(s):",
-                                          choices = uni.area,
-                                          multiple=T,
-                                          selected='Arizona'),
+                              radioGroupButtons(inputId = "typechoice",
+                                                label = "Show data by:",
+                                                choices = uni.type,
+                                                direction = "vertical",
+                                                selected = "North America"),
+                              uiOutput("dyn_area"),
                               selectInput(inputId = "sppchoice",
                                           label = "Select species:",
                                           choices = uni.spp,
@@ -75,7 +86,8 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                                          # tableOutput("mytable1")
                                          ),
                                 tabPanel("Plot", 
-                                         # tableOutput("mytable2")
+                                         plotOutput("plotLengthFrequency"),
+                                         plotOutput("plotRelativeWeight")
                                          ),
                                 tabPanel("Preview", 
                                          tableOutput("filtertable")) 
@@ -99,8 +111,23 @@ Furthermore, our hope is that these methods can be adopted by others, particular
 
 server <- function(input, output) {
   
-  ## If want to separate state and ecoregion in menu, add reactive part
-  ## here to update table selection and subset data
+  # Render a UI for selecting area depending on North America, Ecoregions, or State/Province
+  output$dyn_area <- renderUI({
+    if(input$typechoice == "North America") {
+      temp <- "North_America"
+    } else if(input$typechoice == "Ecoregion") {
+      temp <- uni.area[1:11]
+    } else if(input$typechoice == "State/Province") {
+      temp2 <-  uni.area[uni.area %nin% 'North_America']
+      temp <- temp2[-1:-11]
+    }
+    
+    selectInput(inputId = "areachoice",
+                label = "Select area:", 
+                choices = temp,
+                selected = temp[1],
+                multiple = TRUE)
+  })
   
   # make filtered, a reactive data object  
   filtered <- reactive({
@@ -168,7 +195,7 @@ server <- function(input, output) {
                     "Common Name" = common_name,
                     "Method" = method,
                     "Waterbody Type" = waterbody_type,
-                    "Gable House" = gcat,
+                    "Gabelhouse" = gcat,
                     "N" = N,
                     "Mean" = mean,
                     "SE" = se,
@@ -177,6 +204,60 @@ server <- function(input, output) {
                     "50%" = `50%`,
                     "75%" = `75%`,
                     "95%" = `95%`)
+  })
+  
+  output$plotLengthFrequency <- renderPlot({
+ 
+    fig <- filtered() %>%
+      filter(metric == "Length Frequency") %>%
+      mutate(gcat = factor(gcat, 
+                           levels = c("stock", "quality", "preferred", "memorable", "trophy"))) %>%
+      ggplot(aes(x = gcat, y = mean)) +
+      geom_bar(stat = "identity") +
+      geom_errorbar(aes(ymin = mean - se,
+                        ymax = mean + se),
+                    width = 0) +
+      scale_y_continuous("Frequency (%)",
+                         limits = c(0, 100)) +
+      theme_bw() +
+      theme(axis.title.x = element_blank())
+    
+    print(fig)
+    
+  })
+  
+  output$plotRelativeWeight <- renderPlot({
+    
+    fig <- filtered() %>%
+      filter(metric == "Relative Weight") %>%
+      mutate(gcat = factor(gcat, 
+                           levels = c("stock", "quality", "preferred", "memorable", "trophy"))) %>%
+      ggplot(aes(x = gcat)) +
+      geom_point(aes(y = mean,
+                     color = "Mean"),
+                 size = 2.5) +
+      geom_line(aes(y = mean,
+                    group = metric, 
+                    color = "Mean"),
+                size = 1,
+                alpha = 0.5) +
+      geom_line(aes(y = `25%`,
+                    group = metric,
+                    color = "25th percentile"),
+                lty = 2) +
+      geom_line(aes(y = `75%`,
+                    group = metric,
+                    color = "75th percentile"),
+                lty = 2) +
+      scale_y_continuous("Relative weight") +
+      scale_color_manual(values = c("blue", "red", "black")) +
+      theme_bw() +
+      theme(axis.title.x = element_blank(),
+            legend.position = "bottom",
+            legend.title = element_blank())
+    
+    print(fig)
+    
   })
 
   output$user_table <- renderTable({
