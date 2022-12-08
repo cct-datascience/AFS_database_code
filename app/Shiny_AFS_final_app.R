@@ -45,10 +45,11 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                           )
                  ),
                  
-                 tabPanel(title = "Obtain Averages",
+                 tabPanel(title = "Explore",
                           sidebarLayout(
                             sidebarPanel(
                               "Welcome to the American Fisheries Society Standard Sampling Database App!", br(), br(),
+                              "To explore standard fish data, select one or more options from each menu below.",
                               radioGroupButtons(inputId = "typechoice",
                                                 label = "Show data by:",
                                                 choices = uni.type,
@@ -81,15 +82,7 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                             
                             mainPanel(
                               tabsetPanel(
-                                id = 'metrics',
-                                tabPanel("Map", 
-                                         # tableOutput("mytable1")
-                                         ),
-                                tabPanel("Plot", 
-                                         plotOutput("plotLengthFrequency"),
-                                         plotOutput("plotRelativeWeight"),
-                                         plotOutput("plotCPUE")
-                                         ),
+                                tabPanel("Map"),
                                 tabPanel("Preview", 
                                          tableOutput("filtertable")) 
                                 
@@ -98,13 +91,44 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                             )
                           )
                  ), 
-                 tabPanel(title = "Compare Your Data",
-                          fileInput("upload", NULL, 
-                                    buttonLabel =  "Upload Your Data", 
-                                    multiple = FALSE, accept = (".csv")),
-                          tableOutput("user_table"), 
-                          dataTableOutput("view_user_table")
-                 )
+                 tabPanel(title = "View",
+                   sidebarLayout(
+                     sidebarPanel(
+                       "Welcome to the American Fisheries Society Standard Sampling Database App!", br(), br(),
+                       "To view plots of standard fish data, select one option from each menu below.",
+                       radioGroupButtons(inputId = "typechoice2",
+                                         label = "Show data by:",
+                                         choices = uni.type,
+                                         direction = "vertical",
+                                         selected = "North America"),
+                       uiOutput("dyn_area2"),
+                       selectInput(inputId = "sppchoice",
+                                   label = "Select species:",
+                                   choices = uni.spp,
+                                   selected ='Bluegill'),
+                       selectInput(inputId = "methodchoice",
+                                   label = "Select method type(s):",
+                                   choices = uni.method,
+                                   selected = "boat_electrofishing"),
+                       selectInput(inputId = "watertypechoice",
+                                   label = "Select waterbody type(s):",
+                                   choices = uni.watertype,
+                                   selected = "large_standing_waters")
+                       ),
+                     mainPanel("Plot", 
+                               plotOutput("plotLengthFrequency"),
+                               plotOutput("plotRelativeWeight"),
+                               plotOutput("plotCPUE")
+                     )
+                 )),
+                tabPanel(title = "Compare Your Data",
+                         fileInput("upload", NULL,
+                                   buttonLabel =  "Upload Your Data",
+                                   multiple = FALSE, accept = (".csv")),
+                         tableOutput("user_table"),
+                         dataTableOutput("view_user_table")
+                 ) 
+
 )
 
 
@@ -130,12 +154,47 @@ server <- function(input, output) {
                 multiple = TRUE)
   })
   
-  # make filtered, a reactive data object  
+  # Render a UI for selecting area depending on North America, Ecoregions, or State/Province for tab2
+  output$dyn_area2 <- renderUI({
+    if(input$typechoice2 == "North America") {
+      temp <- "North_America"
+    } else if(input$typechoice2 == "Ecoregion") {
+      temp <- uni.area[1:11]
+    } else if(input$typechoice2 == "State/Province") {
+      temp2 <-  uni.area[uni.area %nin% 'North_America']
+      temp <- temp2[-1:-11]
+    }
+    
+    selectInput(inputId = "areachoice2",
+                label = "Select area:", 
+                choices = temp,
+                selected = temp[1],
+                multiple = TRUE)
+  })
+  
+  # make filtered, a reactive data object for tab 1 explore, multiple combos okay
   filtered <- reactive({
     
     f_df <-  metrics %>%
       filter(metric %in% input$metricchoice,
              area %in% input$areachoice,
+             case_when("All" %in% input$sppchoice ~ common_name %in% uni.spp,
+                       "All" %nin% input$sppchoice ~ common_name %in% input$sppchoice),
+             case_when("All" %in% input$methodchoice ~ method %in% uni.method,
+                       "All" %nin% input$methodchoice ~ method %in% input$methodchoice),
+             case_when("All" %in% input$watertypechoice ~ waterbody_type %in% uni.watertype,
+                       "All" %nin% input$watertypechoice ~ waterbody_type %in% input$watertypechoice)) %>%
+      arrange(common_name) %>%
+      select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
+             se, `5%`, `25%`, `50%`, `75%`, `95%`)
+    
+  })
+  # make filtered, a reactive data object for tab 2, single combos only
+  filtered2 <- reactive({
+    
+    f_df <-  metrics %>%
+      filter(metric %in% uni.metric,
+             area %in% input$areachoice2,
              case_when("All" %in% input$sppchoice ~ common_name %in% uni.spp,
                        "All" %nin% input$sppchoice ~ common_name %in% input$sppchoice),
              case_when("All" %in% input$methodchoice ~ method %in% uni.method,
@@ -207,7 +266,7 @@ server <- function(input, output) {
   })
   
   output$plotLengthFrequency <- renderPlot({
-    temp <- filtered() %>%
+    temp <- filtered2() %>%
       filter(metric == "Length Frequency") %>%
       mutate(gcat = factor(gcat, 
                            levels = c("stock", "quality", "preferred", "memorable", "trophy")))
@@ -231,7 +290,7 @@ server <- function(input, output) {
   
   output$plotRelativeWeight <- renderPlot({
     
-    temp <- filtered() %>%
+    temp <- filtered2() %>%
       filter(metric == "Relative Weight") %>%
       mutate(gcat = factor(gcat, 
                            levels = c("stock", "quality", "preferred", "memorable", "trophy")))
@@ -273,7 +332,7 @@ server <- function(input, output) {
   
   output$plotCPUE <- renderPlot({
     
-    temp <- filtered() %>%
+    temp <- filtered2() %>%
       filter(metric == "CPUE") %>%
       mutate(gcat = factor(gcat, 
                            levels = c("stock", "quality", "preferred", "memorable", "trophy")))
