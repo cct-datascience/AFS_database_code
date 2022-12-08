@@ -87,7 +87,8 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                                          ),
                                 tabPanel("Plot", 
                                          plotOutput("plotLengthFrequency"),
-                                         plotOutput("plotRelativeWeight")
+                                         plotOutput("plotRelativeWeight"),
+                                         plotOutput("plotCPUE")
                                          ),
                                 tabPanel("Preview", 
                                          tableOutput("filtertable")) 
@@ -134,8 +135,7 @@ server <- function(input, output) {
     
     f_df <-  metrics %>%
       filter(metric %in% input$metricchoice,
-             case_when("All" %in% input$areachoice ~ area %in% uni.area,
-                       "All" %nin% input$areachoice ~ area %in% input$areachoice),
+             area %in% input$areachoice,
              case_when("All" %in% input$sppchoice ~ common_name %in% uni.spp,
                        "All" %nin% input$sppchoice ~ common_name %in% input$sppchoice),
              case_when("All" %in% input$methodchoice ~ method %in% uni.method,
@@ -207,20 +207,23 @@ server <- function(input, output) {
   })
   
   output$plotLengthFrequency <- renderPlot({
- 
-    fig <- filtered() %>%
+    temp <- filtered() %>%
       filter(metric == "Length Frequency") %>%
       mutate(gcat = factor(gcat, 
-                           levels = c("stock", "quality", "preferred", "memorable", "trophy"))) %>%
-      ggplot(aes(x = gcat, y = mean)) +
+                           levels = c("stock", "quality", "preferred", "memorable", "trophy")))
+    N <- unique(temp$N)
+    
+    fig <- ggplot(temp, aes(x = gcat, y = mean)) +
       geom_bar(stat = "identity") +
       geom_errorbar(aes(ymin = mean - se,
                         ymax = mean + se),
                     width = 0) +
       scale_y_continuous("Frequency (%)",
-                         limits = c(0, 100)) +
-      theme_bw() +
-      theme(axis.title.x = element_blank())
+                         limits = c(0, 100),
+                         expand = c(0, 0)) +
+      theme_classic(base_size = 16) +
+      theme(axis.title.x = element_blank()) +
+      ggtitle(paste0("N = ", N))
     
     print(fig)
     
@@ -228,19 +231,24 @@ server <- function(input, output) {
   
   output$plotRelativeWeight <- renderPlot({
     
-    fig <- filtered() %>%
+    temp <- filtered() %>%
       filter(metric == "Relative Weight") %>%
       mutate(gcat = factor(gcat, 
-                           levels = c("stock", "quality", "preferred", "memorable", "trophy"))) %>%
-      ggplot(aes(x = gcat)) +
+                           levels = c("stock", "quality", "preferred", "memorable", "trophy")))
+    
+    ypos <- min(temp$`25%`,  na.rm = TRUE) - 2
+    
+    fig <- ggplot(temp, aes(x = gcat)) +
       geom_point(aes(y = mean,
                      color = "Mean"),
                  size = 2.5) +
       geom_line(aes(y = mean,
                     group = metric, 
                     color = "Mean"),
-                size = 1,
-                alpha = 0.5) +
+                size = 0.75) +
+      geom_text(aes(y = ypos,
+                    label = N),
+                vjust = 0.5) +
       geom_line(aes(y = `25%`,
                     group = metric,
                     color = "25th percentile"),
@@ -250,11 +258,41 @@ server <- function(input, output) {
                     color = "75th percentile"),
                 lty = 2) +
       scale_y_continuous("Relative weight") +
-      scale_color_manual(values = c("blue", "red", "black")) +
-      theme_bw() +
+      scale_color_manual(values = c("darkblue", "darkred", "black")) +
+      theme_classic(base_size = 16) +
       theme(axis.title.x = element_blank(),
             legend.position = "bottom",
-            legend.title = element_blank())
+            legend.title = element_blank()) +
+      guides(color = guide_legend(override.aes = 
+                                   list(shape = c(NA, NA, 16),
+                                        lty = c(2, 2, 1))))  
+    
+    print(fig)
+    
+  })
+  
+  output$plotCPUE <- renderPlot({
+    
+    temp <- filtered() %>%
+      filter(metric == "CPUE") %>%
+      mutate(gcat = factor(gcat, 
+                           levels = c("stock", "quality", "preferred", "memorable", "trophy")))
+
+    N <- unique(temp$N)
+    
+    fig <- ggplot(temp, aes(y = area)) +
+      geom_boxplot(aes(xmin = `5%`,
+                       xlower = `25%`,
+                       xmiddle = `50%`,
+                       xupper = `75%`,
+                       xmax = `95%`),
+                   stat = "identity") +
+      scale_x_continuous("CPUE (fish / hour)") +
+      theme_classic(base_size = 16) +
+      theme(axis.title.y = element_blank(),
+            axis.text.y = element_blank(),
+            axis.ticks.y = element_blank()) +
+      ggtitle(paste0("N = ", N))
     
     print(fig)
     
