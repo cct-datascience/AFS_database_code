@@ -12,9 +12,9 @@ metrics <- read_csv('Full_results_112122.csv') %>%
          N = count)
 uni.type <- c("North America", "Ecoregion", "State/Province")
 uni.area <- sort(unique(metrics$area))
-uni.spp <- c('All', sort(unique(metrics$common_name)))
-uni.method <- c("All", sort(unique(metrics$method)))
-uni.watertype <- c("All", sort(unique(metrics$waterbody_type)))
+uni.spp <- sort(unique(metrics$common_name))
+uni.method <- sort(unique(metrics$method))
+uni.watertype <- sort(unique(metrics$waterbody_type))
 uni.metric <- c("Length Frequency", "Relative Weight", "CPUE") 
 
 `%nin%` <- negate(`%in%`)
@@ -29,7 +29,7 @@ foo <- metrics %>%
 
 #Shiny App
 ui <- navbarPage("AFS Standard Sampling App",
-                 theme = bslib::bs_theme(bootswatch = "darkly"),
+                 theme = bslib::bs_theme(bootswatch = "sandstone"),
                  tabPanel("About",
                           wellPanel(
                             h2("About Standard Sampling", align = "center"),
@@ -48,7 +48,9 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                  tabPanel(title = "Explore",
                           sidebarLayout(
                             sidebarPanel(
-                              "Welcome to the American Fisheries Society Standard Sampling Database App!", br(), br(),
+                              "Welcome to the American Fisheries Society Standard Sampling Database App!", 
+                              br(),
+                              br(),
                               "To explore standard fish data, select one or more options from each menu below.",
                               radioGroupButtons(inputId = "typechoice",
                                                 label = "Show data by:",
@@ -58,43 +60,44 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                               uiOutput("dyn_area"),
                               selectInput(inputId = "sppchoice",
                                           label = "Select species:",
-                                          choices = uni.spp,
-                                          multiple=T,
-                                          selected='Bluegill'),
+                                          choices = c("All", uni.spp),
+                                          multiple = TRUE,
+                                          selected = 'Bluegill'),
                               selectInput(inputId = "methodchoice",
                                           label = "Select method type(s):",
-                                          choices = uni.method,
-                                          multiple = T,
+                                          choices = c("All", uni.method),
+                                          multiple = TRUE,
                                           selected = "boat_electrofishing"),
                               selectInput(inputId = "watertypechoice",
                                           label = "Select waterbody type(s):",
-                                          choices = uni.watertype,
-                                          multiple = T,
+                                          choices = c("All", uni.watertype),
+                                          multiple = TRUE,
                                           selected = "large_standing_waters"),
                               selectInput(inputId = "metricchoice",
                                           label = "Select metric(s):",
                                           choices = uni.metric,
-                                          multiple = T,
+                                          multiple = TRUE,
                                           selected = uni.metric),
                               downloadButton("filterdownload", "Download filtered"),
                               downloadButton("alldownload", "Download all")
-                              ),
+                            ),
                             
                             mainPanel(
                               tabsetPanel(
                                 tabPanel("Map"),
                                 tabPanel("Preview", 
-                                         tableOutput("filtertable")) 
-                                
-                                
+                                         tableOutput("filtertable"))
+                                )
                               )
-                            )
                           )
-                 ), 
+                          ), 
+
                  tabPanel(title = "View",
                    sidebarLayout(
                      sidebarPanel(
-                       "Welcome to the American Fisheries Society Standard Sampling Database App!", br(), br(),
+                       "Welcome to the American Fisheries Society Standard Sampling Database App!", 
+                       br(), 
+                       br(),
                        "To view plots of standard fish data, select one option from each menu below.",
                        radioGroupButtons(inputId = "typechoice2",
                                          label = "Show data by:",
@@ -102,25 +105,25 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                                          direction = "vertical",
                                          selected = "North America"),
                        uiOutput("dyn_area2"),
-                       selectInput(inputId = "sppchoice",
+                       selectInput(inputId = "sppchoice2",
                                    label = "Select species:",
                                    choices = uni.spp,
                                    selected ='Bluegill'),
-                       selectInput(inputId = "methodchoice",
+                       selectInput(inputId = "methodchoice2",
                                    label = "Select method type(s):",
                                    choices = uni.method,
                                    selected = "boat_electrofishing"),
-                       selectInput(inputId = "watertypechoice",
+                       selectInput(inputId = "watertypechoice2",
                                    label = "Select waterbody type(s):",
                                    choices = uni.watertype,
                                    selected = "large_standing_waters")
                        ),
-                     mainPanel("Plot", 
-                               plotOutput("plotLengthFrequency"),
+                     mainPanel(plotOutput("plotLengthFrequency"),
                                plotOutput("plotRelativeWeight"),
-                               plotOutput("plotCPUE")
+                               plotOutput("plotCPUE", height = "200px")
+                               )
                      )
-                 )),
+                   ),
                 tabPanel(title = "Compare Your Data",
                          fileInput("upload", NULL,
                                    buttonLabel =  "Upload Your Data",
@@ -168,8 +171,7 @@ server <- function(input, output) {
     selectInput(inputId = "areachoice2",
                 label = "Select area:", 
                 choices = temp,
-                selected = temp[1],
-                multiple = TRUE)
+                selected = temp[1])
   })
   
   # make filtered, a reactive data object for tab 1 explore, multiple combos okay
@@ -189,33 +191,6 @@ server <- function(input, output) {
              se, `5%`, `25%`, `50%`, `75%`, `95%`)
     
   })
-  # make filtered, a reactive data object for tab 2, single combos only
-  filtered2 <- reactive({
-    
-    f_df <-  metrics %>%
-      filter(metric %in% uni.metric,
-             area %in% input$areachoice2,
-             case_when("All" %in% input$sppchoice ~ common_name %in% uni.spp,
-                       "All" %nin% input$sppchoice ~ common_name %in% input$sppchoice),
-             case_when("All" %in% input$methodchoice ~ method %in% uni.method,
-                       "All" %nin% input$methodchoice ~ method %in% input$methodchoice),
-             case_when("All" %in% input$watertypechoice ~ waterbody_type %in% uni.watertype,
-                       "All" %nin% input$watertypechoice ~ waterbody_type %in% input$watertypechoice)) %>%
-      arrange(common_name) %>%
-      select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
-             se, `5%`, `25%`, `50%`, `75%`, `95%`)
-    
-  })
-  
-  output$filterdownload <- downloadHandler(
-    filename = function() {
-      paste0("AFS-filtered-", Sys.Date(), ".csv")
-    },
-    
-    content = function(file) {
-      write_csv(filtered(), file)
-    }
-  )
   
   all <- reactive({
     
@@ -234,6 +209,32 @@ server <- function(input, output) {
       write.csv(all(), file)
     }
   )
+  # make filtered, a reactive data object for tab 2, single combos only
+  filtered2 <- reactive({
+    
+    f_df <-  metrics %>%
+      filter(metric %in% uni.metric,
+             area %in% input$areachoice2,
+             common_name %in% input$sppchoice2,
+             method %in% input$methodchoice2,
+             waterbody_type %in% input$watertypechoice2) %>%
+      arrange(common_name) %>%
+      select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
+             se, `5%`, `25%`, `50%`, `75%`, `95%`)
+    
+  })
+  
+  output$filterdownload <- downloadHandler(
+    filename = function() {
+      paste0("AFS-filtered-", Sys.Date(), ".csv")
+    },
+    
+    content = function(file) {
+      write_csv(filtered(), file)
+    }
+  )
+  
+
   
   # Making the table look nice
   output$filtertable <- renderTable({  
