@@ -1,10 +1,19 @@
 ### Read in libraries ###
 library(sf)
 library(leaflet)
+library(dplyr)
 
 ### Read in data ###
 # TODO: get location data
 metrics <- read.csv('app/Full_results_112122.csv', as.is=T)
+
+# TODO: remove simulated location data
+metrics <- metrics %>% 
+  mutate(lat = runif(nrow(metrics), min = 30, max = 45), 
+         lon = ifelse(region == "8", 
+                      runif(nrow(metrics), min = -90, max = -75), 
+                      runif(nrow(metrics), min = -120, max = -90))) %>% 
+  filter(region %in% c("8", "Arizona"), common_name %in% c("Black Bullhead", "Gizzard Shad"))
 
 ecoregions_url <- "https://gaftp.epa.gov/EPADataCommons/ORD/Ecoregions/cec_na/na_cec_eco_l1.zip"
 ecoregions_path <- "app/ecoregions1.zip"
@@ -26,6 +35,9 @@ factpal <- colorFactor(rainbow(length(unique(ecoregions_trans$NA_L1CODE))),
 
 leaflet() %>% 
   addTiles() %>% 
-  addPolygons(data = ecoregions_trans, color = ~factpal(NA_L1CODE), 
-              fillOpacity = 0.5, popup = ~htmltools::htmlEscape(NA_L1NAME), 
+  addCircleMarkers(data = metrics, lng = ~lon, lat = ~lat, label = ~common_name, 
+                   stroke = FALSE, radius = 3, fillOpacity = 1) %>% 
+  addPolygons(data = ecoregions_trans, color = ~factpal(NA_L1CODE),
+              fillOpacity = 0.5, popup = ~htmltools::htmlEscape(NA_L1NAME),
               stroke = FALSE)
+
