@@ -1,6 +1,7 @@
 library(shiny)
 library(shinyWidgets)
 library(tidyverse)
+library(leaflet)
 # library(data.table)
 # library(dplyr)
 # library(rsconnect)
@@ -84,7 +85,8 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                             
                             mainPanel(
                               tabsetPanel(
-                                tabPanel("Map"),
+                                tabPanel("Map", 
+                                         leafletOutput("plotSites")),
                                 tabPanel("Preview", 
                                          tableOutput("filtertable"))
                                 )
@@ -264,6 +266,24 @@ server <- function(input, output) {
                     "50%" = `50%`,
                     "75%" = `75%`,
                     "95%" = `95%`)
+  })
+  
+  output$plotSites <- renderLeaflet({
+    plot_data <- filtered() %>%  #replace metrics with filtered? 
+      mutate(lat = runif(nrow(filtered()), min = 30, max = 45), 
+             lon = ifelse(area == "8", 
+                          runif(nrow(filtered()), min = -90, max = -75), 
+                          runif(nrow(filtered()), min = -120, max = -90)), 
+             lat = as.numeric(lat), 
+             lon = as.numeric(lon)) %>% 
+      filter(area %in% c("8", "Arizona"), common_name %in% c("Black Bullhead", "Gizzard Shad"))
+    
+    leaflet() %>% 
+      addTiles() %>% 
+      addCircleMarkers(c(-90, -110, -80), c(40, 33, 41))
+      # addCircleMarkers(data = plot_data, lng = ~lon, lat = ~lat, 
+      #                  stroke = FALSE, radius = 3, 
+      #                  fillOpacity = 1)
   })
   
   output$plotLengthFrequency <- renderPlot({
