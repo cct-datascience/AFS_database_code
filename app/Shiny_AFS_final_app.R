@@ -1,6 +1,7 @@
 library(shiny)
 library(shinyWidgets)
 library(tidyverse)
+library(sf)
 library(leaflet)
 # library(data.table)
 # library(dplyr)
@@ -17,6 +18,13 @@ uni.spp <- sort(unique(metrics$common_name))
 uni.method <- sort(unique(metrics$method))
 uni.watertype <- sort(unique(metrics$waterbody_type))
 uni.metric <- c("Length Frequency", "Relative Weight", "CPUE") 
+
+ecoregions <- read_sf("ecoregions1/NA_CEC_Eco_Level1.shp")
+ecoregions_crs <- "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs"
+ecoregions_trans <- ecoregions %>% 
+  rmapshaper::ms_simplify() %>% 
+  st_set_crs(ecoregions_crs) %>%
+  st_transform("+proj=longlat +datum=WGS84")
 
 `%nin%` <- negate(`%in%`)
 
@@ -269,21 +277,24 @@ server <- function(input, output) {
   })
   
   output$plotSites <- renderLeaflet({
-    plot_data <- filtered() %>%  #replace metrics with filtered? 
+    plot_data <- filtered() %>%  
       mutate(lat = runif(nrow(filtered()), min = 30, max = 45), 
              lon = ifelse(area == "8", 
                           runif(nrow(filtered()), min = -90, max = -75), 
                           runif(nrow(filtered()), min = -120, max = -90)), 
              lat = as.numeric(lat), 
-             lon = as.numeric(lon)) %>% 
-      filter(area %in% c("8", "Arizona"), common_name %in% c("Black Bullhead", "Gizzard Shad"))
+             lon = as.numeric(lon))
+    
+    factpal <- colorFactor(rainbow(length(unique(ecoregions_trans$NA_L1CODE))), 
+                           ecoregions_trans$NA_L1CODE)
     
     leaflet() %>% 
       addTiles() %>% 
-      addCircleMarkers(c(-90, -110, -80), c(40, 33, 41))
-      # addCircleMarkers(data = plot_data, lng = ~lon, lat = ~lat, 
-      #                  stroke = FALSE, radius = 3, 
-      #                  fillOpacity = 1)
+      addCircleMarkers(data = plot_data, lng = ~lon, lat = ~lat, stroke = FALSE, 
+                       radius = 3, fillOpacity = 1) %>% 
+      addPolygons(data = ecoregions_trans, color = ~factpal(NA_L1CODE),
+                  fillOpacity = 0.5, popup = ~htmltools::htmlEscape(NA_L1NAME),
+                  stroke = FALSE)
   })
   
   output$plotLengthFrequency <- renderPlot({
