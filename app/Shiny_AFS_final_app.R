@@ -302,19 +302,27 @@ server <- function(input, output) {
       filter(metric == "Length Frequency") %>%
       mutate(gcat = factor(gcat, 
                            levels = c("stock", "quality", "preferred", "memorable", "trophy")))
-    N <- unique(temp$N)
     
-    fig <- ggplot(temp, aes(x = gcat, y = mean)) +
-      geom_bar(stat = "identity") +
-      geom_errorbar(aes(ymin = mean - se,
-                        ymax = mean + se),
-                    width = 0) +
-      scale_y_continuous("Frequency (%)",
-                         limits = c(0, 100),
-                         expand = c(0, 0)) +
-      theme_classic(base_size = 16) +
-      theme(axis.title.x = element_blank()) +
-      ggtitle(paste0("N = ", N))
+    N <- unique(temp$N)
+
+    if(nrow(temp) == 0){
+      fig <- ggplot() +
+        annotate("text", x = 1, y = 1, size = 8,
+                 label = "No length frequency data for selected options") +
+        theme_void()
+    } else {
+      fig <- ggplot(temp, aes(x = gcat, y = mean)) +
+        geom_bar(stat = "identity") +
+        geom_errorbar(aes(ymin = mean - se,
+                          ymax = mean + se),
+                      width = 0) +
+        scale_y_continuous("Frequency (%)",
+                           limits = c(0, 100),
+                           expand = c(0, 0)) +
+        theme_classic(base_size = 16) +
+        theme(axis.title.x = element_blank()) +
+        ggtitle(paste0("N = ", N))
+    }
     
     print(fig)
     
@@ -328,36 +336,43 @@ server <- function(input, output) {
                            levels = c("stock", "quality", "preferred", "memorable", "trophy")))
     
     ypos <- min(temp$`25%`,  na.rm = TRUE) - 2
-    
-    fig <- ggplot(temp, aes(x = gcat)) +
-      geom_point(aes(y = mean,
-                     color = "Mean"),
-                 size = 2.5) +
-      geom_line(aes(y = mean,
-                    group = metric, 
-                    color = "Mean"),
-                size = 0.75) +
-      geom_text(aes(y = ypos,
-                    label = N),
-                vjust = 0.5) +
-      geom_line(aes(y = `25%`,
-                    group = metric,
-                    color = "25th percentile"),
-                lty = 2) +
-      geom_line(aes(y = `75%`,
-                    group = metric,
-                    color = "75th percentile"),
-                lty = 2) +
-      scale_y_continuous("Relative weight") +
-      scale_color_manual(values = c("darkblue", "darkred", "black")) +
-      theme_classic(base_size = 16) +
-      theme(axis.title.x = element_blank(),
-            legend.position = "bottom",
-            legend.title = element_blank()) +
-      guides(color = guide_legend(override.aes = 
-                                   list(shape = c(NA, NA, 16),
-                                        lty = c(2, 2, 1))))  
-    
+
+    if(nrow(temp) == 0){
+      fig <- ggplot() +
+        annotate("text", x = 1, y = 1, size = 8,
+                 label = "No relative weight data for selected options") +
+        theme_void()
+    } else {
+      fig <- ggplot(temp, aes(x = gcat)) +
+        geom_point(aes(y = mean,
+                       color = "Mean"),
+                   size = 2.5) +
+        geom_line(aes(y = mean,
+                      group = metric, 
+                      color = "Mean"),
+                  size = 0.75) +
+        geom_text(aes(y = ypos,
+                      label = N),
+                  vjust = 0.5) +
+        geom_line(aes(y = `25%`,
+                      group = metric,
+                      color = "25th percentile"),
+                  lty = 2) +
+        geom_line(aes(y = `75%`,
+                      group = metric,
+                      color = "75th percentile"),
+                  lty = 2) +
+        scale_y_continuous("Relative weight") +
+        scale_color_manual(values = c("darkblue", "darkred", "black")) +
+        theme_classic(base_size = 16) +
+        theme(axis.title.x = element_blank(),
+              legend.position = "bottom",
+              legend.title = element_blank()) +
+        guides(color = guide_legend(override.aes = 
+                                      list(shape = c(NA, NA, 16),
+                                           lty = c(2, 2, 1))))  
+    }    
+
     print(fig)
     
   })
@@ -370,21 +385,28 @@ server <- function(input, output) {
                            levels = c("stock", "quality", "preferred", "memorable", "trophy")))
 
     N <- unique(temp$N)
-    
-    fig <- ggplot(temp, aes(y = area)) +
-      geom_boxplot(aes(xmin = `5%`,
-                       xlower = `25%`,
-                       xmiddle = `50%`,
-                       xupper = `75%`,
-                       xmax = `95%`),
-                   stat = "identity") +
-      scale_x_continuous("CPUE (fish / hour)") +
-      theme_classic(base_size = 16) +
-      theme(axis.title.y = element_blank(),
-            axis.text.y = element_blank(),
-            axis.ticks.y = element_blank()) +
-      ggtitle(paste0("N = ", N))
-    
+
+    if(nrow(temp) == 0){
+      fig <- ggplot() +
+        annotate("text", x = 1, y = 1, size = 8,
+                 label = "No CPUE data for selected options") +
+        theme_void()
+    } else {
+      fig <- ggplot(temp, aes(y = area)) +
+        geom_boxplot(aes(xmin = `5%`,
+                         xlower = `25%`,
+                         xmiddle = `50%`,
+                         xupper = `75%`,
+                         xmax = `95%`),
+                     stat = "identity") +
+        scale_x_continuous("CPUE (fish / hour)") +
+        theme_classic(base_size = 16) +
+        theme(axis.title.y = element_blank(),
+              axis.text.y = element_blank(),
+              axis.ticks.y = element_blank()) +
+        ggtitle(paste0("N = ", N))  
+    }
+
     print(fig)
     
   })
@@ -396,15 +418,6 @@ server <- function(input, output) {
       datatable(data)
   })
   })
-  
-  #user.results <- reactive({
-   # req(input$upload)
-    # user.dat.df <- read.csv(input$upload$datapath)
-    
-    ## Insert code to derive results (equations etc.) for PSD, Wr, CPUE
-    #return(user.results.df)}) ## Return the results data.frame you make
-  
-  
 }
 
 
