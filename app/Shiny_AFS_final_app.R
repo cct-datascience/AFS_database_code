@@ -3,11 +3,11 @@ library(shinyWidgets)
 library(tidyverse)
 library(sf)
 library(leaflet)
-# library(data.table)
+#library(data.table)
 # library(dplyr)
 # library(rsconnect)
 # library(rmarkdown)
-# library(DT)
+library(DT)
 
 metrics <- read_csv('Full_results_112122.csv') %>%
   rename(area = region,
@@ -135,11 +135,43 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                      )
                    ),
                 tabPanel(title = "Compare Your Data",
-                         fileInput("upload", NULL,
-                                   buttonLabel =  "Upload Your Data",
-                                   multiple = FALSE, accept = (".csv")),
-                         tableOutput("user_table"),
-                         dataTableOutput("view_user_table")
+                         sidebarLayout(
+                           fileInput("upload", NULL,
+                                     buttonLabel =  "Upload Your Data",
+                                     multiple = FALSE, accept = (".csv")), 
+                           mainPanel(plotOutput("plotLengthFrequencyuser"))
+                           # sidebarPanel(
+                           #   "Welcome to the American Fisheries Society Standard Sampling Database App!", 
+                           #   br(), 
+                           #   br(),
+                           #   "To view plots of standard fish data, select one option from each menu below.",
+                           #   radioGroupButtons(inputId = "typechoice2",
+                           #                     label = "Show data by:",
+                           #                     choices = uni.type,
+                           #                     direction = "vertical",
+                           #                     selected = "North America"),
+                           #   uiOutput("dyn_area2"),
+                           #   selectInput(inputId = "sppchoice2",
+                           #               label = "Select species:",
+                           #               choices = uni.spp,
+                           #               selected ='Bluegill'),
+                           #   selectInput(inputId = "methodchoice2",
+                           #               label = "Select method type(s):",
+                           #               choices = uni.method,
+                           #               selected = "boat_electrofishing"),
+                           #   selectInput(inputId = "watertypechoice2",
+                           #               label = "Select waterbody type(s):",
+                           #               choices = uni.watertype,
+                           #               selected = "large_standing_waters")
+                           # ),
+                           # mainPanel(plotOutput("plotLengthFrequency"),
+                           #           plotOutput("plotRelativeWeight"),
+                           #           plotOutput("plotCPUE", height = "200px")
+                           # )
+                         ), 
+# ,
+#                          tableOutput("user_table"),
+#                          dataTableOutput("view_user_table")
                  ) 
 
 )
@@ -232,6 +264,7 @@ server <- function(input, output) {
       select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
              se, `5%`, `25%`, `50%`, `75%`, `95%`)
     
+    
   })
   
   output$filterdownload <- downloadHandler(
@@ -243,8 +276,6 @@ server <- function(input, output) {
       write_csv(filtered(), file)
     }
   )
-  
-
   
   # Making the table look nice
   output$filtertable <- renderTable({  
@@ -411,13 +442,40 @@ server <- function(input, output) {
     
   })
 
-  output$user_table <- renderTable({
+  filtered3 <- reactive({
     inFile <- input$upload
-    data <- read.csv(inFile$datapath)
-    output$view_user_table <- renderDataTable({
-      datatable(data)
+    uu <- read_csv(inFile$datapath)
+    f_df <-  uu %>%
+      filter(metric %in% uni.metric,
+             area %in% input$areachoice2,
+             common_name %in% input$sppchoice2,
+             method %in% input$methodchoice2,
+             waterbody_type %in% input$watertypechoice2) %>%
+      arrange(common_name) %>%
+      select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
+             se, `5%`, `25%`, `50%`, `75%`, `95%`)
+    
   })
+  
+  output$plotLengthFrequencyuser <- renderPlot({
+    temp <- filtered3() %>% 
+      bind_rows(filtered2(), .id = "id") %>% 
+      rename(data_source = id) %>% 
+      mutate(data_source = case_when(data_source == 1 ~ "User upload", 
+                                     data_source == 2 ~ "Standardized")) %>% 
+      filter(metric == "Length Frequency")
+    fig <- ggplot(temp, aes(x = gcat, y = mean, fill = data_source)) +
+      geom_bar(stat = "identity")
+    print(fig)
   })
+  
+  # output$user_table <- renderTable({
+  #   inFile <- input$upload
+  #   data <- read.csv(inFile$datapath)
+  #   # output$view_user_table <- renderDataTable({
+  #   #   datatable(data)
+  # })
+  #}) delete this?
 }
 
 
