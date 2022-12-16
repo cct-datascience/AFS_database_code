@@ -3,10 +3,6 @@ library(shinyWidgets)
 library(tidyverse)
 library(sf)
 library(leaflet)
-#library(data.table)
-# library(dplyr)
-# library(rsconnect)
-# library(rmarkdown)
 library(DT)
 
 metrics <- read_csv('Full_results_112122.csv') %>%
@@ -94,7 +90,7 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                             mainPanel(
                               tabsetPanel(
                                 tabPanel("Map", 
-                                         leafletOutput("plotSites")),
+                                         leafletOutput("plotSites")), #incrase height of map
                                 tabPanel("Preview", 
                                          tableOutput("filtertable"))
                                 )
@@ -136,38 +132,37 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                    ),
                 tabPanel(title = "Compare Your Data",
                          sidebarLayout(
-                           fileInput("upload", NULL,
-                                     buttonLabel =  "Upload Your Data",
-                                     multiple = FALSE, accept = (".csv")), 
-                           mainPanel(plotOutput("plotLengthFrequencyuser"))
-                           # sidebarPanel(
-                           #   "Welcome to the American Fisheries Society Standard Sampling Database App!", 
-                           #   br(), 
-                           #   br(),
-                           #   "To view plots of standard fish data, select one option from each menu below.",
-                           #   radioGroupButtons(inputId = "typechoice2",
-                           #                     label = "Show data by:",
-                           #                     choices = uni.type,
-                           #                     direction = "vertical",
-                           #                     selected = "North America"),
-                           #   uiOutput("dyn_area2"),
-                           #   selectInput(inputId = "sppchoice2",
-                           #               label = "Select species:",
-                           #               choices = uni.spp,
-                           #               selected ='Bluegill'),
-                           #   selectInput(inputId = "methodchoice2",
-                           #               label = "Select method type(s):",
-                           #               choices = uni.method,
-                           #               selected = "boat_electrofishing"),
-                           #   selectInput(inputId = "watertypechoice2",
-                           #               label = "Select waterbody type(s):",
-                           #               choices = uni.watertype,
-                           #               selected = "large_standing_waters")
-                           # ),
-                           # mainPanel(plotOutput("plotLengthFrequency"),
-                           #           plotOutput("plotRelativeWeight"),
-                           #           plotOutput("plotCPUE", height = "200px")
-                           # )
+                           sidebarPanel(
+                             "Welcome to the American Fisheries Society Standard Sampling Database App!",
+                             br(),
+                             br(),
+                             "Upload your fish data for comparison here: ", 
+                             fileInput("upload", NULL,
+                                       buttonLabel =  "Upload Your Data",
+                                       multiple = FALSE, accept = (".csv")), 
+                             "To view plots of standard fish data, select one option from each menu below.",
+                             radioGroupButtons(inputId = "typechoice3",
+                                               label = "Show data by:",
+                                               choices = uni.type,
+                                               direction = "vertical",
+                                               selected = "North America"),
+                             uiOutput("dyn_area3"),
+                             selectInput(inputId = "sppchoice3",
+                                         label = "Select species:",
+                                         choices = uni.spp,
+                                         selected ='Bluegill'),
+                             selectInput(inputId = "methodchoice3",
+                                         label = "Select method type(s):",
+                                         choices = uni.method,
+                                         selected = "boat_electrofishing"),
+                             selectInput(inputId = "watertypechoice3",
+                                         label = "Select waterbody type(s):",
+                                         choices = uni.watertype,
+                                         selected = "large_standing_waters")
+                           ),
+                           mainPanel(plotOutput("plotLengthFrequencyuser"), 
+                                     plotOutput("plotRelativeWeightuser"), 
+                                     plotOutput("plotCPUEuser"))
                          ), 
 # ,
 #                          tableOutput("user_table"),
@@ -215,7 +210,24 @@ server <- function(input, output) {
                 choices = temp,
                 selected = temp[1])
   })
-  
+
+  # Render a UI for selecting area depending on North America, Ecoregions, or State/Province for tab 3
+  output$dyn_area3 <- renderUI({
+    if(input$typechoice3 == "North America") {
+      temp <- "North_America"
+    } else if(input$typechoice3 == "Ecoregion") {
+      temp <- uni.area[1:11]
+    } else if(input$typechoice3 == "State/Province") {
+      temp2 <-  uni.area[uni.area %nin% 'North_America']
+      temp <- temp2[-1:-11]
+    }
+    
+    selectInput(inputId = "areachoice3",
+                label = "Select area:", 
+                choices = temp,
+                selected = temp[1])
+  })  
+
   # make filtered, a reactive data object for tab 1 explore, multiple combos okay
   filtered <- reactive({
     
@@ -253,7 +265,7 @@ server <- function(input, output) {
   )
   # make filtered, a reactive data object for tab 2, single combos only
   filtered2 <- reactive({
-    
+
     f_df <-  metrics %>%
       filter(metric %in% uni.metric,
              area %in% input$areachoice2,
@@ -263,8 +275,12 @@ server <- function(input, output) {
       arrange(common_name) %>%
       select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
              se, `5%`, `25%`, `50%`, `75%`, `95%`)
+    print(f_df)
     
-    
+  })
+
+  observeEvent(input$areachoice2, {
+    print(paste0("You have chosen: ", input$areachoice2))
   })
   
   output$filterdownload <- downloadHandler(
@@ -306,6 +322,41 @@ server <- function(input, output) {
                     "75%" = `75%`,
                     "95%" = `95%`)
   })
+
+  filtered3 <- reactive({
+    
+    f_df <-  metrics %>%
+      filter(metric %in% uni.metric,
+             area %in% input$areachoice3,
+             common_name %in% input$sppchoice3,
+             method %in% input$methodchoice3,
+             waterbody_type %in% input$watertypechoice3) %>%
+      arrange(common_name) %>%
+      select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
+             se, `5%`, `25%`, `50%`, `75%`, `95%`)
+    
+    
+  })
+  
+  uu_filtered <- reactive({
+    inFile <- input$upload
+    uu <- read_csv(inFile$datapath)
+    print("UU original")
+    print(uu)
+    f_df <-  uu %>%
+      filter(metric %in% uni.metric,
+             area %in% input$areachoice3,
+             common_name %in% input$sppchoice3,
+             method %in% input$methodchoice3,
+             waterbody_type %in% input$watertypechoice3) %>%
+      arrange(common_name) %>%
+      select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
+             se, `5%`, `25%`, `50%`, `75%`, `95%`)
+    print("UU filtered")
+    print(f_df$metric)
+    print(f_df, n = Inf)
+    
+  })
   
   output$plotSites <- renderLeaflet({
     plot_data <- filtered() %>%  
@@ -334,7 +385,9 @@ server <- function(input, output) {
       mutate(gcat = factor(gcat, 
                            levels = c("stock", "quality", "preferred", "memorable", "trophy")))
     
-    N <- unique(temp$N)
+    N <- temp %>% 
+      distinct(N) %>% 
+      pull(N)
 
     if(nrow(temp) == 0){
       fig <- ggplot() +
@@ -342,7 +395,7 @@ server <- function(input, output) {
                  label = "No length frequency data for selected options") +
         theme_void()
     } else {
-      fig <- ggplot(temp, aes(x = gcat, y = mean)) +
+      fig <- ggplot(temp, aes(x = gcat, y = mean, fill = "#F8766D")) +
         geom_bar(stat = "identity") +
         geom_errorbar(aes(ymin = mean - se,
                           ymax = mean + se),
@@ -351,7 +404,8 @@ server <- function(input, output) {
                            limits = c(0, 100),
                            expand = c(0, 0)) +
         theme_classic(base_size = 16) +
-        theme(axis.title.x = element_blank()) +
+        theme(axis.title.x = element_blank(), 
+              legend.position = "none") +
         ggtitle(paste0("N = ", N))
     }
     
@@ -442,41 +496,120 @@ server <- function(input, output) {
     
   })
 
-  filtered3 <- reactive({
-    inFile <- input$upload
-    uu <- read_csv(inFile$datapath)
-    f_df <-  uu %>%
-      filter(metric %in% uni.metric,
-             area %in% input$areachoice2,
-             common_name %in% input$sppchoice2,
-             method %in% input$methodchoice2,
-             waterbody_type %in% input$watertypechoice2) %>%
-      arrange(common_name) %>%
-      select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
-             se, `5%`, `25%`, `50%`, `75%`, `95%`)
-    
-  })
-  
   output$plotLengthFrequencyuser <- renderPlot({
-    temp <- filtered3() %>% 
-      bind_rows(filtered2(), .id = "id") %>% 
+    #TODO: don't plot standardized data if there is no corresponding user upload data
+    #if nrow uu_filtered is 0...
+    temp <- uu_filtered() %>% 
+      bind_rows(filtered3(), .id = "id") %>% 
       rename(data_source = id) %>% 
       mutate(data_source = case_when(data_source == 1 ~ "User upload", 
                                      data_source == 2 ~ "Standardized")) %>% 
-      filter(metric == "Length Frequency")
+      filter(metric == "Length Frequency") %>%
+      mutate(gcat = factor(gcat, 
+                           levels = c("stock", "quality", "preferred", "memorable", "trophy")))
+    
+    stand_N <- temp %>% 
+      filter(data_source == "Standardized") %>% 
+      distinct(N) %>% 
+      pull(N)
+
+    user_N <- temp %>% 
+      filter(data_source == "User upload") %>% 
+      distinct(N) %>% 
+      pull(N)
+    
     fig <- ggplot(temp, aes(x = gcat, y = mean, fill = data_source)) +
-      geom_bar(stat = "identity")
+      geom_bar(stat = "identity", position = "dodge")  +
+      geom_errorbar(aes(ymin = mean - se,
+                        ymax = mean + se),
+                    position = position_dodge(width = 0.9), 
+                    width = 0) +
+      scale_y_continuous("Frequency (%)",
+                         limits = c(0, 100),
+                         expand = c(0, 0)) +
+      theme_classic(base_size = 16) +
+      theme(axis.title.x = element_blank()) +
+      ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
+    
     print(fig)
+
   })
   
-  # output$user_table <- renderTable({
-  #   inFile <- input$upload
-  #   data <- read.csv(inFile$datapath)
-  #   # output$view_user_table <- renderDataTable({
-  #   #   datatable(data)
-  # })
-  #}) delete this?
+  output$plotRelativeWeightuser <- renderPlot({
+    
+    temp <- uu_filtered() %>% 
+      bind_rows(filtered3(), .id = "id") %>% 
+      rename(data_source = id) %>% 
+      mutate(data_source = case_when(data_source == 1 ~ "User upload", 
+                                     data_source == 2 ~ "Standardized")) %>% 
+      filter(metric == "Relative Weight") %>%
+      mutate(gcat = factor(gcat, 
+                           levels = c("stock", "quality", "preferred", "memorable", "trophy")))
+    
+    fig <- ggplot(temp, aes(x = gcat)) +
+      geom_point(aes(y = mean,
+                     color = data_source),
+                 size = 2.5) +
+      geom_line(aes(y = mean,
+                    group = data_source, 
+                    color = data_source),
+                size = 0.75) +
+      geom_line(aes(y = `25%`,
+                    group = data_source,
+                    color = data_source),
+                lty = 2) +
+      geom_line(aes(y = `75%`,
+                    group = data_source,
+                    color = data_source),
+                lty = 2) +
+      scale_y_continuous("Relative weight") +
+      theme_classic(base_size = 16) +
+      theme(axis.title.x = element_blank(),
+            legend.position = "bottom",
+            legend.title = element_blank()) 
+    
+    print(fig)
+    
+  })
+  
+  output$plotCPUEuser <- renderPlot({
+    temp <- uu_filtered() %>% 
+      bind_rows(filtered3(), .id = "id") %>% 
+      rename(data_source = id) %>% 
+      mutate(data_source = case_when(data_source == 1 ~ "User upload", 
+                                     data_source == 2 ~ "Standardized")) %>% 
+      filter(metric == "CPUE")
+    
+    print(temp, n = Inf)
+    
+    stand_N <- temp %>% 
+      filter(data_source == "Standardized") %>% 
+      distinct(N) %>% 
+      pull(N)
+    
+    user_N <- temp %>% 
+      filter(data_source == "User upload") %>% 
+      distinct(N) %>% 
+      pull(N)
+    
+    fig <- ggplot(temp, aes(y = area, fill = data_source)) +
+      geom_boxplot(aes(xmin = `5%`,
+                       xlower = `25%`,
+                       xmiddle = `50%`,
+                       xupper = `75%`,
+                       xmax = `95%`),
+                   stat = "identity") +
+      scale_x_continuous("CPUE (fish / hour)") +
+      theme_classic(base_size = 16) +
+      theme(axis.title.y = element_blank(),
+            axis.text.y = element_blank(),
+            axis.ticks.y = element_blank()) +
+      ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
+    
+    print(fig)
+    
+  })
+  
 }
-
 
 shinyApp(ui, server)
