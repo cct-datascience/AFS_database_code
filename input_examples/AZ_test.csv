@@ -1,0 +1,26 @@
+state,watername_method_yearID,ecoregion,waterbody_name,fish_type,waterbody_type,month,day,year,method,effort_day,common_name,total_length_mm,weight_g,lat,long,additional_info,date,total_m2,gcat,effort,count
+Arizona,2010Lake Mead_boat_electrofishing,8,Lake Mead,warmwater,large_standing_waters,11,13,2010,boat_electrofishing,1500,Largemouth Bass,300,210,32.883,-114.465,NA,11132010,NA,quality,1500,3
+Arizona,2010Lake Mead_boat_electrofishing,8,Lake Mead,warmwater,large_standing_waters,11,13,2010,boat_electrofishing,1500,Largemouth Bass,239,115,32.883,-114.465,NA,11132010,NA,stock,1500,3
+Arizona,2010Lake Mead_boat_electrofishing,8,Lake Mead,warmwater,large_standing_waters,11,13,2010,boat_electrofishing,1500,Green Sunfish,160,80,32.883,-114.465,NA,11132010,NA,stock,1500,2
+Arizona,2010Lake Mead_boat_electrofishing,8,Lake Mead,warmwater,large_standing_waters,11,13,2010,boat_electrofishing,1500,Green Sunfish,233,NA,32.883,-114.465,NA,11132010,NA,stock,1500,2
+Arizona,2010Lake Mead_boat_electrofishing,8,Lake Mead,warmwater,large_standing_waters,11,13,2010,boat_electrofishing,1500,Largemouth Bass,403,300,32.883,-114.465,NA,11132010,NA,preferred,1500,3
+Arizona,2010Lake Mead_gill_net_spring,8,Lake Mead,warmwater,large_standing_waters,11,13,2010,gill_net_spring,3,Green Sunfish,200,NA,32.883,-114.465,NA,11132010,NA,preferred,3,2
+Arizona,2010Lake Mead_gill_net_spring,8,Lake Mead,warmwater,large_standing_waters,11,13,2010,gill_net_spring,3,Green Sunfish,221,101,32.883,-114.465,NA,11132010,NA,preferred,3,2
+Arizona,2010Lake Mead_small_catfish_hoopnet,8,Lake Mead,warmwater,large_standing_waters,11,13,2010,small_catfish_hoopnet,2,Green Sunfish,202,NA,32.883,-114.465,NA,11132010,NA,quality,2,1
+Arizona,2010Lake Mead_small_catfish_hoopnet,8,Lake Mead,warmwater,large_standing_waters,11,13,2010,small_catfish_hoopnet,2,Largemouth Bass,403,301,32.883,-114.465,NA,11132010,NA,preferred,2,1
+Arizona,2014Colorado RiverParker Strip_boat_electrofishing,9,Colorado River  Parker Strip,warmwater,rivers,10,26,2014,boat_electrofishing,1200,Green Sunfish,93,15,34.134,-114.1056,NA,10262014,NA,stock,2200,7
+Arizona,2014Colorado RiverParker Strip_boat_electrofishing,9,Colorado River  Parker Strip,warmwater,rivers,10,26,2014,boat_electrofishing,1200,Largemouth Bass,242,185,34.134,-114.1056,NA,10262014,NA,stock,2200,3
+Arizona,2014Colorado RiverParker Strip_boat_electrofishing,9,Colorado River  Parker Strip,warmwater,rivers,10,26,2014,boat_electrofishing,1200,Green Sunfish,132,NA,34.134,-114.1056,NA,10262014,NA,stock,2200,7
+Arizona,2014Colorado RiverParker Strip_boat_electrofishing,9,Colorado River  Parker Strip,warmwater,rivers,10,26,2014,boat_electrofishing,1200,Green Sunfish,150,69,34.134,-114.1056,NA,10262014,NA,quality,2200,7
+Arizona,2014Colorado RiverParker Strip_boat_electrofishing,9,Colorado River  Parker Strip,warmwater,rivers,10,26,2014,boat_electrofishing,1200,Largemouth Bass,202,100,34.134,-114.1056,NA,10262014,NA,stock,2200,3
+Arizona,2014Colorado RiverParker Strip_boat_electrofishing,9,Colorado River  Parker Strip,warmwater,rivers,10,26,2014,boat_electrofishing,1200,Green Sunfish,147,45,34.134,-114.1056,NA,10262014,NA,stock,2200,7
+Arizona,2014Colorado RiverParker Strip_boat_electrofishing,9,Colorado River  Parker Strip,warmwater,rivers,10,26,2014,boat_electrofishing,1200,Green Sunfish,150,70,34.134,-114.1056,NA,10262014,NA,quality,2200,7
+Arizona,2014Colorado RiverParker Strip_boat_electrofishing,9,Colorado River  Parker Strip,warmwater,rivers,10,26,2014,boat_electrofishing,1200,Green Sunfish,134,40,34.134,-114.1056,NA,10262014,NA,stock,2200,7
+Arizona,2014Colorado RiverParker Strip_boat_electrofishing,9,Colorado River  Parker Strip,warmwater,rivers,10,28,2014,boat_electrofishing,1000,Green Sunfish,250,100,34.134,-114.1056,NA,10282014,NA,memorable,2200,7
+Arizona,2014Colorado RiverParker Strip_boat_electrofishing,9,Colorado River  Parker Strip,warmwater,rivers,10,28,2014,boat_electrofishing,1000,Largemouth Bass,201,NA,34.134,-114.1056,NA,10282014,NA,stock,2200,3
+Arizona,2014Colorado RiverParker Strip_backpack_electrofishing,9,Colorado River  Parker Strip,warmwater,rivers,10,26,2014,backpack_electrofishing,NA,Green Sunfish,134,40,34.134,-114.1056,NA,10262014,400,stock,2200,3
+Arizona,2014Colorado RiverParker Strip_backpack_electrofishing,9,Colorado River  Parker Strip,warmwater,rivers,10,28,2014,backpack_electrofishing,1000,Green Sunfish,250,100,34.134,-114.1056,NA,10282014,600,memorable,2200,3
+Arizona,2014Colorado RiverParker Strip_backpack_electrofishing,9,Colorado River  Parker Strip,warmwater,rivers,10,28,2014,backpack_electrofishing,1000,Green Sunfish,201,NA,34.134,-114.1056,NA,10282014,600,stock,2200,3
+Arizona,2014Lake Mead_boat_electrofishing,8,Lake Mead,warmwater,large_standing_waters,11,13,2014,boat_electrofishing,1500,Green Sunfish,160,80,32.883,-114.465,NA,11132014,NA,stock,1500,1
+Arizona,2014Lake Mead_boat_electrofishing,8,Lake Mead,warmwater,large_standing_waters,11,13,2014,boat_electrofishing,1500,Largemouth Bass,233,NA,32.883,-114.465,NA,11132014,NA,stock,1500,2
+Arizona,2014Lake Mead_boat_electrofishing,8,Lake Mead,warmwater,large_standing_waters,11,13,2014,boat_electrofishing,1500,Largemouth Bass,403,300,32.883,-114.465,NA,11132014,NA,preferred,1500,2
