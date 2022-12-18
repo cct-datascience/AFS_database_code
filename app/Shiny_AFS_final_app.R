@@ -1,11 +1,9 @@
 library(shiny)
 library(shinyWidgets)
 library(tidyverse)
-# library(data.table)
-# library(dplyr)
-# library(rsconnect)
-# library(rmarkdown)
-# library(DT)
+library(sf)
+library(leaflet)
+library(DT)
 
 metrics <- read_csv('Full_results_112122.csv') %>%
   rename(area = region,
@@ -16,6 +14,13 @@ uni.spp <- sort(unique(metrics$common_name))
 uni.method <- sort(unique(metrics$method))
 uni.watertype <- sort(unique(metrics$waterbody_type))
 uni.metric <- c("Length Frequency", "Relative Weight", "CPUE") 
+
+ecoregions <- read_sf("ecoregions1/NA_CEC_Eco_Level1.shp")
+ecoregions_crs <- "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs"
+ecoregions_trans <- ecoregions %>% 
+  rmapshaper::ms_simplify() %>% 
+  st_set_crs(ecoregions_crs) %>%
+  st_transform("+proj=longlat +datum=WGS84")
 
 `%nin%` <- negate(`%in%`)
 
@@ -84,7 +89,8 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                             
                             mainPanel(
                               tabsetPanel(
-                                tabPanel("Map"),
+                                tabPanel("Map", 
+                                         leafletOutput("plotSites")), #incrase height of map
                                 tabPanel("Preview", 
                                          tableOutput("filtertable"))
                                 )
@@ -125,11 +131,42 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                      )
                    ),
                 tabPanel(title = "Compare Your Data",
-                         fileInput("upload", NULL,
-                                   buttonLabel =  "Upload Your Data",
-                                   multiple = FALSE, accept = (".csv")),
-                         tableOutput("user_table"),
-                         dataTableOutput("view_user_table")
+                         sidebarLayout(
+                           sidebarPanel(
+                             "Welcome to the American Fisheries Society Standard Sampling Database App!",
+                             br(),
+                             br(),
+                             "Upload your fish data for comparison here: ", 
+                             fileInput("upload", NULL,
+                                       buttonLabel =  "Upload Your Data",
+                                       multiple = FALSE, accept = (".csv")), 
+                             "To view plots of standard fish data, select one option from each menu below.",
+                             radioGroupButtons(inputId = "typechoice3",
+                                               label = "Show data by:",
+                                               choices = uni.type,
+                                               direction = "vertical",
+                                               selected = "North America"),
+                             uiOutput("dyn_area3"),
+                             selectInput(inputId = "sppchoice3",
+                                         label = "Select species:",
+                                         choices = uni.spp,
+                                         selected ='Bluegill'),
+                             selectInput(inputId = "methodchoice3",
+                                         label = "Select method type(s):",
+                                         choices = uni.method,
+                                         selected = "boat_electrofishing"),
+                             selectInput(inputId = "watertypechoice3",
+                                         label = "Select waterbody type(s):",
+                                         choices = uni.watertype,
+                                         selected = "large_standing_waters")
+                           ),
+                           mainPanel(plotOutput("plotLengthFrequencyuser"), 
+                                     plotOutput("plotRelativeWeightuser"), 
+                                     plotOutput("plotCPUEuser"))
+                         ), 
+# ,
+#                          tableOutput("user_table"),
+#                          dataTableOutput("view_user_table")
                  ) 
 
 )
@@ -173,7 +210,24 @@ server <- function(input, output) {
                 choices = temp,
                 selected = temp[1])
   })
-  
+
+  # Render a UI for selecting area depending on North America, Ecoregions, or State/Province for tab 3
+  output$dyn_area3 <- renderUI({
+    if(input$typechoice3 == "North America") {
+      temp <- "North_America"
+    } else if(input$typechoice3 == "Ecoregion") {
+      temp <- uni.area[1:11]
+    } else if(input$typechoice3 == "State/Province") {
+      temp2 <-  uni.area[uni.area %nin% 'North_America']
+      temp <- temp2[-1:-11]
+    }
+    
+    selectInput(inputId = "areachoice3",
+                label = "Select area:", 
+                choices = temp,
+                selected = temp[1])
+  })  
+
   # make filtered, a reactive data object for tab 1 explore, multiple combos okay
   filtered <- reactive({
     
@@ -211,7 +265,7 @@ server <- function(input, output) {
   )
   # make filtered, a reactive data object for tab 2, single combos only
   filtered2 <- reactive({
-    
+
     f_df <-  metrics %>%
       filter(metric %in% uni.metric,
              area %in% input$areachoice2,
@@ -221,7 +275,12 @@ server <- function(input, output) {
       arrange(common_name) %>%
       select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
              se, `5%`, `25%`, `50%`, `75%`, `95%`)
+    print(f_df)
     
+  })
+
+  observeEvent(input$areachoice2, {
+    print(paste0("You have chosen: ", input$areachoice2))
   })
   
   output$filterdownload <- downloadHandler(
@@ -233,8 +292,6 @@ server <- function(input, output) {
       write_csv(filtered(), file)
     }
   )
-  
-
   
   # Making the table look nice
   output$filtertable <- renderTable({  
@@ -265,25 +322,92 @@ server <- function(input, output) {
                     "75%" = `75%`,
                     "95%" = `95%`)
   })
+
+  filtered3 <- reactive({
+    
+    f_df <-  metrics %>%
+      filter(metric %in% uni.metric,
+             area %in% input$areachoice3,
+             common_name %in% input$sppchoice3,
+             method %in% input$methodchoice3,
+             waterbody_type %in% input$watertypechoice3) %>%
+      arrange(common_name) %>%
+      select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
+             se, `5%`, `25%`, `50%`, `75%`, `95%`)
+    
+    
+  })
+  
+  uu_filtered <- reactive({
+    inFile <- input$upload
+    uu <- read_csv(inFile$datapath)
+    print("UU original")
+    print(uu)
+    f_df <-  uu %>%
+      filter(metric %in% uni.metric,
+             area %in% input$areachoice3,
+             common_name %in% input$sppchoice3,
+             method %in% input$methodchoice3,
+             waterbody_type %in% input$watertypechoice3) %>%
+      arrange(common_name) %>%
+      select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
+             se, `5%`, `25%`, `50%`, `75%`, `95%`)
+    print("UU filtered")
+    print(f_df$metric)
+    print(f_df, n = Inf)
+    
+  })
+  
+  output$plotSites <- renderLeaflet({
+    plot_data <- filtered() %>%  
+      mutate(lat = runif(nrow(filtered()), min = 30, max = 45), 
+             lon = ifelse(area == "8", 
+                          runif(nrow(filtered()), min = -90, max = -75), 
+                          runif(nrow(filtered()), min = -120, max = -90)), 
+             lat = as.numeric(lat), 
+             lon = as.numeric(lon))
+    
+    factpal <- colorFactor(rainbow(length(unique(ecoregions_trans$NA_L1CODE))), 
+                           ecoregions_trans$NA_L1CODE)
+    
+    leaflet() %>% 
+      addTiles() %>% 
+      addCircleMarkers(data = plot_data, lng = ~lon, lat = ~lat, stroke = FALSE, 
+                       radius = 3, fillOpacity = 1) %>% 
+      addPolygons(data = ecoregions_trans, color = ~factpal(NA_L1CODE),
+                  fillOpacity = 0.5, popup = ~htmltools::htmlEscape(NA_L1NAME),
+                  stroke = FALSE)
+  })
   
   output$plotLengthFrequency <- renderPlot({
     temp <- filtered2() %>%
       filter(metric == "Length Frequency") %>%
       mutate(gcat = factor(gcat, 
                            levels = c("stock", "quality", "preferred", "memorable", "trophy")))
-    N <- unique(temp$N)
     
-    fig <- ggplot(temp, aes(x = gcat, y = mean)) +
-      geom_bar(stat = "identity") +
-      geom_errorbar(aes(ymin = mean - se,
-                        ymax = mean + se),
-                    width = 0) +
-      scale_y_continuous("Frequency (%)",
-                         limits = c(0, 100),
-                         expand = c(0, 0)) +
-      theme_classic(base_size = 16) +
-      theme(axis.title.x = element_blank()) +
-      ggtitle(paste0("N = ", N))
+    N <- temp %>% 
+      distinct(N) %>% 
+      pull(N)
+
+    if(nrow(temp) == 0){
+      fig <- ggplot() +
+        annotate("text", x = 1, y = 1, size = 8,
+                 label = "No length frequency data for selected options") +
+        theme_void()
+    } else {
+      fig <- ggplot(temp, aes(x = gcat, y = mean, fill = "#F8766D")) +
+        geom_bar(stat = "identity") +
+        geom_errorbar(aes(ymin = mean - se,
+                          ymax = mean + se),
+                      width = 0) +
+        scale_y_continuous("Frequency (%)",
+                           limits = c(0, 100),
+                           expand = c(0, 0)) +
+        theme_classic(base_size = 16) +
+        theme(axis.title.x = element_blank(), 
+              legend.position = "none") +
+        ggtitle(paste0("N = ", N))
+    }
     
     print(fig)
     
@@ -297,36 +421,43 @@ server <- function(input, output) {
                            levels = c("stock", "quality", "preferred", "memorable", "trophy")))
     
     ypos <- min(temp$`25%`,  na.rm = TRUE) - 2
-    
-    fig <- ggplot(temp, aes(x = gcat)) +
-      geom_point(aes(y = mean,
-                     color = "Mean"),
-                 size = 2.5) +
-      geom_line(aes(y = mean,
-                    group = metric, 
-                    color = "Mean"),
-                size = 0.75) +
-      geom_text(aes(y = ypos,
-                    label = N),
-                vjust = 0.5) +
-      geom_line(aes(y = `25%`,
-                    group = metric,
-                    color = "25th percentile"),
-                lty = 2) +
-      geom_line(aes(y = `75%`,
-                    group = metric,
-                    color = "75th percentile"),
-                lty = 2) +
-      scale_y_continuous("Relative weight") +
-      scale_color_manual(values = c("darkblue", "darkred", "black")) +
-      theme_classic(base_size = 16) +
-      theme(axis.title.x = element_blank(),
-            legend.position = "bottom",
-            legend.title = element_blank()) +
-      guides(color = guide_legend(override.aes = 
-                                   list(shape = c(NA, NA, 16),
-                                        lty = c(2, 2, 1))))  
-    
+
+    if(nrow(temp) == 0){
+      fig <- ggplot() +
+        annotate("text", x = 1, y = 1, size = 8,
+                 label = "No relative weight data for selected options") +
+        theme_void()
+    } else {
+      fig <- ggplot(temp, aes(x = gcat)) +
+        geom_point(aes(y = mean,
+                       color = "Mean"),
+                   size = 2.5) +
+        geom_line(aes(y = mean,
+                      group = metric, 
+                      color = "Mean"),
+                  size = 0.75) +
+        geom_text(aes(y = ypos,
+                      label = N),
+                  vjust = 0.5) +
+        geom_line(aes(y = `25%`,
+                      group = metric,
+                      color = "25th percentile"),
+                  lty = 2) +
+        geom_line(aes(y = `75%`,
+                      group = metric,
+                      color = "75th percentile"),
+                  lty = 2) +
+        scale_y_continuous("Relative weight") +
+        scale_color_manual(values = c("darkblue", "darkred", "black")) +
+        theme_classic(base_size = 16) +
+        theme(axis.title.x = element_blank(),
+              legend.position = "bottom",
+              legend.title = element_blank()) +
+        guides(color = guide_legend(override.aes = 
+                                      list(shape = c(NA, NA, 16),
+                                           lty = c(2, 2, 1))))  
+    }    
+
     print(fig)
     
   })
@@ -339,8 +470,129 @@ server <- function(input, output) {
                            levels = c("stock", "quality", "preferred", "memorable", "trophy")))
 
     N <- unique(temp$N)
+
+    if(nrow(temp) == 0){
+      fig <- ggplot() +
+        annotate("text", x = 1, y = 1, size = 8,
+                 label = "No CPUE data for selected options") +
+        theme_void()
+    } else {
+      fig <- ggplot(temp, aes(y = area)) +
+        geom_boxplot(aes(xmin = `5%`,
+                         xlower = `25%`,
+                         xmiddle = `50%`,
+                         xupper = `75%`,
+                         xmax = `95%`),
+                     stat = "identity") +
+        scale_x_continuous("CPUE (fish / hour)") +
+        theme_classic(base_size = 16) +
+        theme(axis.title.y = element_blank(),
+              axis.text.y = element_blank(),
+              axis.ticks.y = element_blank()) +
+        ggtitle(paste0("N = ", N))  
+    }
+
+    print(fig)
     
-    fig <- ggplot(temp, aes(y = area)) +
+  })
+
+  output$plotLengthFrequencyuser <- renderPlot({
+    #TODO: don't plot standardized data if there is no corresponding user upload data
+    #if nrow uu_filtered is 0...
+    temp <- uu_filtered() %>% 
+      bind_rows(filtered3(), .id = "id") %>% 
+      rename(data_source = id) %>% 
+      mutate(data_source = case_when(data_source == 1 ~ "User upload", 
+                                     data_source == 2 ~ "Standardized")) %>% 
+      filter(metric == "Length Frequency") %>%
+      mutate(gcat = factor(gcat, 
+                           levels = c("stock", "quality", "preferred", "memorable", "trophy")))
+    
+    stand_N <- temp %>% 
+      filter(data_source == "Standardized") %>% 
+      distinct(N) %>% 
+      pull(N)
+
+    user_N <- temp %>% 
+      filter(data_source == "User upload") %>% 
+      distinct(N) %>% 
+      pull(N)
+    
+    fig <- ggplot(temp, aes(x = gcat, y = mean, fill = data_source)) +
+      geom_bar(stat = "identity", position = "dodge")  +
+      geom_errorbar(aes(ymin = mean - se,
+                        ymax = mean + se),
+                    position = position_dodge(width = 0.9), 
+                    width = 0) +
+      scale_y_continuous("Frequency (%)",
+                         limits = c(0, 100),
+                         expand = c(0, 0)) +
+      theme_classic(base_size = 16) +
+      theme(axis.title.x = element_blank()) +
+      ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
+    
+    print(fig)
+
+  })
+  
+  output$plotRelativeWeightuser <- renderPlot({
+    
+    temp <- uu_filtered() %>% 
+      bind_rows(filtered3(), .id = "id") %>% 
+      rename(data_source = id) %>% 
+      mutate(data_source = case_when(data_source == 1 ~ "User upload", 
+                                     data_source == 2 ~ "Standardized")) %>% 
+      filter(metric == "Relative Weight") %>%
+      mutate(gcat = factor(gcat, 
+                           levels = c("stock", "quality", "preferred", "memorable", "trophy")))
+    
+    fig <- ggplot(temp, aes(x = gcat)) +
+      geom_point(aes(y = mean,
+                     color = data_source),
+                 size = 2.5) +
+      geom_line(aes(y = mean,
+                    group = data_source, 
+                    color = data_source),
+                size = 0.75) +
+      geom_line(aes(y = `25%`,
+                    group = data_source,
+                    color = data_source),
+                lty = 2) +
+      geom_line(aes(y = `75%`,
+                    group = data_source,
+                    color = data_source),
+                lty = 2) +
+      scale_y_continuous("Relative weight") +
+      theme_classic(base_size = 16) +
+      theme(axis.title.x = element_blank(),
+            legend.position = "bottom",
+            legend.title = element_blank()) 
+    
+    print(fig)
+    
+  })
+  
+  output$plotCPUEuser <- renderPlot({
+    temp <- uu_filtered() %>% 
+      bind_rows(filtered3(), .id = "id") %>% 
+      rename(data_source = id) %>% 
+      mutate(data_source = case_when(data_source == 1 ~ "User upload", 
+                                     data_source == 2 ~ "Standardized")) %>% 
+      filter(metric == "CPUE")
+    
+    print(temp, n = Inf)
+    
+    stand_N <- temp %>% 
+      filter(data_source == "Standardized") %>% 
+      distinct(N) %>% 
+      pull(N)
+    
+    user_N <- temp %>% 
+      filter(data_source == "User upload") %>% 
+      distinct(N) %>% 
+      pull(N)
+    
+    fig <- ggplot(temp, aes(y = area, fill = data_source)) +
       geom_boxplot(aes(xmin = `5%`,
                        xlower = `25%`,
                        xmiddle = `50%`,
@@ -352,29 +604,12 @@ server <- function(input, output) {
       theme(axis.title.y = element_blank(),
             axis.text.y = element_blank(),
             axis.ticks.y = element_blank()) +
-      ggtitle(paste0("N = ", N))
+      ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
     
     print(fig)
     
   })
-
-  output$user_table <- renderTable({
-    inFile <- input$upload
-    data <- read.csv(inFile$datapath)
-    output$view_user_table <- renderDataTable({
-      datatable(data)
-  })
-  })
-  
-  #user.results <- reactive({
-   # req(input$upload)
-    # user.dat.df <- read.csv(input$upload$datapath)
-    
-    ## Insert code to derive results (equations etc.) for PSD, Wr, CPUE
-    #return(user.results.df)}) ## Return the results data.frame you make
-  
   
 }
-
 
 shinyApp(ui, server)
