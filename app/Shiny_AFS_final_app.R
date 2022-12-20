@@ -116,11 +116,11 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                                    choices = uni.spp,
                                    selected ='Bluegill'),
                        selectInput(inputId = "methodchoice2",
-                                   label = "Select method type(s):",
+                                   label = "Select method type:",
                                    choices = uni.method,
                                    selected = "boat_electrofishing"),
                        selectInput(inputId = "watertypechoice2",
-                                   label = "Select waterbody type(s):",
+                                   label = "Select waterbody type:",
                                    choices = uni.watertype,
                                    selected = "large_standing_waters")
                        ),
@@ -147,18 +147,9 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                                                direction = "vertical",
                                                selected = "North America"),
                              uiOutput("dyn_area3"),
-                             selectInput(inputId = "sppchoice3",
-                                         label = "Select species:",
-                                         choices = uni.spp,
-                                         selected ='Bluegill'),
-                             selectInput(inputId = "methodchoice3",
-                                         label = "Select method type(s):",
-                                         choices = uni.method,
-                                         selected = "boat_electrofishing"),
-                             selectInput(inputId = "watertypechoice3",
-                                         label = "Select waterbody type(s):",
-                                         choices = uni.watertype,
-                                         selected = "large_standing_waters")
+                             uiOutput("dyn_spp3"),
+                             uiOutput("dyn_method3"),
+                             uiOutput("dyn_watertype3")
                            ),
                            mainPanel(plotOutput("plotLengthFrequencyuser"), 
                                      plotOutput("plotRelativeWeightuser"), 
@@ -211,15 +202,32 @@ server <- function(input, output) {
                 selected = temp[1])
   })
 
+  # Read in raw user upload data to be used in reactive UI's
+  uu_raw <- reactive({
+    inFile <- input$upload
+    uu <- read_csv(inFile$datapath)
+    
+  })
+  
+  
   # Render a UI for selecting area depending on North America, Ecoregions, or State/Province for tab 3
   output$dyn_area3 <- renderUI({
+    req(uu_raw())
+    
     if(input$typechoice3 == "North America") {
       temp <- "North_America"
     } else if(input$typechoice3 == "Ecoregion") {
-      temp <- uni.area[1:11]
+      temp <- uu_raw() %>%
+        filter(type == "ecoregion") %>%
+        select(area) %>%
+        unique() %>%
+        pull()
     } else if(input$typechoice3 == "State/Province") {
-      temp2 <-  uni.area[uni.area %nin% 'North_America']
-      temp <- temp2[-1:-11]
+      temp <- uu_raw() %>%
+        filter(type == "state") %>%
+        select(area) %>%
+        unique() %>%
+        pull()
     }
     
     selectInput(inputId = "areachoice3",
@@ -227,6 +235,52 @@ server <- function(input, output) {
                 choices = temp,
                 selected = temp[1])
   })  
+  
+  # Render a UI for selecting species depending on user upload data in tab 3
+  output$dyn_spp3 <- renderUI({
+    req(uu_raw())
+    
+    temp <- uu_raw() %>%
+      select(common_name) %>%
+      unique() %>%
+      pull()
+    
+    selectInput(inputId = "sppchoice3",
+                label = "Select species:",
+                choices = temp,
+                selected = temp[1])
+  })  
+  
+  # Render a UI for selecting species depending on user upload data in tab 3
+  output$dyn_method3 <- renderUI({
+    req(uu_raw())
+    
+    temp <- uu_raw() %>%
+      select(method) %>%
+      unique() %>%
+      pull()
+    
+    selectInput(inputId = "methodchoice3",
+                label = "Select method type::",
+                choices = temp,
+                selected = temp[1])
+  })  
+  
+  # Render a UI for selecting species depending on user upload data in tab 3
+  output$dyn_watertype3 <- renderUI({
+    req(uu_raw())
+    
+    temp <- uu_raw() %>%
+      select(waterbody_type) %>%
+      unique() %>%
+      pull()
+    
+    selectInput(inputId = "watertypechoice3",
+                label = "Select waterbody type:",
+                choices = temp,
+                selected = temp[1])
+  }) 
+  
 
   # make filtered, a reactive data object for tab 1 explore, multiple combos okay
   filtered <- reactive({
@@ -339,6 +393,12 @@ server <- function(input, output) {
   })
   
   uu_filtered <- reactive({
+    # Suppresses error messages for plots until inputs are chosen
+    req(input$areachoice3)
+    req(input$sppchoice3)
+    req(input$methodchoice3)
+    req(input$watertypechoice3)
+    
     inFile <- input$upload
     uu <- read_csv(inFile$datapath)
     print("UU original")
@@ -527,8 +587,10 @@ server <- function(input, output) {
       scale_y_continuous("Frequency (%)",
                          limits = c(0, 100),
                          expand = c(0, 0)) +
+      scale_fill_discrete("Data source") +
       theme_classic(base_size = 16) +
-      theme(axis.title.x = element_blank()) +
+      theme(axis.title.x = element_blank(),
+            legend.position = c(0.85, 0.85)) +
       ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
     
     print(fig)
@@ -563,10 +625,10 @@ server <- function(input, output) {
                     color = data_source),
                 lty = 2) +
       scale_y_continuous("Relative weight") +
+      scale_color_discrete("Data source") +
       theme_classic(base_size = 16) +
       theme(axis.title.x = element_blank(),
-            legend.position = "bottom",
-            legend.title = element_blank()) 
+            legend.position = "bottom") 
     
     print(fig)
     
@@ -600,6 +662,7 @@ server <- function(input, output) {
                        xmax = `95%`),
                    stat = "identity") +
       scale_x_continuous("CPUE (fish / hour)") +
+      scale_fill_discrete("Data source") +
       theme_classic(base_size = 16) +
       theme(axis.title.y = element_blank(),
             axis.text.y = element_blank(),
