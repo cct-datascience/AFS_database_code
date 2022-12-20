@@ -212,7 +212,7 @@ server <- function(input, output) {
   
   # Render a UI for selecting area depending on North America, Ecoregions, or State/Province for tab 3
   output$dyn_area3 <- renderUI({
-    req(uu_raw())
+    req(input$upload)
     
     if(input$typechoice3 == "North America") {
       temp <- "North_America"
@@ -238,7 +238,7 @@ server <- function(input, output) {
   
   # Render a UI for selecting species depending on user upload data in tab 3
   output$dyn_spp3 <- renderUI({
-    req(uu_raw())
+    req(input$upload)
     
     temp <- uu_raw() %>%
       select(common_name) %>%
@@ -253,7 +253,7 @@ server <- function(input, output) {
   
   # Render a UI for selecting species depending on user upload data in tab 3
   output$dyn_method3 <- renderUI({
-    req(uu_raw())
+    req(input$upload)
     
     temp <- uu_raw() %>%
       select(method) %>%
@@ -268,7 +268,7 @@ server <- function(input, output) {
   
   # Render a UI for selecting species depending on user upload data in tab 3
   output$dyn_watertype3 <- renderUI({
-    req(uu_raw())
+    req(input$upload)
     
     temp <- uu_raw() %>%
       select(waterbody_type) %>%
