@@ -377,7 +377,8 @@ server <- function(input, output) {
         group_by(state, ecoregion, waterbody_name, common_name, method, waterbody_type) %>%
         summarize(Nyears = length(unique(year)),
                   lat = unique(lat),
-                  long = unique(long))
+                  long = unique(long)) %>%
+        ungroup()
       
       } else if(input$typechoice == "Ecoregion") {
       l_df <-  locs %>%
@@ -391,7 +392,8 @@ server <- function(input, output) {
         group_by(state, ecoregion, waterbody_name, common_name, method, waterbody_type) %>%
         summarize(Nyears = length(unique(year)),
                   lat = unique(lat),
-                  long = unique(long))
+                  long = unique(long)) %>%
+        ungroup()
       
       } else if(input$typechoice == "State/Province") {
       l_df <-  locs %>%
@@ -405,7 +407,8 @@ server <- function(input, output) {
         group_by(state, ecoregion, waterbody_name, common_name, method, waterbody_type) %>%
         summarize(Nyears = length(unique(year)),
                   lat = unique(lat),
-                  long = unique(long))
+                  long = unique(long)) %>%
+        ungroup()
       
       }
     })
@@ -414,7 +417,7 @@ server <- function(input, output) {
   exclude <- reactive({
     if(input$typechoice == "North America") {
       e_df <- locate() %>%
-        group_by(state, ecoregion, common_name, method, waterbody_type) %>%
+        group_by(common_name, method, waterbody_type) %>%
         summarize(Nlocs = length(waterbody_name),
                   Nyears_tot = sum(Nyears))%>%
         filter(Nlocs == 1,
@@ -550,6 +553,7 @@ server <- function(input, output) {
     plot_data <- locate() %>%
       anti_join(exclude())
     
+    print(exclude())
     factpal <- colorFactor(rainbow(length(unique(ecoregions_trans$NA_L1CODE))), 
                            ecoregions_trans$NA_L1CODE)
     
