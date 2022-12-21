@@ -6,6 +6,38 @@ library(leaflet)
 library(DT)
 # library(periscope)
 
+# Module code
+plotDownloadUI <- function(id, height = 400) {
+  ns <- NS(id)
+  tagList(
+    fluidRow(
+      column(
+        2, offset = 10,
+        downloadButton(ns("download_plot"), "Download")
+      )
+    ),
+    fluidRow(
+      plotOutput(ns('plot'), height = height)
+    )
+    
+  )
+}
+
+plotDownload <- function(input, output, session, plotFun) {
+  output$plot <- renderPlot({
+    plotFun()
+  })
+  
+  output$download_plot <- downloadHandler(
+    filename = function() {
+      "plot.png"
+    },
+    content = function(file) {
+      ggsave(file, plotFun(), width = 6, height = 4)
+    }
+  )
+}
+
 # Read in summary fish metrics
 metrics <- read_csv('Full_results_112122.csv') %>%
   rename(area = region,
@@ -137,9 +169,9 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                                    choices = uni.watertype,
                                    selected = "large_standing_waters")
                        ),
-                     mainPanel(plotOutput("plotLengthFrequency"),
-                               plotOutput("plotRelativeWeight"),
-                               plotOutput("plotCPUE", height = "200px")
+                     mainPanel(plotDownloadUI("LF_plot"),
+                               plotDownloadUI("RW_plot"),
+                               plotDownloadUI("CPUE_plot", height = "200px")
                                )
                      )
                    ),
@@ -164,9 +196,9 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                              uiOutput("dyn_method3"),
                              uiOutput("dyn_watertype3")
                            ),
-                           mainPanel(plotOutput("plotLengthFrequencyuser"), 
-                                     plotOutput("plotRelativeWeightuser"), 
-                                     plotOutput("plotCPUEuser"))
+                           mainPanel(plotDownloadUI("LF_plot_UU"),
+                                     plotDownloadUI("RW_plot_UU"),
+                                     plotDownloadUI("CPUE_plot_UU", height = "200px"))
                          ), 
 # ,
 #                          tableOutput("user_table"),
@@ -543,7 +575,7 @@ server <- function(input, output) {
   })
   
   
-  output$plotLengthFrequency <- renderPlot({
+  plotLengthFrequency <- reactive({
     temp <- filtered2() %>%
       filter(metric == "Length Frequency") %>%
       mutate(gcat = factor(gcat, 
@@ -577,7 +609,9 @@ server <- function(input, output) {
     
   })
   
-  output$plotRelativeWeight <- renderPlot({
+  callModule(plotDownload, "LF_plot", plotLengthFrequency)
+  
+  plotRelativeWeight <- reactive({
     
     temp <- filtered2() %>%
       filter(metric == "Relative Weight") %>%
@@ -626,7 +660,10 @@ server <- function(input, output) {
     
   })
   
-  output$plotCPUE <- renderPlot({
+  callModule(plotDownload, "RW_plot", plotRelativeWeight)
+  
+  
+  plotCPUE <- reactive({
     
     temp <- filtered2() %>%
       filter(metric == "CPUE") %>%
@@ -659,8 +696,10 @@ server <- function(input, output) {
     print(fig)
     
   })
-
-  output$plotLengthFrequencyuser <- renderPlot({
+  
+  callModule(plotDownload, "CPUE_plot", plotCPUE)
+  
+  plotLengthFrequencyuser <- reactive({
     # uu_unfiltered() has a req() for uploaded data, so no more error messages
     temp <- uu_filtered() %>% 
       bind_rows(filtered3(), .id = "id") %>% 
@@ -700,7 +739,9 @@ server <- function(input, output) {
 
   })
   
-  output$plotRelativeWeightuser <- renderPlot({
+  callModule(plotDownload, "LF_plot_UU", plotLengthFrequencyuser)
+  
+    plotRelativeWeightuser <- reactive({
     
     temp <- uu_filtered() %>% 
       bind_rows(filtered3(), .id = "id") %>% 
@@ -736,8 +777,10 @@ server <- function(input, output) {
     print(fig)
     
   })
-  
-  output$plotCPUEuser <- renderPlot({
+    
+    callModule(plotDownload, "RW_plot_UU", plotRelativeWeightuser)
+    
+    plotCPUEuser <- reactive({
     temp <- uu_filtered() %>% 
       bind_rows(filtered3(), .id = "id") %>% 
       rename(data_source = id) %>% 
@@ -775,6 +818,8 @@ server <- function(input, output) {
     print(fig)
     
   })
+    
+    callModule(plotDownload, "CPUE_plot_UU", plotCPUEuser)
   
 }
 
