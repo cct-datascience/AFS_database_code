@@ -564,7 +564,11 @@ server <- function(input, output) {
                   stroke = FALSE) %>% 
       addCircleMarkers(data = plot_data, lng = ~long, lat = ~lat, stroke = FALSE, 
                        radius = 3, fillOpacity = 1,
-                       popup = ~htmltools::htmlEscape(waterbody_name))
+                       popup = popupTable(l_df,
+                                          zcol = 3:7,
+                                          row.numbers = FALSE,
+                                          feature.id = FALSE))
+  
   })
   
   # Text to describe insufficient sample size for anonymity
