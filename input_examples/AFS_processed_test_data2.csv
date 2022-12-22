@@ -1,0 +1,12 @@
+area,type,common_name,method,waterbody_type,gcat,mean,se,metric,5%,25%,50%,75%,95%,N
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,stock,94.28542874,4.27505863,Length Frequency,NA,NA,NA,NA,NA,25
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,quality,42.53533623,3.918647763,Length Frequency,NA,NA,NA,NA,NA,25
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,preferred,23.13393503,0.898502979,Length Frequency,NA,NA,NA,NA,NA,25
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,memorable,20.0453,0.04049657,Length Frequency,NA,NA,NA,NA,NA,25
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,trophy,20,0,Length Frequency,NA,NA,NA,NA,NA,25
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,stock,112.0079431,1.663159236,Relative Weight,83.84908448,90.17983013,96.47282588,100.3639643,104.6549344,25
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,quality,113.2782047,1.978804035,Relative Weight,89.7632786,92.71004389,96.80718146,102.1827914,104.1960633,23
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,preferred,112.7317724,3.070183237,Relative Weight,70.19861425,88.39603764,95.94938359,104.5452597,114.3296422,18
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,memorable,NA,NA,Relative Weight,NA,NA,NA,NA,NA,0
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,trophy,NA,NA,Relative Weight,NA,NA,NA,NA,NA,0
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,NA,1656.003583,277.5228292,CPUE,392.600726,740.9950671,1059,1955.542025,4627.570697,25
