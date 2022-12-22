@@ -4,6 +4,7 @@ library(tidyverse)
 library(sf)
 library(leaflet)
 library(DT)
+library(leafpop)
 # library(periscope)
 
 # Module code
@@ -434,7 +435,7 @@ server <- function(input, output) {
         select(-Nlocs, -Nyears_tot)
       
       } else if(input$typechoice == "State/Province") {
-      e_df <- l_df %>%
+      e_df <- locate() %>%
         group_by(state, common_name, method, waterbody_type) %>%
         summarize(Nlocs = length(waterbody_name),
                   Nyears_tot = sum(Nyears)) %>%
@@ -564,7 +565,7 @@ server <- function(input, output) {
                   stroke = FALSE) %>% 
       addCircleMarkers(data = plot_data, lng = ~long, lat = ~lat, stroke = FALSE, 
                        radius = 3, fillOpacity = 1,
-                       popup = popupTable(l_df,
+                       popup = popupTable(plot_data,
                                           zcol = 3:7,
                                           row.numbers = FALSE,
                                           feature.id = FALSE))
