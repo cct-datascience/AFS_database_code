@@ -1,22 +1,33 @@
-"area","common_name","method","waterbody_type","gcat","mean","se","metric","5%","25%","50%","75%","95%","N"
-"North_America","Bluegill","boat_electrofishing","large_standing_waters","stock",90.70074858,1.16159656,"Length Frequency",NA,NA,NA,NA,NA,398
-"North_America","Bluegill","boat_electrofishing","large_standing_waters","quality",43.88275446,0.909889955,"Length Frequency",NA,NA,NA,NA,NA,398
-"North_America","Bluegill","boat_electrofishing","large_standing_waters","preferred",25.139018833,0.620277738,"Length Frequency",NA,NA,NA,NA,NA,398
-"North_America","Bluegill","boat_electrofishing","large_standing_waters","memorable",20.249000491,0.122794094,"Length Frequency",NA,NA,NA,NA,NA,398
-"North_America","Bluegill","boat_electrofishing","large_standing_waters","trophy",20.028477633,0.026268058,"Length Frequency",NA,NA,NA,NA,NA,398
-"North_America","Bluegill","boat_electrofishing","large_standing_waters","stock",130.4634833,4.507363978,"Relative Weight",81.54442179,87.88741644,95.18687441,104.498095,185.5797986,343
-"North_America","Bluegill","boat_electrofishing","large_standing_waters","quality",114.32967634,1.182405146,"Relative Weight",80.33749496,86.67306534,93.65025456,103.0931656,118.5974522,338
-"North_America","Bluegill","boat_electrofishing","large_standing_waters","preferred",113.47102932,0.873805208,"Relative Weight",79.63493771,88.81176123,96.91091671,104.0932756,116.3370706,189
-"North_America","Bluegill","boat_electrofishing","large_standing_waters","memorable",67.25856199,NA,"Relative Weight",50.25856199,50.25856199,50.25856199,50.25856199,50.25856199,1
-"North_America","Bluegill","boat_electrofishing","large_standing_waters","trophy",NA,NA,"Relative Weight",NA,NA,NA,NA,NA,0
-"Arizona","Bluegill","boat_electrofishing","large_standing_waters","stock",94.28542874,4.27505863,"Length Frequency",NA,NA,NA,NA,NA,25
-"Arizona","Bluegill","boat_electrofishing","large_standing_waters","quality",42.53533623,3.918647763,"Length Frequency",NA,NA,NA,NA,NA,25
-"Arizona","Bluegill","boat_electrofishing","large_standing_waters","preferred",23.133935033,0.898502979,"Length Frequency",NA,NA,NA,NA,NA,25
-"Arizona","Bluegill","boat_electrofishing","large_standing_waters","memorable",20.045300001,0.04049657,"Length Frequency",NA,NA,NA,NA,NA,25
-"Arizona","Bluegill","boat_electrofishing","large_standing_waters","trophy",20,0,"Length Frequency",NA,NA,NA,NA,NA,25
-"Arizona","Bluegill","boat_electrofishing","large_standing_waters","stock",112.00794306,1.663159236,"Relative Weight",83.84908448,90.17983013,96.47282588,100.36396427,104.6549344,25
-"Arizona","Bluegill","boat_electrofishing","large_standing_waters","quality",113.27820466,1.978804035,"Relative Weight",89.7632786,92.71004389,96.80718146,102.18279138,104.1960633,23
-"Arizona","Bluegill","boat_electrofishing","large_standing_waters","preferred",112.73177235,3.070183237,"Relative Weight",70.19861425,88.39603764,95.94938359,104.5452597,114.3296422,18
-"Arizona","Bluegill","boat_electrofishing","large_standing_waters","memorable",NA,NA,"Relative Weight",NA,NA,NA,NA,NA,0
-"Arizona","Bluegill","boat_electrofishing","large_standing_waters","trophy",NA,NA,"Relative Weight",NA,NA,NA,NA,NA,0
-"Arizona","Bluegill","boat_electrofishing","large_standing_waters",NA,1656.003583,277.5228292,"CPUE",392.600726,740.9950671,1059,1955.542025,4627.570697,25
+area,type,common_name,method,waterbody_type,gcat,mean,se,metric,5%,25%,50%,75%,95%,N
+North_America,all,Bluegill,boat_electrofishing,large_standing_waters,stock,90.70074858,1.16159656,Length Frequency,NA,NA,NA,NA,NA,398
+North_America,all,Bluegill,boat_electrofishing,large_standing_waters,quality,43.88275446,0.909889955,Length Frequency,NA,NA,NA,NA,NA,398
+North_America,all,Bluegill,boat_electrofishing,large_standing_waters,preferred,25.13901883,0.620277738,Length Frequency,NA,NA,NA,NA,NA,398
+North_America,all,Bluegill,boat_electrofishing,large_standing_waters,memorable,20.24900049,0.122794094,Length Frequency,NA,NA,NA,NA,NA,398
+North_America,all,Bluegill,boat_electrofishing,large_standing_waters,trophy,20.02847763,0.026268058,Length Frequency,NA,NA,NA,NA,NA,398
+North_America,all,Bluegill,boat_electrofishing,large_standing_waters,stock,130.4634833,4.507363978,Relative Weight,81.54442179,87.88741644,95.18687441,104.498095,185.5797986,343
+North_America,all,Bluegill,boat_electrofishing,large_standing_waters,quality,114.3296763,1.182405146,Relative Weight,80.33749496,86.67306534,93.65025456,103.0931656,118.5974522,338
+North_America,all,Bluegill,boat_electrofishing,large_standing_waters,preferred,113.4710293,0.873805208,Relative Weight,79.63493771,88.81176123,96.91091671,104.0932756,116.3370706,189
+North_America,all,Bluegill,boat_electrofishing,large_standing_waters,memorable,67.25856199,NA,Relative Weight,50.25856199,50.25856199,50.25856199,50.25856199,50.25856199,1
+North_America,all,Bluegill,boat_electrofishing,large_standing_waters,trophy,NA,NA,Relative Weight,NA,NA,NA,NA,NA,0
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,stock,94.28542874,4.27505863,Length Frequency,NA,NA,NA,NA,NA,25
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,quality,42.53533623,3.918647763,Length Frequency,NA,NA,NA,NA,NA,25
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,preferred,23.13393503,0.898502979,Length Frequency,NA,NA,NA,NA,NA,25
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,memorable,20.0453,0.04049657,Length Frequency,NA,NA,NA,NA,NA,25
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,trophy,20,0,Length Frequency,NA,NA,NA,NA,NA,25
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,stock,112.0079431,1.663159236,Relative Weight,83.84908448,90.17983013,96.47282588,100.3639643,104.6549344,25
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,quality,113.2782047,1.978804035,Relative Weight,89.7632786,92.71004389,96.80718146,102.1827914,104.1960633,23
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,preferred,112.7317724,3.070183237,Relative Weight,70.19861425,88.39603764,95.94938359,104.5452597,114.3296422,18
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,memorable,NA,NA,Relative Weight,NA,NA,NA,NA,NA,0
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,trophy,NA,NA,Relative Weight,NA,NA,NA,NA,NA,0
+Arizona,state,Bluegill,boat_electrofishing,large_standing_waters,NA,1656.003583,277.5228292,CPUE,392.600726,740.9950671,1059,1955.542025,4627.570697,25
+10,ecoregion,Bluegill,boat_electrofishing,large_standing_waters,stock,94.28542874,4.27505863,Length Frequency,NA,NA,NA,NA,NA,25
+10,ecoregion,Bluegill,boat_electrofishing,large_standing_waters,quality,42.53533623,3.918647763,Length Frequency,NA,NA,NA,NA,NA,25
+10,ecoregion,Bluegill,boat_electrofishing,large_standing_waters,preferred,23.13393503,0.898502979,Length Frequency,NA,NA,NA,NA,NA,25
+10,ecoregion,Bluegill,boat_electrofishing,large_standing_waters,memorable,20.0453,0.04049657,Length Frequency,NA,NA,NA,NA,NA,25
+10,ecoregion,Bluegill,boat_electrofishing,large_standing_waters,trophy,20,0,Length Frequency,NA,NA,NA,NA,NA,25
+10,ecoregion,Bluegill,boat_electrofishing,large_standing_waters,stock,112.0079431,1.663159236,Relative Weight,83.84908448,90.17983013,96.47282588,100.3639643,104.6549344,25
+10,ecoregion,Bluegill,boat_electrofishing,large_standing_waters,quality,113.2782047,1.978804035,Relative Weight,89.7632786,92.71004389,96.80718146,102.1827914,104.1960633,23
+10,ecoregion,Bluegill,boat_electrofishing,large_standing_waters,preferred,112.7317724,3.070183237,Relative Weight,70.19861425,88.39603764,95.94938359,104.5452597,114.3296422,18
+10,ecoregion,Bluegill,boat_electrofishing,large_standing_waters,memorable,NA,NA,Relative Weight,NA,NA,NA,NA,NA,0
+10,ecoregion,Bluegill,boat_electrofishing,large_standing_waters,trophy,NA,NA,Relative Weight,NA,NA,NA,NA,NA,0
+10,ecoregion,Bluegill,boat_electrofishing,large_standing_waters,NA,1656.003583,277.5228292,CPUE,392.600726,740.9950671,1059,1955.542025,4627.570697,25

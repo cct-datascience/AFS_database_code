@@ -4,10 +4,46 @@ library(tidyverse)
 library(sf)
 library(leaflet)
 library(DT)
+library(leafpop)
+# library(periscope)
 
+# Module code
+plotDownloadUI <- function(id, height = 400) {
+  ns <- NS(id)
+  tagList(
+    fluidRow(
+      column(
+        2, offset = 10,
+        downloadButton(ns("download_plot"), "Download")
+      )
+    ),
+    fluidRow(
+      plotOutput(ns('plot'), height = height)
+    )
+    
+  )
+}
+
+plotDownload <- function(input, output, session, plotFun) {
+  output$plot <- renderPlot({
+    plotFun()
+  })
+  
+  output$download_plot <- downloadHandler(
+    filename = function() {
+      "plot.png"
+    },
+    content = function(file) {
+      ggsave(file, plotFun(), width = 6, height = 4)
+    }
+  )
+}
+
+# Read in summary fish metrics
 metrics <- read_csv('Full_results_112122.csv') %>%
   rename(area = region,
          N = count)
+# Develop vectors of unique entries
 uni.type <- c("North America", "Ecoregion", "State/Province")
 uni.area <- sort(unique(metrics$area))
 uni.spp <- sort(unique(metrics$common_name))
@@ -15,6 +51,7 @@ uni.method <- sort(unique(metrics$method))
 uni.watertype <- sort(unique(metrics$waterbody_type))
 uni.metric <- c("Length Frequency", "Relative Weight", "CPUE") 
 
+# Read in ecoregions shapefiles
 ecoregions <- read_sf("ecoregions1/NA_CEC_Eco_Level1.shp")
 ecoregions_crs <- "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs"
 ecoregions_trans <- ecoregions %>% 
@@ -22,6 +59,11 @@ ecoregions_trans <- ecoregions %>%
   st_set_crs(ecoregions_crs) %>%
   st_transform("+proj=longlat +datum=WGS84")
 
+# Read in lat/longs
+locs <- read_csv("lat_long_AFSshiny.csv") %>%
+  select(-date) # not parseable as is
+
+# Create a "not in" function
 `%nin%` <- negate(`%in%`)
 
 # Test data
@@ -90,7 +132,11 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                             mainPanel(
                               tabsetPanel(
                                 tabPanel("Map", 
-                                         leafletOutput("plotSites")), #incrase height of map
+                                         leafletOutput("plotSites",
+                                                       width = 700,
+                                                       height = 500),
+                                         textOutput("report_absent1"),
+                                         textOutput("report_absent2")), 
                                 tabPanel("Preview", 
                                          tableOutput("filtertable"))
                                 )
@@ -116,17 +162,17 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                                    choices = uni.spp,
                                    selected ='Bluegill'),
                        selectInput(inputId = "methodchoice2",
-                                   label = "Select method type(s):",
+                                   label = "Select method type:",
                                    choices = uni.method,
                                    selected = "boat_electrofishing"),
                        selectInput(inputId = "watertypechoice2",
-                                   label = "Select waterbody type(s):",
+                                   label = "Select waterbody type:",
                                    choices = uni.watertype,
                                    selected = "large_standing_waters")
                        ),
-                     mainPanel(plotOutput("plotLengthFrequency"),
-                               plotOutput("plotRelativeWeight"),
-                               plotOutput("plotCPUE", height = "200px")
+                     mainPanel(plotDownloadUI("LF_plot"),
+                               plotDownloadUI("RW_plot"),
+                               plotDownloadUI("CPUE_plot", height = "200px")
                                )
                      )
                    ),
@@ -141,32 +187,17 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                                        buttonLabel =  "Upload Your Data",
                                        multiple = FALSE, accept = (".csv")), 
                              "To view plots of standard fish data, select one option from each menu below.",
-                             radioGroupButtons(inputId = "typechoice3",
-                                               label = "Show data by:",
-                                               choices = uni.type,
-                                               direction = "vertical",
-                                               selected = "North America"),
+                             uiOutput("dyn_type"),
                              uiOutput("dyn_area3"),
-                             selectInput(inputId = "sppchoice3",
-                                         label = "Select species:",
-                                         choices = uni.spp,
-                                         selected ='Bluegill'),
-                             selectInput(inputId = "methodchoice3",
-                                         label = "Select method type(s):",
-                                         choices = uni.method,
-                                         selected = "boat_electrofishing"),
-                             selectInput(inputId = "watertypechoice3",
-                                         label = "Select waterbody type(s):",
-                                         choices = uni.watertype,
-                                         selected = "large_standing_waters")
+                             uiOutput("dyn_spp3"),
+                             uiOutput("dyn_method3"),
+                             uiOutput("dyn_watertype3")
                            ),
-                           mainPanel(plotOutput("plotLengthFrequencyuser"), 
-                                     plotOutput("plotRelativeWeightuser"), 
-                                     plotOutput("plotCPUEuser"))
+                           mainPanel(plotDownloadUI("LF_plot_UU"),
+                                     plotDownloadUI("RW_plot_UU"),
+                                     plotDownloadUI("CPUE_plot_UU", height = "200px"))
                          ), 
-# ,
-#                          tableOutput("user_table"),
-#                          dataTableOutput("view_user_table")
+
                  ) 
 
 )
@@ -211,15 +242,51 @@ server <- function(input, output) {
                 selected = temp[1])
   })
 
+  # Read in raw user upload data to be used in reactive UI's
+  uu_raw <- reactive({
+    inFile <- input$upload
+    uu <- read_csv(inFile$datapath)
+    
+  })
+  
+  # Render a UI for selectin area 
+  output$dyn_type <- renderUI({
+    req(input$upload)
+    
+    temp <-  uu_raw() %>% # 
+      select(type) %>%
+      unique() %>%
+      mutate(types = case_when(type == "all" ~ "North America",
+                               type == "ecoregion" ~ "Ecoregion",
+                               type == "state" ~ "State/Province")) %>%
+      pull(types)
+    
+    
+    radioGroupButtons(inputId = "typechoice3",
+                      label = "Show data by:",
+                      choices = union("North America", temp),
+                      direction = "vertical",
+                      selected = "North America")
+  })
+  
   # Render a UI for selecting area depending on North America, Ecoregions, or State/Province for tab 3
   output$dyn_area3 <- renderUI({
+    req(input$upload)
+    
     if(input$typechoice3 == "North America") {
       temp <- "North_America"
     } else if(input$typechoice3 == "Ecoregion") {
-      temp <- uni.area[1:11]
+      temp <- uu_raw() %>%
+        filter(type == "ecoregion") %>%
+        select(area) %>%
+        unique() %>%
+        pull()
     } else if(input$typechoice3 == "State/Province") {
-      temp2 <-  uni.area[uni.area %nin% 'North_America']
-      temp <- temp2[-1:-11]
+      temp <- uu_raw() %>%
+        filter(type == "state") %>%
+        select(area) %>%
+        unique() %>%
+        pull()
     }
     
     selectInput(inputId = "areachoice3",
@@ -227,6 +294,52 @@ server <- function(input, output) {
                 choices = temp,
                 selected = temp[1])
   })  
+  
+  # Render a UI for selecting species depending on user upload data in tab 3
+  output$dyn_spp3 <- renderUI({
+    req(input$upload)
+    
+    temp <- uu_raw() %>%
+      select(common_name) %>%
+      unique() %>%
+      pull()
+    
+    selectInput(inputId = "sppchoice3",
+                label = "Select species:",
+                choices = temp,
+                selected = temp[1])
+  })  
+  
+  # Render a UI for selecting species depending on user upload data in tab 3
+  output$dyn_method3 <- renderUI({
+    req(input$upload)
+    
+    temp <- uu_raw() %>%
+      select(method) %>%
+      unique() %>%
+      pull()
+    
+    selectInput(inputId = "methodchoice3",
+                label = "Select method type::",
+                choices = temp,
+                selected = temp[1])
+  })  
+  
+  # Render a UI for selecting species depending on user upload data in tab 3
+  output$dyn_watertype3 <- renderUI({
+    req(input$upload)
+    
+    temp <- uu_raw() %>%
+      select(waterbody_type) %>%
+      unique() %>%
+      pull()
+    
+    selectInput(inputId = "watertypechoice3",
+                label = "Select waterbody type:",
+                choices = temp,
+                selected = temp[1])
+  }) 
+  
 
   # make filtered, a reactive data object for tab 1 explore, multiple combos okay
   filtered <- reactive({
@@ -246,6 +359,7 @@ server <- function(input, output) {
     
   })
   
+  # For downloading the entire dataset for tab 1 explore
   all <- reactive({
     
     all_df <-  metrics %>%
@@ -263,6 +377,88 @@ server <- function(input, output) {
       write.csv(all(), file)
     }
   )
+  
+  # make locations, a reactive data object for tab 1, only locations that are selected
+  locate <- reactive({
+    if(input$typechoice == "North America") {
+      l_df <-  locs %>%
+        filter(case_when("All" %in% input$sppchoice ~ common_name %in% uni.spp,
+                         "All" %nin% input$sppchoice ~ common_name %in% input$sppchoice),
+               case_when("All" %in% input$methodchoice ~ method %in% uni.method,
+                         "All" %nin% input$methodchoice ~ method %in% input$methodchoice),
+               case_when("All" %in% input$watertypechoice ~ waterbody_type %in% uni.watertype,
+                         "All" %nin% input$watertypechoice ~ waterbody_type %in% input$watertypechoice)) %>%
+        group_by(state, ecoregion, waterbody_name, common_name, method, waterbody_type) %>%
+        summarize(Nyears = length(unique(year)),
+                  lat = unique(lat),
+                  long = unique(long)) %>%
+        ungroup()
+      
+      } else if(input$typechoice == "Ecoregion") {
+      l_df <-  locs %>%
+        filter(ecoregion %in% input$areachoice,
+               case_when("All" %in% input$sppchoice ~ common_name %in% uni.spp,
+                         "All" %nin% input$sppchoice ~ common_name %in% input$sppchoice),
+               case_when("All" %in% input$methodchoice ~ method %in% uni.method,
+                         "All" %nin% input$methodchoice ~ method %in% input$methodchoice),
+               case_when("All" %in% input$watertypechoice ~ waterbody_type %in% uni.watertype,
+                         "All" %nin% input$watertypechoice ~ waterbody_type %in% input$watertypechoice)) %>%
+        group_by(state, ecoregion, waterbody_name, common_name, method, waterbody_type) %>%
+        summarize(Nyears = length(unique(year)),
+                  lat = unique(lat),
+                  long = unique(long)) %>%
+        ungroup()
+      
+      } else if(input$typechoice == "State/Province") {
+      l_df <-  locs %>%
+        filter(state %in% input$areachoice,
+               case_when("All" %in% input$sppchoice ~ common_name %in% uni.spp,
+                         "All" %nin% input$sppchoice ~ common_name %in% input$sppchoice),
+               case_when("All" %in% input$methodchoice ~ method %in% uni.method,
+                         "All" %nin% input$methodchoice ~ method %in% input$methodchoice),
+               case_when("All" %in% input$watertypechoice ~ waterbody_type %in% uni.watertype,
+                         "All" %nin% input$watertypechoice ~ waterbody_type %in% input$watertypechoice)) %>%
+        group_by(state, ecoregion, waterbody_name, common_name, method, waterbody_type) %>%
+        summarize(Nyears = length(unique(year)),
+                  lat = unique(lat),
+                  long = unique(long)) %>%
+        ungroup()
+      
+      }
+    })
+  
+  # Create excluded dataframe for combinations with only one site and one year
+  exclude <- reactive({
+    if(input$typechoice == "North America") {
+      e_df <- locate() %>%
+        group_by(common_name, method, waterbody_type) %>%
+        summarize(Nlocs = length(waterbody_name),
+                  Nyears_tot = sum(Nyears))%>%
+        filter(Nlocs == 1,
+               Nyears_tot == 1) %>%
+        select(-Nlocs, -Nyears_tot)
+      
+      } else if(input$typechoice == "Ecoregion") {
+      e_df <- locate() %>%
+        group_by(ecoregion, common_name, method, waterbody_type) %>%
+        summarize(Nlocs = length(waterbody_name),
+                  Nyears_tot = sum(Nyears))%>%
+        filter(Nlocs == 1,
+               Nyears_tot == 1) %>%
+        select(-Nlocs, -Nyears_tot)
+      
+      } else if(input$typechoice == "State/Province") {
+      e_df <- locate() %>%
+        group_by(state, common_name, method, waterbody_type) %>%
+        summarize(Nlocs = length(waterbody_name),
+                  Nyears_tot = sum(Nyears)) %>%
+        filter(Nlocs == 1,
+               Nyears_tot == 1) %>%
+        select(-Nlocs, -Nyears_tot)
+      
+      }
+    })
+  
   # make filtered, a reactive data object for tab 2, single combos only
   filtered2 <- reactive({
 
@@ -339,6 +535,12 @@ server <- function(input, output) {
   })
   
   uu_filtered <- reactive({
+    # Suppresses error messages for plots until inputs are chosen
+    req(input$areachoice3)
+    req(input$sppchoice3)
+    req(input$methodchoice3)
+    req(input$watertypechoice3)
+    
     inFile <- input$upload
     uu <- read_csv(inFile$datapath)
     print("UU original")
@@ -358,28 +560,48 @@ server <- function(input, output) {
     
   })
   
+  # Map of ecoregions and sites
   output$plotSites <- renderLeaflet({
-    plot_data <- filtered() %>%  
-      mutate(lat = runif(nrow(filtered()), min = 30, max = 45), 
-             lon = ifelse(area == "8", 
-                          runif(nrow(filtered()), min = -90, max = -75), 
-                          runif(nrow(filtered()), min = -120, max = -90)), 
-             lat = as.numeric(lat), 
-             lon = as.numeric(lon))
     
+    # Remove 'exclude()' from plot_data if only 1 site or 1 year is represented
+    plot_data <- locate() %>%
+      anti_join(exclude())
+    
+    print(plot_data)
     factpal <- colorFactor(rainbow(length(unique(ecoregions_trans$NA_L1CODE))), 
                            ecoregions_trans$NA_L1CODE)
     
-    leaflet() %>% 
-      addTiles() %>% 
-      addCircleMarkers(data = plot_data, lng = ~lon, lat = ~lat, stroke = FALSE, 
-                       radius = 3, fillOpacity = 1) %>% 
+    map <- leaflet() %>% 
+      addTiles() %>%
       addPolygons(data = ecoregions_trans, color = ~factpal(NA_L1CODE),
                   fillOpacity = 0.5, popup = ~htmltools::htmlEscape(NA_L1NAME),
                   stroke = FALSE)
+    if(nrow(plot_data) > 0) {
+      map <- map %>%
+        addCircleMarkers(data = plot_data, lng = ~long, lat = ~lat, stroke = FALSE, 
+                         radius = 3, fillOpacity = 1,
+                         popup = popupTable(plot_data,
+                                            zcol = 3:7,
+                                            row.numbers = FALSE,
+                                            feature.id = FALSE))
+    }
+      print(map)
+  
   })
   
-  output$plotLengthFrequency <- renderPlot({
+  # Text to describe insufficient sample size for anonymity
+  output$report_absent1 <- renderText({
+    paste(nrow(exclude()), " site(s) not shown to maintain data anonymity. ")
+  })
+  
+  # Text to describe sites missing lat/lon
+  output$report_absent2 <- renderText({
+    paste(locate() %>% filter(is.na(lat)) %>% nrow(), 
+          " site(s) not shown due to unreported lat/long. ")
+  })
+  
+  
+  plotLengthFrequency <- reactive({
     temp <- filtered2() %>%
       filter(metric == "Length Frequency") %>%
       mutate(gcat = factor(gcat, 
@@ -413,7 +635,9 @@ server <- function(input, output) {
     
   })
   
-  output$plotRelativeWeight <- renderPlot({
+  callModule(plotDownload, "LF_plot", plotLengthFrequency)
+  
+  plotRelativeWeight <- reactive({
     
     temp <- filtered2() %>%
       filter(metric == "Relative Weight") %>%
@@ -462,7 +686,10 @@ server <- function(input, output) {
     
   })
   
-  output$plotCPUE <- renderPlot({
+  callModule(plotDownload, "RW_plot", plotRelativeWeight)
+  
+  
+  plotCPUE <- reactive({
     
     temp <- filtered2() %>%
       filter(metric == "CPUE") %>%
@@ -495,10 +722,11 @@ server <- function(input, output) {
     print(fig)
     
   })
-
-  output$plotLengthFrequencyuser <- renderPlot({
-    #TODO: don't plot standardized data if there is no corresponding user upload data
-    #if nrow uu_filtered is 0...
+  
+  callModule(plotDownload, "CPUE_plot", plotCPUE)
+  
+  plotLengthFrequencyuser <- reactive({
+    # uu_unfiltered() has a req() for uploaded data, so no more error messages
     temp <- uu_filtered() %>% 
       bind_rows(filtered3(), .id = "id") %>% 
       rename(data_source = id) %>% 
@@ -527,15 +755,19 @@ server <- function(input, output) {
       scale_y_continuous("Frequency (%)",
                          limits = c(0, 100),
                          expand = c(0, 0)) +
+      scale_fill_discrete("Data source") +
       theme_classic(base_size = 16) +
-      theme(axis.title.x = element_blank()) +
+      theme(axis.title.x = element_blank(),
+            legend.position = c(0.85, 0.85)) +
       ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
     
     print(fig)
 
   })
   
-  output$plotRelativeWeightuser <- renderPlot({
+  callModule(plotDownload, "LF_plot_UU", plotLengthFrequencyuser)
+  
+    plotRelativeWeightuser <- reactive({
     
     temp <- uu_filtered() %>% 
       bind_rows(filtered3(), .id = "id") %>% 
@@ -563,16 +795,18 @@ server <- function(input, output) {
                     color = data_source),
                 lty = 2) +
       scale_y_continuous("Relative weight") +
+      scale_color_discrete("Data source") +
       theme_classic(base_size = 16) +
       theme(axis.title.x = element_blank(),
-            legend.position = "bottom",
-            legend.title = element_blank()) 
+            legend.position = "bottom") 
     
     print(fig)
     
   })
-  
-  output$plotCPUEuser <- renderPlot({
+    
+    callModule(plotDownload, "RW_plot_UU", plotRelativeWeightuser)
+    
+    plotCPUEuser <- reactive({
     temp <- uu_filtered() %>% 
       bind_rows(filtered3(), .id = "id") %>% 
       rename(data_source = id) %>% 
@@ -600,6 +834,7 @@ server <- function(input, output) {
                        xmax = `95%`),
                    stat = "identity") +
       scale_x_continuous("CPUE (fish / hour)") +
+      scale_fill_discrete("Data source") +
       theme_classic(base_size = 16) +
       theme(axis.title.y = element_blank(),
             axis.text.y = element_blank(),
@@ -609,6 +844,8 @@ server <- function(input, output) {
     print(fig)
     
   })
+    
+    callModule(plotDownload, "CPUE_plot_UU", plotCPUEuser)
   
 }
 
