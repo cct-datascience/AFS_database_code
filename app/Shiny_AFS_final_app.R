@@ -4,7 +4,40 @@ library(tidyverse)
 library(sf)
 library(leaflet)
 library(DT)
+library(leafpop)
 # library(periscope)
+
+# Module code
+plotDownloadUI <- function(id, height = 400) {
+  ns <- NS(id)
+  tagList(
+    fluidRow(
+      column(
+        2, offset = 10,
+        downloadButton(ns("download_plot"), "Download")
+      )
+    ),
+    fluidRow(
+      plotOutput(ns('plot'), height = height)
+    )
+    
+  )
+}
+
+plotDownload <- function(input, output, session, plotFun) {
+  output$plot <- renderPlot({
+    plotFun()
+  })
+  
+  output$download_plot <- downloadHandler(
+    filename = function() {
+      "plot.png"
+    },
+    content = function(file) {
+      ggsave(file, plotFun(), width = 6, height = 4)
+    }
+  )
+}
 
 # Read in summary fish metrics
 metrics <- read_csv('Full_results_112122.csv') %>%
@@ -137,9 +170,9 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                                    choices = uni.watertype,
                                    selected = "large_standing_waters")
                        ),
-                     mainPanel(plotOutput("plotLengthFrequency"),
-                               plotOutput("plotRelativeWeight"),
-                               plotOutput("plotCPUE", height = "200px")
+                     mainPanel(plotDownloadUI("LF_plot"),
+                               plotDownloadUI("RW_plot"),
+                               plotDownloadUI("CPUE_plot", height = "200px")
                                )
                      )
                    ),
@@ -154,23 +187,17 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                                        buttonLabel =  "Upload Your Data",
                                        multiple = FALSE, accept = (".csv")), 
                              "To view plots of standard fish data, select one option from each menu below.",
-                             radioGroupButtons(inputId = "typechoice3",
-                                               label = "Show data by:",
-                                               choices = uni.type,
-                                               direction = "vertical",
-                                               selected = "North America"),
+                             uiOutput("dyn_type"),
                              uiOutput("dyn_area3"),
                              uiOutput("dyn_spp3"),
                              uiOutput("dyn_method3"),
                              uiOutput("dyn_watertype3")
                            ),
-                           mainPanel(plotOutput("plotLengthFrequencyuser"), 
-                                     plotOutput("plotRelativeWeightuser"), 
-                                     plotOutput("plotCPUEuser"))
+                           mainPanel(plotDownloadUI("LF_plot_UU"),
+                                     plotDownloadUI("RW_plot_UU"),
+                                     plotDownloadUI("CPUE_plot_UU", height = "200px"))
                          ), 
-# ,
-#                          tableOutput("user_table"),
-#                          dataTableOutput("view_user_table")
+
                  ) 
 
 )
@@ -222,6 +249,25 @@ server <- function(input, output) {
     
   })
   
+  # Render a UI for selectin area 
+  output$dyn_type <- renderUI({
+    req(input$upload)
+    
+    temp <-  uu_raw() %>% # 
+      select(type) %>%
+      unique() %>%
+      mutate(types = case_when(type == "all" ~ "North America",
+                               type == "ecoregion" ~ "Ecoregion",
+                               type == "state" ~ "State/Province")) %>%
+      pull(types)
+    
+    
+    radioGroupButtons(inputId = "typechoice3",
+                      label = "Show data by:",
+                      choices = union("North America", temp),
+                      direction = "vertical",
+                      selected = "North America")
+  })
   
   # Render a UI for selecting area depending on North America, Ecoregions, or State/Province for tab 3
   output$dyn_area3 <- renderUI({
@@ -345,7 +391,8 @@ server <- function(input, output) {
         group_by(state, ecoregion, waterbody_name, common_name, method, waterbody_type) %>%
         summarize(Nyears = length(unique(year)),
                   lat = unique(lat),
-                  long = unique(long))
+                  long = unique(long)) %>%
+        ungroup()
       
       } else if(input$typechoice == "Ecoregion") {
       l_df <-  locs %>%
@@ -359,7 +406,8 @@ server <- function(input, output) {
         group_by(state, ecoregion, waterbody_name, common_name, method, waterbody_type) %>%
         summarize(Nyears = length(unique(year)),
                   lat = unique(lat),
-                  long = unique(long))
+                  long = unique(long)) %>%
+        ungroup()
       
       } else if(input$typechoice == "State/Province") {
       l_df <-  locs %>%
@@ -373,7 +421,8 @@ server <- function(input, output) {
         group_by(state, ecoregion, waterbody_name, common_name, method, waterbody_type) %>%
         summarize(Nyears = length(unique(year)),
                   lat = unique(lat),
-                  long = unique(long))
+                  long = unique(long)) %>%
+        ungroup()
       
       }
     })
@@ -382,7 +431,7 @@ server <- function(input, output) {
   exclude <- reactive({
     if(input$typechoice == "North America") {
       e_df <- locate() %>%
-        group_by(state, ecoregion, common_name, method, waterbody_type) %>%
+        group_by(common_name, method, waterbody_type) %>%
         summarize(Nlocs = length(waterbody_name),
                   Nyears_tot = sum(Nyears))%>%
         filter(Nlocs == 1,
@@ -399,7 +448,7 @@ server <- function(input, output) {
         select(-Nlocs, -Nyears_tot)
       
       } else if(input$typechoice == "State/Province") {
-      e_df <- l_df %>%
+      e_df <- locate() %>%
         group_by(state, common_name, method, waterbody_type) %>%
         summarize(Nlocs = length(waterbody_name),
                   Nyears_tot = sum(Nyears)) %>%
@@ -518,17 +567,26 @@ server <- function(input, output) {
     plot_data <- locate() %>%
       anti_join(exclude())
     
+    print(plot_data)
     factpal <- colorFactor(rainbow(length(unique(ecoregions_trans$NA_L1CODE))), 
                            ecoregions_trans$NA_L1CODE)
     
-    leaflet() %>% 
+    map <- leaflet() %>% 
       addTiles() %>%
       addPolygons(data = ecoregions_trans, color = ~factpal(NA_L1CODE),
                   fillOpacity = 0.5, popup = ~htmltools::htmlEscape(NA_L1NAME),
-                  stroke = FALSE) %>% 
-      addCircleMarkers(data = plot_data, lng = ~long, lat = ~lat, stroke = FALSE, 
-                       radius = 3, fillOpacity = 1,
-                       popup = ~htmltools::htmlEscape(waterbody_name))
+                  stroke = FALSE)
+    if(nrow(plot_data) > 0) {
+      map <- map %>%
+        addCircleMarkers(data = plot_data, lng = ~long, lat = ~lat, stroke = FALSE, 
+                         radius = 3, fillOpacity = 1,
+                         popup = popupTable(plot_data,
+                                            zcol = 3:7,
+                                            row.numbers = FALSE,
+                                            feature.id = FALSE))
+    }
+      print(map)
+  
   })
   
   # Text to describe insufficient sample size for anonymity
@@ -543,7 +601,7 @@ server <- function(input, output) {
   })
   
   
-  output$plotLengthFrequency <- renderPlot({
+  plotLengthFrequency <- reactive({
     temp <- filtered2() %>%
       filter(metric == "Length Frequency") %>%
       mutate(gcat = factor(gcat, 
@@ -577,7 +635,9 @@ server <- function(input, output) {
     
   })
   
-  output$plotRelativeWeight <- renderPlot({
+  callModule(plotDownload, "LF_plot", plotLengthFrequency)
+  
+  plotRelativeWeight <- reactive({
     
     temp <- filtered2() %>%
       filter(metric == "Relative Weight") %>%
@@ -626,7 +686,10 @@ server <- function(input, output) {
     
   })
   
-  output$plotCPUE <- renderPlot({
+  callModule(plotDownload, "RW_plot", plotRelativeWeight)
+  
+  
+  plotCPUE <- reactive({
     
     temp <- filtered2() %>%
       filter(metric == "CPUE") %>%
@@ -659,8 +722,10 @@ server <- function(input, output) {
     print(fig)
     
   })
-
-  output$plotLengthFrequencyuser <- renderPlot({
+  
+  callModule(plotDownload, "CPUE_plot", plotCPUE)
+  
+  plotLengthFrequencyuser <- reactive({
     # uu_unfiltered() has a req() for uploaded data, so no more error messages
     temp <- uu_filtered() %>% 
       bind_rows(filtered3(), .id = "id") %>% 
@@ -700,7 +765,9 @@ server <- function(input, output) {
 
   })
   
-  output$plotRelativeWeightuser <- renderPlot({
+  callModule(plotDownload, "LF_plot_UU", plotLengthFrequencyuser)
+  
+    plotRelativeWeightuser <- reactive({
     
     temp <- uu_filtered() %>% 
       bind_rows(filtered3(), .id = "id") %>% 
@@ -736,8 +803,10 @@ server <- function(input, output) {
     print(fig)
     
   })
-  
-  output$plotCPUEuser <- renderPlot({
+    
+    callModule(plotDownload, "RW_plot_UU", plotRelativeWeightuser)
+    
+    plotCPUEuser <- reactive({
     temp <- uu_filtered() %>% 
       bind_rows(filtered3(), .id = "id") %>% 
       rename(data_source = id) %>% 
@@ -775,6 +844,8 @@ server <- function(input, output) {
     print(fig)
     
   })
+    
+    callModule(plotDownload, "CPUE_plot_UU", plotCPUEuser)
   
 }
 
