@@ -14,3 +14,9 @@ app/lat_long_AFSshiny.csv
 # Will delete later
 test_app/
 test_app2/
+
+# Rmd htmls
+app/process_user_data.html
+
+# Rstudio connect files
+app/rsconnect/

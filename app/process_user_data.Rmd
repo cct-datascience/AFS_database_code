@@ -1,25 +1,38 @@
+---
+title: "Approach to process user upload data"
+author: "Kristina Riemer"
+date: '2023-01-20'
+output: html_document
+---
+
+## Purpose
+
+Users will upload raw data, which will have length and/or weight measurements with one row per observation (a single fish or multiple fish summed). These data need to be summarized to the three metrics of interest for each unique combination of area, species, collection method, type of water body, and year. The three metrics are: 
+
+1. [Catch per unit effort](https://en.wikipedia.org/wiki/Catch_per_unit_effort) (CPUE)
+2. Length frequency
+3. Relative weight
+
+## Prepare to calculate metrics
+
+### Read in libraries
+```{r}
 library(readxl)
 library(dplyr)
 library(FSA)
+```
 
-# Read in user upload data examples
-raw_example <- readxl::read_xlsx("input_examples/AFS_test_data.xlsx")
-process_example <- read.csv("input_examples/AFS_processed_test_data.csv")
+### Read in example datasets
+```{r}
+raw_example <- readxl::read_xlsx("../input_examples/AFS_test_data.xlsx")
+process_example <- read.csv("../input_examples/AFS_processed_test_data.csv")
+```
 
-# Process
-# multiple rows for "individual" fish summarized into one row by area, 
-# species, method, waterbody type
+## Calculate metrics
 
-# Variables
-# state/ecoregion: user provides one column with North America, full state name, 
-# or ecoregion name; state and/or ecoregion columns?
-# we put into "area" column
-
-# species: need column of common names as spelled in FSA table function PSDlit
-
-# Start with length frequency, needs length and species name
-
-test <- raw_example %>% 
+### 1. Length frequency
+```{r}
+lf <- raw_example %>% 
   select(state, common_name, method, waterbody_type, total_length) %>%  #also by year? 
   mutate(common_name = stringr::str_to_title(common_name)) %>% 
   mutate(gcat = psdAdd(total_length, common_name, what = "incremental")) %>% 
@@ -31,7 +44,10 @@ test <- raw_example %>%
   # as.data.frame() %>% 
   # mutate(Freq = Freq * 100)
 # change categories into factor with all 5
+lf
+```
 
+```{r}
 single_ex <- raw_example %>% 
   select(state, common_name, method, waterbody_type, total_length) %>%
   filter(common_name == "largemouth bass")
@@ -43,3 +59,11 @@ freq <- xtabs(~common_name+gcat, data = species.i.method.j.type.w.id.u)
 psd <- prop.table(freq,margin=1)*100
 psd <-as.data.frame(psd)
 psd$gcat <- as.character(psd$gcat)
+```
+
+
+
+
+
+
+
