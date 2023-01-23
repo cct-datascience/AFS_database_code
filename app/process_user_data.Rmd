@@ -15,11 +15,24 @@ Users will upload raw data, which will have length and/or weight measurements wi
 
 ## Defining user inputs
 
-- Date will need to be three separate columns with month, day, and year
-- Length (mm)
-- Weight (g)
-- Effort (s)
-- Method needs to be from this list and match name exactly, with corresponding effort column with correct unit and type: 
+1. CPUE requires `effort` column
+2. Length frequency requires `total_length` column 
+3. Relative weight requires `weight` and `total_length` columns
+
+Required columns in input dataframe: 
+
+- **Area**: need at least one of these columns, can have all three
+  - `area` can only be "North_America"
+  - `state` must be spelled out and capitalized
+  - `ecoregion` comes from [EPA level 1 ecoregions](https://www.epa.gov/eco-research/ecoregions-north-america)
+- **Date**: only a numeric `year` column is needed
+- **Measurements**: 
+  - `total_length` is fish record length (mm)
+  - `weight` is fish record weight (g)
+  - `effort` is specified in **Collection method**
+- **Collection method**: see the table below for details
+  - `method` must exactly match one of the options in the first column
+  - `effort` will contain a numeric value that has correct type and unit
 
 | **Method name**          | **Effort type** | **Unit** |
 |--------------------------|-----------------|----------|
@@ -38,14 +51,14 @@ Users will upload raw data, which will have length and/or weight measurements wi
 | backpack_electrofishing  | Area            | m2       |
 | snorkel                  | Area            | m2       |
 
-- Species will be common species, needs to be in this list from `FSA::PSDlit` and match exactly: 
-
+- **Type of water body**
+  - `waterbody_type` must be one of the following: "large_standing_waters", "small_standing_waters", "two_story_standing_waters", "wadeable_streams", "rivers"
+- **Species** must be in `common_name` as species common name, which must match one of those listed below, as from `FSA::PSDlit`:
 
 ```{r, echo=FALSE}
 species_list <- FSA::PSDlit
 print(species_list$species)
 ```
-
 
 ## Prepare to calculate metrics
 
@@ -53,31 +66,46 @@ print(species_list$species)
 ```{r}
 library(readxl)
 library(dplyr)
+library(stringr)
 library(FSA)
 library(ggplot2)
 ```
 
 ### Read in and modify example datasets
+
+Example of final dataset: 
+
+```{r, echo=FALSE}
+process_example <- read.csv("../input_examples/AFS_processed_test_data.csv")
+head(process_example)
+```
+
+Read in example dataset. 
+
 ```{r}
 raw_y1 <- readxl::read_xlsx("../input_examples/AFS_test_data.xlsx") %>%
   tidyr::separate(date, into = c("month", "day", "year"), sep = c(1, 3, 7)) %>% 
   mutate(year = as.numeric(year), 
-         common_name = stringr::str_to_title(common_name))
-process_example <- read.csv("../input_examples/AFS_processed_test_data.csv")
+         common_name = str_to_title(common_name), 
+         waterbody_type = str_replace_all(waterbody_type, " ", "_"))
 ```
 
 Simulate extra data for additional years for raw data. 
+
 ```{r}
 raw_y2 <- raw_y1 %>% 
   mutate(year = year + 1, 
          total_length = total_length + 50, 
          effort = effort / 2)
-
-raw_example <- bind_rows(raw_y1, raw_y2)
 ```
 
-TODO: print/save simplest complete example data
+Simplify dataset to include only necessary columns. 
 
+```{r}
+raw_example <- bind_rows(raw_y1, raw_y2) %>% 
+  rename(area = state) %>% 
+  select(area, common_name, method, waterbody_type, year, effort, total_length, weight)
+```
 
 ## Calculate metrics
 
@@ -89,13 +117,12 @@ For time-based methods, convert effort from seconds to hours. Calculate CPUE by 
 
 ```{r}
 cpue <- raw_example %>% 
-  select(state, common_name, method, waterbody_type, year, effort) %>% 
   mutate(effort = ifelse(method %in% c("boat_electrofishing", "tow_barge_electrofishing", "raft_electrofishing", "trawl"), 
                            effort / 3600, 
                            effort)) %>%
-  add_count(state, common_name, method, waterbody_type, year) %>% 
+  add_count(area, common_name, method, waterbody_type, year) %>% 
   mutate(cpue = n / effort) %>% 
-  group_by(state, common_name, method, waterbody_type) %>% 
+  group_by(area, common_name, method, waterbody_type) %>% 
   summarize_at(vars(cpue), list(mean = mean, se = se, 
                                 `5%` = ~quantile(x = ., probs = 0.05),
                                 `25%` = ~quantile(x = ., probs = 0.25),
@@ -108,7 +135,7 @@ cpue <- raw_example %>%
 Plot example processed data. 
 
 ```{r}
-ggplot(cpue, aes(y = state)) +
+ggplot(cpue, aes(y = area)) +
         geom_boxplot(aes(xmin = `5%`,
                          xlower = `25%`,
                          xmiddle = `50%`,
@@ -125,12 +152,11 @@ Calculate Gabelhouse category for each fish record using length and species iden
 
 ```{r}
 lf <- raw_example %>% 
-  select(state, common_name, method, waterbody_type, year, total_length) %>%
   mutate(gcat = psdAdd(total_length, common_name, what = "incremental")) %>% 
-  group_by(state, common_name, method, waterbody_type, year) %>% 
+  group_by(area, common_name, method, waterbody_type, year) %>% 
   count(gcat) %>% 
   mutate(lenfreq = n / sum(n)) %>% 
-  group_by(state, common_name, method, waterbody_type, gcat) %>% 
+  group_by(area, common_name, method, waterbody_type, gcat) %>% 
   summarize_at(vars(lenfreq), list(mean = mean, se = se), na.rm = TRUE)
 ```
 
@@ -151,10 +177,9 @@ Calculate Gabelhouse category for each fish record using length and species iden
 
 ```{r}
 rw <- raw_example %>% 
-  select(state, common_name, method, waterbody_type, year, weight, total_length) %>%
   mutate(gcat = psdAdd(total_length, common_name, what = "incremental"), 
          relweight= wrAdd(wt = weight, len = total_length, spec = common_name)) %>% 
-  group_by(state, common_name, method, waterbody_type, gcat) %>% 
+  group_by(area, common_name, method, waterbody_type, gcat) %>% 
   summarize_at(vars(relweight), list(mean = mean, se = se, 
                                 `5%` = ~quantile(x = ., probs = 0.05),
                                 `25%` = ~quantile(x = ., probs = 0.25),
