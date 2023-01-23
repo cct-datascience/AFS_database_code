@@ -63,7 +63,7 @@ print(species_list$species)
 ## Prepare to calculate metrics
 
 ### Read in libraries
-```{r}
+```{r, warning=FALSE, message=FALSE}
 library(readxl)
 library(dplyr)
 library(stringr)
@@ -107,35 +107,96 @@ raw_example <- bind_rows(raw_y1, raw_y2) %>%
   select(area, common_name, method, waterbody_type, year, effort, total_length, weight)
 ```
 
-## Calculate metrics
-
-TODO: refactor these into functions, test with example dataset
+## Functions to calculate metrics
 
 ### 1. CPUE
 
 For time-based methods, convert effort from seconds to hours. Calculate CPUE by dividing number of fish records for each species by effort. 
 
 ```{r}
-cpue <- raw_example %>% 
-  mutate(effort = ifelse(method %in% c("boat_electrofishing", "tow_barge_electrofishing", "raft_electrofishing", "trawl"), 
+calculate_cpue <- function(df){
+  stopifnot(c("area", "common_name", "method", "waterbody_type", 
+              "year", "effort") %in% colnames(df))
+  cpue <- df %>% 
+    mutate(effort = ifelse(method %in% c("boat_electrofishing", 
+                                       "tow_barge_electrofishing", 
+                                       "raft_electrofishing", "trawl"), 
                            effort / 3600, 
                            effort)) %>%
-  add_count(area, common_name, method, waterbody_type, year) %>% 
-  mutate(cpue = n / effort) %>% 
-  group_by(area, common_name, method, waterbody_type) %>% 
-  summarize_at(vars(cpue), list(mean = mean, se = se, 
+    add_count(area, common_name, method, waterbody_type, year) %>% 
+    mutate(cpue = n / effort) %>% 
+    group_by(area, common_name, method, waterbody_type) %>% 
+    summarize_at(vars(cpue), list(mean = mean, se = se, 
                                 `5%` = ~quantile(x = ., probs = 0.05),
                                 `25%` = ~quantile(x = ., probs = 0.25),
                                 `50%` = ~quantile(x = ., probs = 0.50),
                                 `75%` = ~quantile(x = ., probs = 0.75),
                                 `95%` = ~quantile(x = ., probs = 0.95)), 
-               na.rm = TRUE)
+               na.rm = TRUE) %>% 
+    mutate(metric = "CPUE")
+  return(cpue)
+}
 ```
 
-Plot example processed data. 
+### 2. Length frequency
+
+Calculate Gabelhouse category for each fish record using length and species identity. For each species and each year, determine proportion of records in each category. Then calculate mean and standard error of length frequency for each species by category across years. 
 
 ```{r}
-ggplot(cpue, aes(y = area)) +
+calculate_lf <- function(df){
+    stopifnot(c("area", "common_name", "method", "waterbody_type", 
+                "year", "total_length") %in% colnames(df))
+  lf <- raw_example %>% 
+    mutate(gcat = psdAdd(total_length, common_name, what = "incremental")) %>% 
+    group_by(area, common_name, method, waterbody_type, year) %>% 
+    count(gcat) %>% 
+    mutate(lenfreq = n / sum(n)) %>% 
+    group_by(area, common_name, method, waterbody_type, gcat) %>% 
+    summarize_at(vars(lenfreq), list(mean = mean, se = se), na.rm = TRUE) %>% 
+    mutate(metric = "Length Frequency")
+  return(lf)
+}
+```
+
+### 3. Relative weight
+
+Calculate Gabelhouse category for each fish record using length and species identity, and relative weight for each fish record using width, length, and species identity. Then calculate mean and standard error for relative weight for each species by category across years. 
+
+```{r}
+calculate_rw <- function(df){
+  stopifnot(c("area", "common_name", "method", "waterbody_type", "year", 
+              "total_length", "weight") %in% colnames(df))
+  rw <- raw_example %>% 
+    mutate(gcat = psdAdd(total_length, common_name, what = "incremental"), 
+         relweight = wrAdd(wt = weight, len = total_length, spec = common_name)) %>% 
+    group_by(area, common_name, method, waterbody_type, gcat) %>% 
+    summarize_at(vars(relweight), list(mean = mean, se = se, 
+                                `5%` = ~quantile(x = ., probs = 0.05),
+                                `25%` = ~quantile(x = ., probs = 0.25),
+                                `50%` = ~quantile(x = ., probs = 0.50),
+                                `75%` = ~quantile(x = ., probs = 0.75),
+                                `95%` = ~quantile(x = ., probs = 0.95)), na.rm = TRUE) %>% 
+    mutate(metric = "Relative Weight")
+  return(rw)
+}
+```
+
+## Generate metrics dataset
+
+Run 3 functions on user input data, then combine into final dataset. 
+
+```{r}
+cpue_example <- calculate_cpue(raw_example)
+lf_example <- calculate_lf(raw_example)
+rw_example <- calculate_rw(raw_example)
+
+final_example <- bind_rows(cpue_example, lf_example, rw_example)
+```
+
+### Plot metrics dataset
+
+```{r}
+ggplot(cpue_example, aes(y = area)) +
         geom_boxplot(aes(xmin = `5%`,
                          xlower = `25%`,
                          xmiddle = `50%`,
@@ -145,25 +206,8 @@ ggplot(cpue, aes(y = area)) +
   facet_wrap(vars(common_name))
 ```
 
-
-### 2. Length frequency
-
-Calculate Gabelhouse category for each fish record using length and species identity. For each species and each year, determine proportion of records in each category. Then calculate mean and standard error of length frequency for each species by category across years. 
-
 ```{r}
-lf <- raw_example %>% 
-  mutate(gcat = psdAdd(total_length, common_name, what = "incremental")) %>% 
-  group_by(area, common_name, method, waterbody_type, year) %>% 
-  count(gcat) %>% 
-  mutate(lenfreq = n / sum(n)) %>% 
-  group_by(area, common_name, method, waterbody_type, gcat) %>% 
-  summarize_at(vars(lenfreq), list(mean = mean, se = se), na.rm = TRUE)
-```
-
-Plot example processed data. 
-
-```{r}
-ggplot(lf, aes(x = gcat, y = mean)) +
+ggplot(lf_example, aes(x = gcat, y = mean)) +
   geom_bar(stat = "identity") +
   facet_wrap(vars(common_name)) +
         geom_errorbar(aes(ymin = mean - se,
@@ -171,32 +215,9 @@ ggplot(lf, aes(x = gcat, y = mean)) +
                       width = 0)
 ```
 
-### 3. Relative weight
-
-Calculate Gabelhouse category for each fish record using length and species identity, and relative weight for each fish record using width, length, and species identity. Then calculate mean and standard error for relative weight for each species by category across years. 
-
 ```{r}
-rw <- raw_example %>% 
-  mutate(gcat = psdAdd(total_length, common_name, what = "incremental"), 
-         relweight= wrAdd(wt = weight, len = total_length, spec = common_name)) %>% 
-  group_by(area, common_name, method, waterbody_type, gcat) %>% 
-  summarize_at(vars(relweight), list(mean = mean, se = se, 
-                                `5%` = ~quantile(x = ., probs = 0.05),
-                                `25%` = ~quantile(x = ., probs = 0.25),
-                                `50%` = ~quantile(x = ., probs = 0.50),
-                                `75%` = ~quantile(x = ., probs = 0.75),
-                                `95%` = ~quantile(x = ., probs = 0.95)), na.rm = TRUE)
-```
-
-Plot example processed data. 
-
-```{r}
-ggplot(rw, aes(x = gcat)) +
+ggplot(rw_example, aes(x = gcat)) +
   geom_point(aes(y = mean)) +
   geom_line(aes(y = mean)) +
   facet_wrap(vars(common_name))
 ```
-
-## Generate metrics dataset
-
-Run 3 functions on user input data, then combine into final dataset. 
