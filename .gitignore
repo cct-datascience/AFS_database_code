@@ -9,7 +9,7 @@
 # Data files
 app/ecoregions1*
 app/lat_long_AFSshiny.csv
-
+app/Lat_long_AFSshiny_012023.csv
 
 # Will delete later
 test_app/

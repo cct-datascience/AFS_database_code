@@ -60,7 +60,7 @@ ecoregions_trans <- ecoregions %>%
   st_transform("+proj=longlat +datum=WGS84")
 
 # Read in lat/longs
-locs <- read_csv("lat_long_AFSshiny.csv") %>%
+locs <- read_csv("Lat_long_AFSshiny_012023.csv") %>%
   select(-date) # not parseable as is
 
 # Create a "not in" function
