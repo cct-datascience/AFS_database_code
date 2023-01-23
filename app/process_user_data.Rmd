@@ -16,78 +16,35 @@ Users will upload raw data, which will have length and/or weight measurements wi
 ## Defining user inputs
 
 - Date will need to be three separate columns with month, day, and year
-- Length in what units? 
-- Weight in what units? 
+- Length (mm)
+- Weight (g)
+- Effort (s)
+- Method needs to be from this list and match name exactly, with corresponding effort column with correct unit and type: 
+
+| **Method name**          | **Effort type** | **Unit** |
+|--------------------------|-----------------|----------|
+| boat_electrofishing      | Time            | seconds  |
+| tow_barge_electrofishing | Time            | seconds  |
+| raft_electrofishing      | Time            | seconds  |
+| trawl                    | Time            | seconds  |
+| gill_net_fall            | Number of nets  | number   |
+| gill_net_fall            | Number of nets  | number   |
+| hoop_net                 | Number of nets  | number   |
+| small_catfish_hoopnet    | Number of nets  | number   |
+| large_catfish_hoopnet    | Number of nets  | number   |
+| seine                    | Number of nets  | number   |
+| bag_seine                | Number of nets  | number   |
+| stream_seine             | Number of nets  | number   |
+| backpack_electrofishing  | Area            | m2       |
+| snorkel                  | Area            | m2       |
+
 - Species will be common species, needs to be in this list from `FSA::PSDlit` and match exactly: 
 
- [1] "Arctic Grayling"            
- [2] "Bighead Carp"               
- [3] "Bigmouth Buffalo"           
- [4] "Black Bullhead"             
- [5] "Black Carp"                 
- [6] "Black Crappie"              
- [7] "Blue Catfish"               
- [8] "Bluegill"                   
- [9] "Brook Trout (lentic)"       
-[10] "Brook Trout (lotic)"        
-[11] "Brook Trout"                
-[12] "Brown Bullhead"             
-[13] "Brown Trout (lentic)"       
-[14] "Brown Trout (lotic)"        
-[15] "Bull Trout"                 
-[16] "Burbot"                     
-[17] "Chain Pickerel"             
-[18] "Channel Catfish"            
-[19] "Chinook Salmon (landlocked)"
-[20] "Common Carp"                
-[21] "Cutthroat Trout"            
-[22] "Flathead Catfish"           
-[23] "Freshwater Drum"            
-[24] "Gizzard Shad"               
-[25] "Golden Trout"               
-[26] "Grass Carp"                 
-[27] "Green Sunfish"              
-[28] "Kokanee"                    
-[29] "Lake Trout"                 
-[30] "Largemouth Bass"            
-[31] "Longnose Gar"               
-[32] "Muskellunge"                
-[33] "Northern Pike"              
-[34] "Paddlefish"                 
-[35] "Pallid Sturgeon"            
-[36] "Palmetto Bass"              
-[37] "Palmetto Bass (original)"   
-[38] "Pumpkinseed"                
-[39] "Rainbow Trout"              
-[40] "Redear Sunfish"             
-[41] "River Carpsucker"           
-[42] "Rock Bass"                  
-[43] "Ruffe"                      
-[44] "Sauger"                     
-[45] "Saugeye"                    
-[46] "Shoal Bass"                 
-[47] "Shorthead Redhorse"         
-[48] "Silver Carp"                
-[49] "Smallmouth Bass"            
-[50] "Smallmouth Buffalo "        
-[51] "Splake"                     
-[52] "Spotted Bass"               
-[53] "Spotted Gar"                
-[54] "Striped Bass (landlocked)"  
-[55] "Striped Bass (hybrid)"      
-[56] "Striped Bass X White Bass"  
-[57] "Suwannee Bass"              
-[58] "Utah Chub"                  
-[59] "Walleye"                    
-[60] "Warmouth"                   
-[61] "White Bass"                 
-[62] "White Catfish"              
-[63] "White Crappie"              
-[64] "White Perch"                
-[65] "White Sucker"               
-[66] "Yellow Perch"               
-[67] "Yellow Bass"                
-[68] "Yellow Bullhead"            
+
+```{r, echo=FALSE}
+species_list <- FSA::PSDlit
+print(species_list$species)
+```
 
 
 ## Prepare to calculate metrics
@@ -104,7 +61,8 @@ library(ggplot2)
 ```{r}
 raw_y1 <- readxl::read_xlsx("../input_examples/AFS_test_data.xlsx") %>%
   tidyr::separate(date, into = c("month", "day", "year"), sep = c(1, 3, 7)) %>% 
-  mutate(year = as.numeric(year))
+  mutate(year = as.numeric(year), 
+         common_name = stringr::str_to_title(common_name))
 process_example <- read.csv("../input_examples/AFS_processed_test_data.csv")
 ```
 
@@ -112,31 +70,68 @@ Simulate extra data for additional years for raw data.
 ```{r}
 raw_y2 <- raw_y1 %>% 
   mutate(year = year + 1, 
-         total_length = total_length + 50)
+         total_length = total_length + 50, 
+         effort = effort / 2)
 
 raw_example <- bind_rows(raw_y1, raw_y2)
 ```
 
+TODO: print/save simplest complete example data
+
 
 ## Calculate metrics
 
+TODO: refactor these into functions, test with example dataset
+
 ### 1. CPUE
+
+For time-based methods, convert effort from seconds to hours. Calculate CPUE by dividing number of fish records for each species by effort. 
+
+```{r}
+cpue <- raw_example %>% 
+  select(state, common_name, method, waterbody_type, year, effort) %>% 
+  mutate(effort = ifelse(method %in% c("boat_electrofishing", "tow_barge_electrofishing", "raft_electrofishing", "trawl"), 
+                           effort / 3600, 
+                           effort)) %>%
+  add_count(state, common_name, method, waterbody_type, year) %>% 
+  mutate(cpue = n / effort) %>% 
+  group_by(state, common_name, method, waterbody_type) %>% 
+  summarize_at(vars(cpue), list(mean = mean, se = se, 
+                                `5%` = ~quantile(x = ., probs = 0.05),
+                                `25%` = ~quantile(x = ., probs = 0.25),
+                                `50%` = ~quantile(x = ., probs = 0.50),
+                                `75%` = ~quantile(x = ., probs = 0.75),
+                                `95%` = ~quantile(x = ., probs = 0.95)), 
+               na.rm = TRUE)
+```
+
+Plot example processed data. 
+
+```{r}
+ggplot(cpue, aes(y = state)) +
+        geom_boxplot(aes(xmin = `5%`,
+                         xlower = `25%`,
+                         xmiddle = `50%`,
+                         xupper = `75%`,
+                         xmax = `95%`),
+                     stat = "identity") +
+  facet_wrap(vars(common_name))
+```
 
 
 ### 2. Length frequency
 
-Calculate Gabelhouse category for each fish record using length and species identity. For each species and each year, determine proportion of records in each category. Then calculate mean and standard for each species across years. 
+Calculate Gabelhouse category for each fish record using length and species identity. For each species and each year, determine proportion of records in each category. Then calculate mean and standard error of length frequency for each species by category across years. 
 
 ```{r}
 lf <- raw_example %>% 
   select(state, common_name, method, waterbody_type, year, total_length) %>%
-  mutate(common_name = stringr::str_to_title(common_name), 
-         gcat = psdAdd(total_length, common_name, what = "incremental")) %>% 
+  mutate(gcat = psdAdd(total_length, common_name, what = "incremental")) %>% 
   group_by(state, common_name, method, waterbody_type, year) %>% 
   count(gcat) %>% 
-  mutate(freq = n / sum(n)) %>% 
+  mutate(lenfreq = n / sum(n)) %>% 
   group_by(state, common_name, method, waterbody_type, gcat) %>% 
-  summarize_at(vars(freq), list(mean = mean, se = se), na.rm = TRUE)
+  summarize_at(vars(lenfreq), list(mean = mean, se = se), na.rm = TRUE)
 ```
 
 Plot example processed data. 
@@ -152,10 +147,31 @@ ggplot(lf, aes(x = gcat, y = mean)) +
 
 ### 3. Relative weight
 
-```{r, eval=FALSE}
+Calculate Gabelhouse category for each fish record using length and species identity, and relative weight for each fish record using width, length, and species identity. Then calculate mean and standard error for relative weight for each species by category across years. 
+
+```{r}
 rw <- raw_example %>% 
-  select(state, common_name, method, waterbody_type, year, weight) %>%
-  group_by(state, common_name, method, waterbody_type, year) %>% 
-  wrAdd()
+  select(state, common_name, method, waterbody_type, year, weight, total_length) %>%
+  mutate(gcat = psdAdd(total_length, common_name, what = "incremental"), 
+         relweight= wrAdd(wt = weight, len = total_length, spec = common_name)) %>% 
+  group_by(state, common_name, method, waterbody_type, gcat) %>% 
+  summarize_at(vars(relweight), list(mean = mean, se = se, 
+                                `5%` = ~quantile(x = ., probs = 0.05),
+                                `25%` = ~quantile(x = ., probs = 0.25),
+                                `50%` = ~quantile(x = ., probs = 0.50),
+                                `75%` = ~quantile(x = ., probs = 0.75),
+                                `95%` = ~quantile(x = ., probs = 0.95)), na.rm = TRUE)
 ```
 
+Plot example processed data. 
+
+```{r}
+ggplot(rw, aes(x = gcat)) +
+  geom_point(aes(y = mean)) +
+  geom_line(aes(y = mean)) +
+  facet_wrap(vars(common_name))
+```
+
+## Generate metrics dataset
+
+Run 3 functions on user input data, then combine into final dataset. 
