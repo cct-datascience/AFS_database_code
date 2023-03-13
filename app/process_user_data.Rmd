@@ -153,7 +153,9 @@ calculate_lf <- function(df){
     mutate(lenfreq = n / sum(n)) %>% 
     group_by(area, common_name, method, waterbody_type, gcat) %>% 
     summarize_at(vars(lenfreq), list(mean = mean, se = se), na.rm = TRUE) %>% 
-    mutate(metric = "Length Frequency")
+    mutate(metric = "Length Frequency", 
+           gcat = factor(gcat, levels = c("stock", "quality", "preferred",
+                                          "memorable", "trophy")))
   return(lf)
 }
 ```
@@ -176,7 +178,9 @@ calculate_rw <- function(df){
                                 `50%` = ~quantile(x = ., probs = 0.50),
                                 `75%` = ~quantile(x = ., probs = 0.75),
                                 `95%` = ~quantile(x = ., probs = 0.95)), na.rm = TRUE) %>% 
-    mutate(metric = "Relative Weight")
+    mutate(metric = "Relative Weight", 
+           gcat = factor(gcat, levels = c("stock", "quality", "preferred",
+                                          "memorable", "trophy")))
   return(rw)
 }
 ```
@@ -209,6 +213,7 @@ ggplot(cpue_example, aes(y = area)) +
 ```{r}
 ggplot(lf_example, aes(x = gcat, y = mean)) +
   geom_bar(stat = "identity") +
+  scale_x_discrete(drop = FALSE) +
   facet_wrap(vars(common_name)) +
         geom_errorbar(aes(ymin = mean - se,
                           ymax = mean + se),
@@ -219,5 +224,6 @@ ggplot(lf_example, aes(x = gcat, y = mean)) +
 ggplot(rw_example, aes(x = gcat)) +
   geom_point(aes(y = mean)) +
   geom_line(aes(y = mean)) +
+  scale_x_discrete(drop = FALSE) +
   facet_wrap(vars(common_name))
 ```
