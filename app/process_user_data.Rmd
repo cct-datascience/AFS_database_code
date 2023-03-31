@@ -76,14 +76,14 @@ library(ggplot2)
 Example of final dataset: 
 
 ```{r, echo=FALSE}
-process_example <- read.csv("../input_examples/AFS_processed_test_data.csv")
+process_example <- read.csv("input_examples/AFS_processed_test_data.csv")
 head(process_example)
 ```
 
 Read in example dataset. 
 
 ```{r}
-raw_y1 <- readxl::read_xlsx("../input_examples/AFS_test_data.xlsx") %>%
+raw_y1 <- readxl::read_xlsx("input_examples/AFS_test_data.xlsx") %>%
   tidyr::separate(date, into = c("month", "day", "year"), sep = c(1, 3, 7)) %>% 
   mutate(year = as.numeric(year), 
          common_name = str_to_title(common_name), 
@@ -104,7 +104,7 @@ Simplify dataset to include only necessary columns.
 ```{r}
 raw_example <- bind_rows(raw_y1, raw_y2) %>% 
   rename(area = state) %>% 
-  select(area, common_name, method, waterbody_type, year, effort, total_length, weight)
+  select(area, waterbody_name, common_name, method, waterbody_type, year, effort, effort_transect, transect, total_length, weight)
 ```
 
 ## Functions to calculate metrics
@@ -114,28 +114,44 @@ raw_example <- bind_rows(raw_y1, raw_y2) %>%
 For time-based methods, convert effort from seconds to hours. Calculate CPUE by dividing number of fish records for each species by effort. 
 
 ```{r}
+# average each lake, then calculate metric (number of fish and effort), then do average by state
+
+# get sampleID first = state, waterbody name, year, method
+# then average measurements by sampleID
+  # measurements = effort
+# n is for number of sampleIDs in a state/ecoregion
+
+non_net_methods <- c("boat_electrofishing", "tow_barge_electrofishing", 
+                     "raft_electrofishing", "small_mesh_trawl", "large_mesh_trawl")
+net_methods <- c("gill_net_spring", "stream_seine", "hoop_net", 
+                 "small_catfish_hoopnet", "drifting_trammel_net",
+                 "large_catfish_hoopnet", "seine", "bag_seine")
+bp_methods <- c("backpack_electrofishing")
+
 calculate_cpue <- function(df){
   stopifnot(c("area", "common_name", "method", "waterbody_type", 
-              "year", "effort") %in% colnames(df))
+              "year", "effort") %in% colnames(df)) #todo check these
   cpue <- df %>% 
-    mutate(effort = ifelse(method %in% c("boat_electrofishing", 
-                                       "tow_barge_electrofishing", 
-                                       "raft_electrofishing", "trawl"), 
-                           effort / 3600, 
-                           effort)) %>%
-    add_count(area, common_name, method, waterbody_type, year) %>% 
-    mutate(cpue = n / effort) %>% 
-    group_by(area, common_name, method, waterbody_type) %>% 
-    summarize_at(vars(cpue), list(mean = mean, se = se, 
+    group_by(area, waterbody_name, year, method, waterbody_type, common_name) %>% 
+    summarize(n_fish = n(), 
+              effort_sampleID = mean(effort)) %>% 
+    mutate(effort = case_when(method %in% non_net_methods ~ effort_sampleID / 3600, 
+                              method %in% net_methods ~ effort_sampleID)) %>% 
+    mutate(cpue = n_fish / effort) %>% # n is number of fish
+    group_by(area, common_name, method, waterbody_type) %>%
+    summarize_at(vars(cpue), list(mean = mean, se = se,
                                 `5%` = ~quantile(x = ., probs = 0.05),
                                 `25%` = ~quantile(x = ., probs = 0.25),
                                 `50%` = ~quantile(x = ., probs = 0.50),
                                 `75%` = ~quantile(x = ., probs = 0.75),
-                                `95%` = ~quantile(x = ., probs = 0.95)), 
-               na.rm = TRUE) %>% 
+                                `95%` = ~quantile(x = ., probs = 0.95)),
+               na.rm = TRUE) %>%
     mutate(metric = "CPUE")
   return(cpue)
 }
+
+cpue_example <- calculate_cpue(raw_example)
+
 ```
 
 ### 2. Length frequency
@@ -143,6 +159,7 @@ calculate_cpue <- function(df){
 Calculate Gabelhouse category for each fish record using length and species identity. For each species and each year, determine proportion of records in each category. Then calculate mean and standard error of length frequency for each species by category across years. 
 
 ```{r}
+# lf by lake then averaged across state
 calculate_lf <- function(df){
     stopifnot(c("area", "common_name", "method", "waterbody_type", 
                 "year", "total_length") %in% colnames(df))
