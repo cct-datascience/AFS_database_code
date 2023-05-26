@@ -531,7 +531,6 @@ server <- function(input, output) {
       select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
              se, `5%`, `25%`, `50%`, `75%`, `95%`)
     
-    
   })
   
   uu_filtered <- reactive({
@@ -554,10 +553,11 @@ server <- function(input, output) {
       arrange(common_name) %>%
       select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
              se, `5%`, `25%`, `50%`, `75%`, `95%`)
+
     print("UU filtered")
     print(f_df$metric)
     print(f_df, n = Inf)
-    
+
   })
   
   # Map of ecoregions and sites
@@ -746,21 +746,32 @@ server <- function(input, output) {
       distinct(N) %>% 
       pull(N)
     
-    fig <- ggplot(temp, aes(x = gcat, y = mean, fill = data_source)) +
-      geom_bar(stat = "identity", position = "dodge")  +
-      geom_errorbar(aes(ymin = mean - se,
-                        ymax = mean + se),
-                    position = position_dodge(width = 0.9), 
-                    width = 0) +
-      scale_y_continuous("Frequency (%)",
-                         limits = c(0, 100),
-                         expand = c(0, 0)) +
-      scale_fill_discrete("Data source") +
-      theme_classic(base_size = 16) +
-      theme(axis.title.x = element_blank(),
-            legend.position = c(0.85, 0.85)) +
-      ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
+    stand_only <- temp %>% 
+      filter(data_source == "Standardized")
     
+    if(nrow(stand_only) == 0){
+      fig <- ggplot() +
+        annotate("text", x = 1, y = 1, size = 8,
+                 label = "No standardized data corresponding to uploaded data") +
+        theme_void()
+      
+    } else {
+      fig <- ggplot(temp, aes(x = gcat, y = mean, fill = data_source)) +
+        geom_bar(stat = "identity", position = "dodge")  +
+        geom_errorbar(aes(ymin = mean - se,
+                          ymax = mean + se),
+                      position = position_dodge(width = 0.9),
+                      width = 0) +
+        scale_y_continuous("Frequency (%)",
+                           limits = c(0, 100),
+                           expand = c(0, 0)) +
+        scale_fill_discrete("Data source") +
+        theme_classic(base_size = 16) +
+        theme(axis.title.x = element_blank(),
+              legend.position = c(0.85, 0.85)) +
+        ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
+    }
+
     print(fig)
 
   })
@@ -777,7 +788,19 @@ server <- function(input, output) {
       filter(metric == "Relative Weight") %>%
       mutate(gcat = factor(gcat, 
                            levels = c("stock", "quality", "preferred", "memorable", "trophy")))
+
+    stand_only <- temp %>% 
+      filter(data_source == "Standardized")
     
+    if(nrow(stand_only) == 0){
+      
+      fig <- ggplot() +
+        annotate("text", x = 1, y = 1, size = 8,
+                 label = "No standardized data corresponding to uploaded data") +
+        theme_void()
+      
+    } else {
+      
     fig <- ggplot(temp, aes(x = gcat)) +
       geom_point(aes(y = mean,
                      color = data_source),
@@ -799,6 +822,8 @@ server <- function(input, output) {
       theme_classic(base_size = 16) +
       theme(axis.title.x = element_blank(),
             legend.position = "bottom") 
+    
+    }
     
     print(fig)
     
@@ -826,20 +851,34 @@ server <- function(input, output) {
       distinct(N) %>% 
       pull(N)
     
-    fig <- ggplot(temp, aes(y = area, fill = data_source)) +
-      geom_boxplot(aes(xmin = `5%`,
-                       xlower = `25%`,
-                       xmiddle = `50%`,
-                       xupper = `75%`,
-                       xmax = `95%`),
-                   stat = "identity") +
-      scale_x_continuous("CPUE (fish / hour)") +
-      scale_fill_discrete("Data source") +
-      theme_classic(base_size = 16) +
-      theme(axis.title.y = element_blank(),
-            axis.text.y = element_blank(),
-            axis.ticks.y = element_blank()) +
-      ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
+    stand_only <- temp %>% 
+      filter(data_source == "Standardized")
+    
+    if(nrow(stand_only) == 0){
+      
+      fig <- ggplot() +
+        annotate("text", x = 1, y = 1, size = 8,
+                 label = "No standardized data corresponding to uploaded data") +
+        theme_void()
+      
+    } else {
+      
+      fig <- ggplot(temp, aes(y = area, fill = data_source)) +
+        geom_boxplot(aes(xmin = `5%`,
+                         xlower = `25%`,
+                         xmiddle = `50%`,
+                         xupper = `75%`,
+                         xmax = `95%`),
+                     stat = "identity") +
+        scale_x_continuous("CPUE (fish / hour)") +
+        scale_fill_discrete("Data source") +
+        theme_classic(base_size = 16) +
+        theme(axis.title.y = element_blank(),
+              axis.text.y = element_blank(),
+              axis.ticks.y = element_blank()) +
+        ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
+      
+    }
     
     print(fig)
     
