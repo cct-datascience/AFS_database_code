@@ -21,7 +21,9 @@ Users will upload raw data, which will have length and/or weight measurements wi
 
 Required columns in input dataframe: 
 
+- **
 - **Area**: need at least one of these columns, can have all three
+  - `type` is "all" or "state"
   - `area` can only be "North_America"
   - `state` must be spelled out and capitalized
   - `ecoregion` comes from [EPA level 1 ecoregions](https://www.epa.gov/eco-research/ecoregions-north-america)
@@ -99,13 +101,30 @@ raw_y2 <- raw_y1 %>%
          effort = effort / 2)
 ```
 
+Simulate North America data. 
+
+```{r}
+raw_y3 <- raw_y2 %>% 
+  mutate(state = "North America", 
+         common_name = "Bluegill")
+```
+
 Simplify dataset to include only necessary columns. 
 
 ```{r}
-raw_example <- bind_rows(raw_y1, raw_y2) %>% 
+raw_example <- bind_rows(raw_y1, raw_y2, raw_y3) %>% 
   rename(area = state) %>% 
-  select(area, waterbody_name, common_name, method, waterbody_type, year, effort, effort_transect, transect, total_length, weight)
+  select(area, waterbody_name, common_name, method, waterbody_type, year, effort, effort_transect, transect, total_length, weight) %>% 
+  mutate(type = case_when(area == "Arizona" ~ "state", 
+                          area == "North America" ~ "all"))
 ```
+
+Save example user input dataset. 
+
+```{r}
+write.csv(raw_example, "input_examples/uu_raw.csv", row.names = FALSE)
+```
+
 
 ## Functions to calculate metrics
 
@@ -129,16 +148,16 @@ net_methods <- c("gill_net_spring", "stream_seine", "hoop_net",
 bp_methods <- c("backpack_electrofishing")
 
 calculate_cpue <- function(df){
-  stopifnot(c("area", "common_name", "method", "waterbody_type", 
+  stopifnot(c("type", "area", "common_name", "method", "waterbody_type", 
               "year", "effort") %in% colnames(df)) #todo check these
   cpue <- df %>% 
-    group_by(area, waterbody_name, year, method, waterbody_type, common_name) %>% 
+    group_by(type, area, waterbody_name, year, method, waterbody_type, common_name) %>% 
     summarize(n_fish = n(), 
               effort_sampleID = mean(effort)) %>% 
     mutate(effort = case_when(method %in% non_net_methods ~ effort_sampleID / 3600, 
                               method %in% net_methods ~ effort_sampleID)) %>% 
     mutate(cpue = n_fish / effort) %>% # n is number of fish
-    group_by(area, common_name, method, waterbody_type) %>%
+    group_by(type, area, common_name, method, waterbody_type) %>%
     summarize_at(vars(cpue), list(mean = mean, se = se,
                                 `5%` = ~quantile(x = ., probs = 0.05),
                                 `25%` = ~quantile(x = ., probs = 0.25),
@@ -161,14 +180,14 @@ Calculate Gabelhouse category for each fish record using length and species iden
 ```{r}
 # lf by lake then averaged across state
 calculate_lf <- function(df){
-    stopifnot(c("area", "common_name", "method", "waterbody_type", 
+    stopifnot(c("type", "area", "common_name", "method", "waterbody_type", 
                 "year", "total_length") %in% colnames(df))
   lf <- raw_example %>% 
     mutate(gcat = psdAdd(total_length, common_name, what = "incremental")) %>% 
-    group_by(area, common_name, method, waterbody_type, year) %>% 
+    group_by(type, area, common_name, method, waterbody_type, year) %>% 
     count(gcat) %>% 
     mutate(lenfreq = n / sum(n)) %>% 
-    group_by(area, common_name, method, waterbody_type, gcat) %>% 
+    group_by(type, area, common_name, method, waterbody_type, gcat) %>% 
     summarize_at(vars(lenfreq), list(mean = mean, se = se), na.rm = TRUE) %>% 
     mutate(metric = "Length Frequency", 
            gcat = factor(gcat, levels = c("stock", "quality", "preferred",
@@ -183,12 +202,12 @@ Calculate Gabelhouse category for each fish record using length and species iden
 
 ```{r}
 calculate_rw <- function(df){
-  stopifnot(c("area", "common_name", "method", "waterbody_type", "year", 
+  stopifnot(c("type", "area", "common_name", "method", "waterbody_type", "year", 
               "total_length", "weight") %in% colnames(df))
   rw <- raw_example %>% 
     mutate(gcat = psdAdd(total_length, common_name, what = "incremental"), 
          relweight = wrAdd(wt = weight, len = total_length, spec = common_name)) %>% 
-    group_by(area, common_name, method, waterbody_type, gcat) %>% 
+    group_by(type, area, common_name, method, waterbody_type, gcat) %>% 
     summarize_at(vars(relweight), list(mean = mean, se = se, 
                                 `5%` = ~quantile(x = ., probs = 0.05),
                                 `25%` = ~quantile(x = ., probs = 0.25),
@@ -206,12 +225,22 @@ calculate_rw <- function(df){
 
 Run 3 functions on user input data, then combine into final dataset. 
 
+TODO: add count
+
+```{r}
+counts <- raw_example %>% 
+  group_by(type, area, common_name, method, waterbody_type) %>%
+  summarise(N = n())
+```
+
+
 ```{r}
 cpue_example <- calculate_cpue(raw_example)
 lf_example <- calculate_lf(raw_example)
 rw_example <- calculate_rw(raw_example)
 
-final_example <- bind_rows(cpue_example, lf_example, rw_example)
+final_example <- bind_rows(cpue_example, lf_example, rw_example) %>% 
+  left_join(counts, by = c("type", "area", "common_name", "method", "waterbody_type"))
 ```
 
 ### Plot metrics dataset
