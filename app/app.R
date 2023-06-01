@@ -5,6 +5,7 @@ library(sf)
 library(leaflet)
 library(DT)
 library(leafpop)
+library(FSA)
 # library(periscope)
 
 # Module code
@@ -533,7 +534,7 @@ server <- function(input, output) {
     
   })
   
-  uu_filtered <- reactive({
+  uu_processed <- reactive({
     # Suppresses error messages for plots until inputs are chosen
     req(input$areachoice3)
     req(input$sppchoice3)
@@ -544,7 +545,20 @@ server <- function(input, output) {
     uu <- read_csv(inFile$datapath)
     print("UU original")
     print(uu)
-    f_df <-  uu %>%
+    
+    # Calculate 3 metrics for user data
+    uu_counts <- uu %>% 
+      group_by(type, area, common_name, method, waterbody_type) %>%
+      summarise(N = n())
+    
+    uu_cpue <- calculate_cpue(uu)
+    uu_lf <- calculate_lf(uu)
+    uu_rw <- calculate_rw(uu)
+    
+    uu_process <- bind_rows(uu_cpue, uu_lf, uu_rw) %>% 
+      left_join(uu_counts, by = c("type", "area", "common_name", "method", "waterbody_type"))
+    
+    f_df <-  uu_process %>%
       filter(metric %in% uni.metric,
              area %in% input$areachoice3,
              common_name %in% input$sppchoice3,
@@ -727,7 +741,7 @@ server <- function(input, output) {
   
   plotLengthFrequencyuser <- reactive({
     # uu_unfiltered() has a req() for uploaded data, so no more error messages
-    temp <- uu_filtered() %>% 
+    temp <- uu_processed() %>% 
       bind_rows(filtered3(), .id = "id") %>% 
       rename(data_source = id) %>% 
       mutate(data_source = case_when(data_source == 1 ~ "User upload", 
@@ -780,7 +794,7 @@ server <- function(input, output) {
   
     plotRelativeWeightuser <- reactive({
     
-    temp <- uu_filtered() %>% 
+    temp <- uu_processed() %>% 
       bind_rows(filtered3(), .id = "id") %>% 
       rename(data_source = id) %>% 
       mutate(data_source = case_when(data_source == 1 ~ "User upload", 
@@ -832,7 +846,7 @@ server <- function(input, output) {
     callModule(plotDownload, "RW_plot_UU", plotRelativeWeightuser)
     
     plotCPUEuser <- reactive({
-    temp <- uu_filtered() %>% 
+    temp <- uu_processed() %>% 
       bind_rows(filtered3(), .id = "id") %>% 
       rename(data_source = id) %>% 
       mutate(data_source = case_when(data_source == 1 ~ "User upload", 
