@@ -5,15 +5,17 @@ date: '2023-01-20'
 output: html_document
 ---
 
-## Purpose
+## How to format input data
 
-Users will upload raw data, which will have length and/or weight measurements with one row per observation (a single fish or multiple fish summed). These data need to be summarized to the three metrics of interest for each unique combination of area, species, collection method, type of water body, and year. The three metrics are: 
+You can upload your own data to compare to the standardized data. This needs to be provided as a csv file that will have length and/or weight measurements with one row per observation (a single fish or multiple fish summed). This app will calculate the three metrics of interest for each unique combination of area, species, collection method, type of water body, and year. The three metrics are: 
 
 1. [Catch per unit effort](https://en.wikipedia.org/wiki/Catch_per_unit_effort) (CPUE)
 2. Length frequency
 3. Relative weight
 
-## Defining user inputs
+### Column details
+
+Below are the details of the required columns in the data. The order of the columns does not matter. There is an example dataset at the bottom of the page with simulated data that may be a helpful guide. 
 
 1. CPUE requires `effort` column
 2. Length frequency requires `total_length` column 
@@ -21,12 +23,9 @@ Users will upload raw data, which will have length and/or weight measurements wi
 
 Required columns in input dataframe: 
 
-- **
-- **Area**: need at least one of these columns, can have all three
+- **Location**: need these two columns
   - `type` is "all" or "state"
-  - `area` can only be "North_America"
-  - `state` must be spelled out and capitalized
-  - `ecoregion` comes from [EPA level 1 ecoregions](https://www.epa.gov/eco-research/ecoregions-north-america)
+  - `area` is "North America" or state name, spelled out and capitalized
 - **Date**: only a numeric `year` column is needed
 - **Measurements**: 
   - `total_length` is fish record length (mm)
@@ -78,14 +77,14 @@ library(ggplot2)
 Example of final dataset: 
 
 ```{r, echo=FALSE}
-process_example <- read.csv("input_examples/AFS_processed_test_data.csv")
+process_example <- read.csv("../input_examples/AFS_processed_test_data.csv")
 head(process_example)
 ```
 
 Read in example dataset. 
 
 ```{r}
-raw_y1 <- readxl::read_xlsx("input_examples/AFS_test_data.xlsx") %>%
+raw_y1 <- readxl::read_xlsx("../input_examples/AFS_test_data.xlsx") %>%
   tidyr::separate(date, into = c("month", "day", "year"), sep = c(1, 3, 7)) %>% 
   mutate(year = as.numeric(year), 
          common_name = str_to_title(common_name), 
@@ -116,13 +115,14 @@ raw_example <- bind_rows(raw_y1, raw_y2, raw_y3) %>%
   rename(area = state) %>% 
   select(area, waterbody_name, common_name, method, waterbody_type, year, effort, effort_transect, transect, total_length, weight) %>% 
   mutate(type = case_when(area == "Arizona" ~ "state", 
-                          area == "North America" ~ "all"))
+                          area == "North America" ~ "all")) %>% 
+  relocate(type, .before = area)
 ```
 
 Save example user input dataset. 
 
 ```{r}
-write.csv(raw_example, "input_examples/uu_raw.csv", row.names = FALSE)
+write.csv(raw_example, "../app/user_example.csv", row.names = FALSE)
 ```
 
 
