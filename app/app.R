@@ -6,6 +6,7 @@ library(leaflet)
 library(DT)
 library(leafpop)
 library(FSA)
+library(knitr)
 # library(periscope)
 
 # Module code
@@ -63,6 +64,9 @@ ecoregions_trans <- ecoregions %>%
 # Read in lat/longs
 locs <- read_csv("lat_long_AFSshiny.csv") %>%
   select(-date) # not parseable as is
+
+# Read in example user upload data
+ex <- read_csv("user_example.csv")
 
 # Create a "not in" function
 `%nin%` <- negate(`%in%`)
@@ -194,9 +198,18 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                              uiOutput("dyn_method3"),
                              uiOutput("dyn_watertype3")
                            ),
-                           mainPanel(plotDownloadUI("LF_plot_UU"),
-                                     plotDownloadUI("RW_plot_UU"),
-                                     plotDownloadUI("CPUE_plot_UU", height = "200px"))
+                           mainPanel(
+                             tabsetPanel(
+                               tabPanel("Instructions", 
+                                        uiOutput("instructions"), 
+                                        tableOutput("example")),
+                               tabPanel("Upload", 
+                                        plotDownloadUI("LF_plot_UU"),
+                                        plotDownloadUI("RW_plot_UU"),
+                                        plotDownloadUI("CPUE_plot_UU", height = "200px"))
+                             )
+                           )
+                          
                          ), 
 
                  ) 
@@ -738,6 +751,141 @@ server <- function(input, output) {
   })
   
   callModule(plotDownload, "CPUE_plot", plotCPUE)
+  
+  mtext <- "## How to format input data
+
+You can upload your own data to compare to the standardized data. This needs to be provided as a csv file that will have length and/or weight measurements with one row per observation (a single fish or multiple fish summed). This app will calculate the three metrics of interest for each unique combination of area, species, collection method, type of water body, and year. The three metrics are: 
+
+1. [Catch per unit effort](https://en.wikipedia.org/wiki/Catch_per_unit_effort) (CPUE)
+2. Length frequency
+3. Relative weight
+
+### Column details
+
+Below are the details of the required columns in the data. The order of the columns does not matter. There is an example dataset at the bottom of the page with simulated data that may be a helpful guide. 
+
+1. CPUE requires `effort` column
+2. Length frequency requires `total_length` column 
+3. Relative weight requires `weight` and `total_length` columns
+
+Required columns in input dataframe: 
+
+- **Location**: need these two columns
+  - `type` is *all* or *state*
+  - `area` is *North America* or state name, spelled out and capitalized
+- **Date**: only a numeric `year` column is needed
+- **Measurements**: 
+  - `total_length` is fish record length (mm)
+  - `weight` is fish record weight (g)
+  - `effort` is specified in **Collection method**
+- **Collection method**: see the table below for details
+  - `method` must exactly match one of the options in the first column
+  - `effort` will contain a numeric value that has correct type and unit
+
+| **Method name**          | **Effort type** | **Unit** |
+|--------------------------|-----------------|----------|
+| boat_electrofishing      | Time            | seconds  |
+| tow_barge_electrofishing | Time            | seconds  |
+| raft_electrofishing      | Time            | seconds  |
+| trawl                    | Time            | seconds  |
+| gill_net_fall            | Number of nets  | number   |
+| gill_net_fall            | Number of nets  | number   |
+| hoop_net                 | Number of nets  | number   |
+| small_catfish_hoopnet    | Number of nets  | number   |
+| large_catfish_hoopnet    | Number of nets  | number   |
+| seine                    | Number of nets  | number   |
+| bag_seine                | Number of nets  | number   |
+| stream_seine             | Number of nets  | number   |
+| backpack_electrofishing  | Area            | m2       |
+| snorkel                  | Area            | m2       |
+
+
+- **Type of water body**
+  - `waterbody_type` must be one of the following: *large_standing_waters*, *small_standing_waters*, *two_story_standing_waters*, *wadeable_streams*, *rivers*
+- **Species** must be in `common_name` as species common name, which must match one of those listed below, as from `FSA::PSDlit`:
+
+| Species                     |
+|-----------------------------|
+| Arctic Grayling             |
+| Bighead Carp                |
+| Bigmouth Buffalo            |
+| Black Bullhead              |
+| Black Carp                  |
+| Black Crappie               |
+| Blue Catfish                |
+| Bluegill                    |
+| Brook Trout (lentic)        |
+| Brook Trout (lotic)         |
+| Brook Trout                 |
+| Brown Bullhead              |
+| Brown Trout (lentic)        |
+| Brown Trout (lotic)         |
+| Bull Trout                  |
+| Burbot                      |
+| Chain Pickerel              |
+| Channel Catfish             |
+| Chinook Salmon (landlocked) |
+| Common Carp                 |
+| Cutthroat Trout             |
+| Flathead Catfish            |
+| Freshwater Drum             |
+| Gizzard Shad                |
+| Golden Trout                |
+| Grass Carp                  |
+| Green Sunfish               |
+| Kokanee                     |
+| Lake Trout                  |
+| Largemouth Bass             |
+| Longnose Gar                |
+| Muskellunge                 |
+| Northern Pike               |
+| Paddlefish                  |
+| Pallid Sturgeon             |
+| Palmetto Bass               |
+| Palmetto Bass (original)    |
+| Pumpkinseed                 |
+| Rainbow Trout               |
+| Redear Sunfish              |
+| River Carpsucker            |
+| Rock Bass                   |
+| Ruffe                       |
+| Sauger                      |
+| Saugeye                     |
+| Shoal Bass                  |
+| Shorthead Redhorse          |
+| Silver Carp                 |
+| Smallmouth Bass             |
+| Smallmouth Buffalo          |
+| Splake                      |
+| Spotted Bass                |
+| Spotted Gar                 |
+| Striped Bass (landlocked)   |
+| Striped Bass (hybrid)       |
+| Striped Bass X White Bass   |
+| Suwannee Bass               |
+| Utah Chub                   |
+| Walleye                     |
+| Warmouth                    |
+| White Bass                  |
+| White Catfish               |
+| White Crappie               |
+| White Perch                 |
+| White Sucker                |
+| Yellow Perch                |
+| Yellow Bass                 |
+| Yellow Bullhead             |
+  
+### Example dataset
+  
+"
+  
+  output$instructions <- renderUI({
+    tf <- tempfile()
+    knit(text = mtext, output = tf)
+    HTML(markdown::markdownToHTML(file = tf))
+  })
+  
+  output$example <- renderTable(ex)
   
   plotLengthFrequencyuser <- reactive({
     # uu_unfiltered() has a req() for uploaded data, so no more error messages
