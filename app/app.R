@@ -87,8 +87,8 @@ The database allows for comparison of fish metrics commonly used in management t
 When developing version two of the database we examined strengths and weaknesses of methods used for requesting, analyzing, and displaying data in an online format.
 We used this information to achieve our goals of maximizing use and providing simple means to update this program for comparison of fisheries data.
 Furthermore, our hope is that these methods can be adopted by others, particularly those in data-poor regions, in the development of their own standard methods and fisheries databases. "),
-                            h4 ("Sponsored by:"),
-                            tags$img(src="AFS_sponsor_3.png", height = 250, width = 150)
+                            h4 ("Sponsored by:"), 
+                            imageOutput("logo")
                           )
                  ),
                  
@@ -206,6 +206,15 @@ Furthermore, our hope is that these methods can be adopted by others, particular
 
 
 server <- function(input, output) {
+  
+  output$logo <- renderImage({
+    list(
+      src = file.path("www/AFS_sponsor_3.png"), 
+      contentType = "image/png", 
+      height = 250, 
+      width = 150
+    )
+  }, deleteFile = FALSE)
   
   # Render a UI for selecting area depending on North America, Ecoregions, or State/Province
   output$dyn_area <- renderUI({
