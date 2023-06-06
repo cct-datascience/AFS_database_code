@@ -42,9 +42,15 @@ plotDownload <- function(input, output, session, plotFun) {
 }
 
 # Read in summary fish metrics
-metrics <- read_csv('Full_results_112122.csv') %>%
-  rename(area = region,
-         N = count)
+metrics <- read_csv('Test_results_full_012723.csv') %>%
+  relocate(area) %>%
+  relocate(N, .after = last_col()) %>%
+  mutate(gcat = case_when(gcat == "Stock-Quality" ~ "S-Q",
+                          gcat == "Quality-Preferred" ~ "Q-P",
+                          gcat == "Preferred-Memorable" ~ "P-M",
+                          gcat == "Memorable-Trophy" ~ "M-T",
+                          gcat == "Trophy" ~ "T") %>%
+           factor(levels = c("S-Q", "Q-P", "P-M", "M-T", "T")))
 # Develop vectors of unique entries
 uni.type <- c("North America", "Ecoregion", "State/Province")
 uni.area <- sort(unique(metrics$area))
@@ -62,7 +68,7 @@ ecoregions_trans <- ecoregions %>%
   st_transform("+proj=longlat +datum=WGS84")
 
 # Read in lat/longs
-locs <- read_csv("lat_long_AFSshiny.csv") %>%
+locs <- read_csv("Lat_long_AFSshiny_012023.csv") %>%
   select(-date) # not parseable as is
 
 # Read in example user upload data
@@ -74,9 +80,9 @@ ex <- read_csv("user_example.csv")
 # Test data
 
 foo <- metrics %>%
-  filter(area == "Arizona",
+  filter(area == "North America",
          common_name == "Bluegill",
-         method == "boat_electrofishing",
+         method == "backpack_electrofishing",
          waterbody_type == "large_standing_waters")
 
 #Shiny App
@@ -92,8 +98,8 @@ The database allows for comparison of fish metrics commonly used in management t
 When developing version two of the database we examined strengths and weaknesses of methods used for requesting, analyzing, and displaying data in an online format.
 We used this information to achieve our goals of maximizing use and providing simple means to update this program for comparison of fisheries data.
 Furthermore, our hope is that these methods can be adopted by others, particularly those in data-poor regions, in the development of their own standard methods and fisheries databases. "),
-                            h4 ("Sponsored by:"),
-                            tags$img(src="AFS_sponsor_3.png", height = 250, width = 150)
+                            h4 ("Sponsored by:"), 
+                            imageOutput("logo")
                           )
                  ),
                  
@@ -221,15 +227,24 @@ Furthermore, our hope is that these methods can be adopted by others, particular
 
 server <- function(input, output) {
   
+  output$logo <- renderImage({
+    list(
+      src = file.path("www/AFS_sponsor_3.png"), 
+      contentType = "image/png", 
+      height = 250, 
+      width = 150
+    )
+  }, deleteFile = FALSE)
+  
   # Render a UI for selecting area depending on North America, Ecoregions, or State/Province
   output$dyn_area <- renderUI({
     if(input$typechoice == "North America") {
-      temp <- "North_America"
+      temp <- "North America"
     } else if(input$typechoice == "Ecoregion") {
-      temp <- uni.area[1:11]
+      temp <- uni.area[1:12]
     } else if(input$typechoice == "State/Province") {
-      temp2 <-  uni.area[uni.area %nin% 'North_America']
-      temp <- temp2[-1:-11]
+      temp2 <-  uni.area[uni.area %nin% 'North America']
+      temp <- temp2[-1:-12]
     }
     
     selectInput(inputId = "areachoice",
@@ -242,12 +257,12 @@ server <- function(input, output) {
   # Render a UI for selecting area depending on North America, Ecoregions, or State/Province for tab2
   output$dyn_area2 <- renderUI({
     if(input$typechoice2 == "North America") {
-      temp <- "North_America"
+      temp <- "North America"
     } else if(input$typechoice2 == "Ecoregion") {
-      temp <- uni.area[1:11]
+      temp <- uni.area[1:12]
     } else if(input$typechoice2 == "State/Province") {
-      temp2 <-  uni.area[uni.area %nin% 'North_America']
-      temp <- temp2[-1:-11]
+      temp2 <-  uni.area[uni.area %nin% 'North America']
+      temp <- temp2[-1:-12]
     }
     
     selectInput(inputId = "areachoice2",
@@ -263,7 +278,7 @@ server <- function(input, output) {
     
   })
   
-  # Render a UI for selectin area 
+  # Render a UI for selecting area 
   output$dyn_type <- renderUI({
     req(input$upload)
     
@@ -288,7 +303,7 @@ server <- function(input, output) {
     req(input$upload)
     
     if(input$typechoice3 == "North America") {
-      temp <- "North_America"
+      temp <- "North America"
     } else if(input$typechoice3 == "Ecoregion") {
       temp <- uu_raw() %>%
         filter(type == "ecoregion") %>%
@@ -402,11 +417,14 @@ server <- function(input, output) {
                          "All" %nin% input$methodchoice ~ method %in% input$methodchoice),
                case_when("All" %in% input$watertypechoice ~ waterbody_type %in% uni.watertype,
                          "All" %nin% input$watertypechoice ~ waterbody_type %in% input$watertypechoice)) %>%
-        group_by(state, ecoregion, waterbody_name, common_name, method, waterbody_type) %>%
-        summarize(Nyears = length(unique(year)),
+        mutate(coords = paste(lat, long)) %>%
+        group_by(state, ecoregion, waterbody_name, common_name, method, 
+                 waterbody_type, coords) %>%
+        summarize(Nsurveys = n(),
                   lat = unique(lat),
                   long = unique(long)) %>%
-        ungroup()
+        ungroup()%>%
+        select(-coords)
       
       } else if(input$typechoice == "Ecoregion") {
       l_df <-  locs %>%
@@ -417,11 +435,14 @@ server <- function(input, output) {
                          "All" %nin% input$methodchoice ~ method %in% input$methodchoice),
                case_when("All" %in% input$watertypechoice ~ waterbody_type %in% uni.watertype,
                          "All" %nin% input$watertypechoice ~ waterbody_type %in% input$watertypechoice)) %>%
-        group_by(state, ecoregion, waterbody_name, common_name, method, waterbody_type) %>%
-        summarize(Nyears = length(unique(year)),
+        mutate(coords = paste(lat, long)) %>%
+        group_by(state, ecoregion, waterbody_name, common_name, method, 
+                 waterbody_type, coords) %>%
+        summarize(Nsurveys = n(),
                   lat = unique(lat),
                   long = unique(long)) %>%
-        ungroup()
+        ungroup()%>%
+        select(-coords)
       
       } else if(input$typechoice == "State/Province") {
       l_df <-  locs %>%
@@ -432,11 +453,14 @@ server <- function(input, output) {
                          "All" %nin% input$methodchoice ~ method %in% input$methodchoice),
                case_when("All" %in% input$watertypechoice ~ waterbody_type %in% uni.watertype,
                          "All" %nin% input$watertypechoice ~ waterbody_type %in% input$watertypechoice)) %>%
-        group_by(state, ecoregion, waterbody_name, common_name, method, waterbody_type) %>%
-        summarize(Nyears = length(unique(year)),
+        mutate(coords = paste(lat, long)) %>%
+        group_by(state, ecoregion, waterbody_name, common_name, method, 
+                 waterbody_type, coords) %>%
+        summarize(Nsurveys = n(),
                   lat = unique(lat),
                   long = unique(long)) %>%
-        ungroup()
+        ungroup() %>%
+        select(-coords)
       
       }
     })
@@ -447,28 +471,28 @@ server <- function(input, output) {
       e_df <- locate() %>%
         group_by(common_name, method, waterbody_type) %>%
         summarize(Nlocs = length(waterbody_name),
-                  Nyears_tot = sum(Nyears))%>%
+                  Nsurveys_tot = sum(Nsurveys))%>%
         filter(Nlocs == 1,
-               Nyears_tot == 1) %>%
-        select(-Nlocs, -Nyears_tot)
+               Nsurveys_tot == 1) %>%
+        select(-Nlocs, -Nsurveys_tot)
       
       } else if(input$typechoice == "Ecoregion") {
       e_df <- locate() %>%
         group_by(ecoregion, common_name, method, waterbody_type) %>%
         summarize(Nlocs = length(waterbody_name),
-                  Nyears_tot = sum(Nyears))%>%
+                  Nsurveys_tot = sum(Nsurveys))%>%
         filter(Nlocs == 1,
-               Nyears_tot == 1) %>%
-        select(-Nlocs, -Nyears_tot)
+               Nsurveys_tot == 1) %>%
+        select(-Nlocs, -Nsurveys_tot)
       
       } else if(input$typechoice == "State/Province") {
       e_df <- locate() %>%
         group_by(state, common_name, method, waterbody_type) %>%
         summarize(Nlocs = length(waterbody_name),
-                  Nyears_tot = sum(Nyears)) %>%
+                  Nsurveys_tot = sum(Nsurveys)) %>%
         filter(Nlocs == 1,
-               Nyears_tot == 1) %>%
-        select(-Nlocs, -Nyears_tot)
+               Nsurveys_tot == 1) %>%
+        select(-Nlocs, -Nsurveys_tot)
       
       }
     })
@@ -594,21 +618,21 @@ server <- function(input, output) {
     plot_data <- locate() %>%
       anti_join(exclude())
     
-    print(plot_data)
+    # print(plot_data)
     factpal <- colorFactor(rainbow(length(unique(ecoregions_trans$NA_L1CODE))), 
                            ecoregions_trans$NA_L1CODE)
     
     map <- leaflet() %>% 
-      addTiles() %>%
+      addTiles(options = tileOptions(minZoom = 2, maxZoom = 6)) %>%
       addPolygons(data = ecoregions_trans, color = ~factpal(NA_L1CODE),
                   fillOpacity = 0.5, popup = ~htmltools::htmlEscape(NA_L1NAME),
                   stroke = FALSE)
     if(nrow(plot_data) > 0) {
       map <- map %>%
         addCircleMarkers(data = plot_data, lng = ~long, lat = ~lat, stroke = FALSE, 
-                         radius = 3, fillOpacity = 1,
+                         radius = 3, fillOpacity = 0.75, fillColor = "black",
                          popup = popupTable(plot_data,
-                                            zcol = 3:7,
+                                            zcol = 4:7,
                                             row.numbers = FALSE,
                                             feature.id = FALSE))
     }
@@ -618,21 +642,28 @@ server <- function(input, output) {
   
   # Text to describe insufficient sample size for anonymity
   output$report_absent1 <- renderText({
-    paste(nrow(exclude()), " site(s) not shown to maintain data anonymity. ")
+    paste0(nrow(exclude()), " site(s) not shown to maintain data anonymity. ")
   })
   
   # Text to describe sites missing lat/lon
   output$report_absent2 <- renderText({
-    paste(locate() %>% filter(is.na(lat)) %>% nrow(), 
-          " site(s) not shown due to unreported lat/long. ")
+    temp <- locate() %>% filter(is.na(lat)) 
+    if(nrow(temp) == 0) {
+      paste0(nrow(temp), 
+             " site(s) not shown due to unreported coordinates. ")
+    } else {
+      paste0(nrow(temp), 
+             " site(s) not shown due to unreported coordinates in ",
+             paste(unique(temp$state), collapse = ", "), 
+             ". ") 
+    }
+    
   })
   
   
   plotLengthFrequency <- reactive({
     temp <- filtered2() %>%
-      filter(metric == "Length Frequency") %>%
-      mutate(gcat = factor(gcat, 
-                           levels = c("stock", "quality", "preferred", "memorable", "trophy")))
+      filter(metric == "Length Frequency")
     
     N <- temp %>% 
       distinct(N) %>% 
@@ -667,10 +698,8 @@ server <- function(input, output) {
   plotRelativeWeight <- reactive({
     
     temp <- filtered2() %>%
-      filter(metric == "Relative Weight") %>%
-      mutate(gcat = factor(gcat, 
-                           levels = c("stock", "quality", "preferred", "memorable", "trophy")))
-    
+      filter(metric == "Relative Weight")
+      
     ypos <- min(temp$`25%`,  na.rm = TRUE) - 2
 
     if(nrow(temp) == 0){
@@ -719,9 +748,7 @@ server <- function(input, output) {
   plotCPUE <- reactive({
     
     temp <- filtered2() %>%
-      filter(metric == "CPUE") %>%
-      mutate(gcat = factor(gcat, 
-                           levels = c("stock", "quality", "preferred", "memorable", "trophy")))
+      filter(metric == "CPUE") 
 
     N <- unique(temp$N)
 
