@@ -593,8 +593,14 @@ server <- function(input, output) {
     uu_rw <- calculate_rw(uu)
     
     uu_process <- bind_rows(uu_cpue, uu_lf, uu_rw) %>% 
-      left_join(uu_counts, by = c("type", "area", "common_name", "method", "waterbody_type"))
-    
+      left_join(uu_counts, by = c("type", "area", "common_name", "method", "waterbody_type")) %>% 
+      mutate(gcat = case_when(gcat == "stock" ~ "S-Q",
+                              gcat == "quality" ~ "Q-P",
+                              gcat == "preferred" ~ "P-M",
+                              gcat == "memorable" ~ "M-T",
+                              gcat == "trophy" ~ "T") %>%
+               factor(levels = c("S-Q", "Q-P", "P-M", "M-T", "T")))
+
     f_df <-  uu_process %>%
       filter(metric %in% uni.metric,
              area %in% input$areachoice3,
@@ -921,9 +927,7 @@ Required columns in input dataframe:
       rename(data_source = id) %>% 
       mutate(data_source = case_when(data_source == 1 ~ "User upload", 
                                      data_source == 2 ~ "Standardized")) %>% 
-      filter(metric == "Length Frequency") %>%
-      mutate(gcat = factor(gcat, 
-                           levels = c("stock", "quality", "preferred", "memorable", "trophy")))
+      filter(metric == "Length Frequency")
     
     stand_N <- temp %>% 
       filter(data_source == "Standardized") %>% 
@@ -974,10 +978,8 @@ Required columns in input dataframe:
       rename(data_source = id) %>% 
       mutate(data_source = case_when(data_source == 1 ~ "User upload", 
                                      data_source == 2 ~ "Standardized")) %>% 
-      filter(metric == "Relative Weight") %>%
-      mutate(gcat = factor(gcat, 
-                           levels = c("stock", "quality", "preferred", "memorable", "trophy")))
-
+      filter(metric == "Relative Weight")
+    
     stand_only <- temp %>% 
       filter(data_source == "Standardized")
     
