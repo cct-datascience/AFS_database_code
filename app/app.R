@@ -40,9 +40,15 @@ plotDownload <- function(input, output, session, plotFun) {
 }
 
 # Read in summary fish metrics
-metrics <- read_csv('Full_results_112122.csv') %>%
-  rename(area = region,
-         N = count)
+metrics <- read_csv('Test_results_full_012723.csv') %>%
+  relocate(area) %>%
+  relocate(N, .after = last_col()) %>%
+  mutate(gcat = case_when(gcat == "Stock-Quality" ~ "S-Q",
+                          gcat == "Quality-Preferred" ~ "Q-P",
+                          gcat == "Preferred-Memorable" ~ "P-M",
+                          gcat == "Memorable-Trophy" ~ "M-T",
+                          gcat == "Trophy" ~ "T") %>%
+           factor(levels = c("S-Q", "Q-P", "P-M", "M-T", "T")))
 # Develop vectors of unique entries
 uni.type <- c("North America", "Ecoregion", "State/Province")
 uni.area <- sort(unique(metrics$area))
@@ -69,7 +75,7 @@ locs <- read_csv("Lat_long_AFSshiny_012023.csv") %>%
 # Test data
 
 foo <- metrics %>%
-  filter(area == "North_America",
+  filter(area == "North America",
          common_name == "Bluegill",
          method == "backpack_electrofishing",
          waterbody_type == "large_standing_waters")
@@ -210,12 +216,12 @@ server <- function(input, output) {
   # Render a UI for selecting area depending on North America, Ecoregions, or State/Province
   output$dyn_area <- renderUI({
     if(input$typechoice == "North America") {
-      temp <- "North_America"
+      temp <- "North America"
     } else if(input$typechoice == "Ecoregion") {
-      temp <- uni.area[1:11]
+      temp <- uni.area[1:12]
     } else if(input$typechoice == "State/Province") {
-      temp2 <-  uni.area[uni.area %nin% 'North_America']
-      temp <- temp2[-1:-11]
+      temp2 <-  uni.area[uni.area %nin% 'North America']
+      temp <- temp2[-1:-12]
     }
     
     selectInput(inputId = "areachoice",
@@ -228,12 +234,12 @@ server <- function(input, output) {
   # Render a UI for selecting area depending on North America, Ecoregions, or State/Province for tab2
   output$dyn_area2 <- renderUI({
     if(input$typechoice2 == "North America") {
-      temp <- "North_America"
+      temp <- "North America"
     } else if(input$typechoice2 == "Ecoregion") {
-      temp <- uni.area[1:11]
+      temp <- uni.area[1:12]
     } else if(input$typechoice2 == "State/Province") {
-      temp2 <-  uni.area[uni.area %nin% 'North_America']
-      temp <- temp2[-1:-11]
+      temp2 <-  uni.area[uni.area %nin% 'North America']
+      temp <- temp2[-1:-12]
     }
     
     selectInput(inputId = "areachoice2",
@@ -274,7 +280,7 @@ server <- function(input, output) {
     req(input$upload)
     
     if(input$typechoice3 == "North America") {
-      temp <- "North_America"
+      temp <- "North America"
     } else if(input$typechoice3 == "Ecoregion") {
       temp <- uu_raw() %>%
         filter(type == "ecoregion") %>%
@@ -621,9 +627,7 @@ server <- function(input, output) {
   
   plotLengthFrequency <- reactive({
     temp <- filtered2() %>%
-      filter(metric == "Length Frequency") %>%
-      mutate(gcat = factor(gcat, 
-                           levels = c("stock", "quality", "preferred", "memorable", "trophy")))
+      filter(metric == "Length Frequency")
     
     N <- temp %>% 
       distinct(N) %>% 
@@ -658,10 +662,8 @@ server <- function(input, output) {
   plotRelativeWeight <- reactive({
     
     temp <- filtered2() %>%
-      filter(metric == "Relative Weight") %>%
-      mutate(gcat = factor(gcat, 
-                           levels = c("stock", "quality", "preferred", "memorable", "trophy")))
-    
+      filter(metric == "Relative Weight")
+      
     ypos <- min(temp$`25%`,  na.rm = TRUE) - 2
 
     if(nrow(temp) == 0){
@@ -710,9 +712,7 @@ server <- function(input, output) {
   plotCPUE <- reactive({
     
     temp <- filtered2() %>%
-      filter(metric == "CPUE") %>%
-      mutate(gcat = factor(gcat, 
-                           levels = c("stock", "quality", "preferred", "memorable", "trophy")))
+      filter(metric == "CPUE") 
 
     N <- unique(temp$N)
 
