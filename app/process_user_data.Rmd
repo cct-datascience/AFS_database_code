@@ -168,9 +168,6 @@ calculate_cpue <- function(df){
     mutate(metric = "CPUE")
   return(cpue)
 }
-
-cpue_example <- calculate_cpue(raw_example)
-
 ```
 
 ### 2. Length frequency
@@ -182,7 +179,7 @@ Calculate Gabelhouse category for each fish record using length and species iden
 calculate_lf <- function(df){
     stopifnot(c("type", "area", "common_name", "method", "waterbody_type", 
                 "year", "total_length") %in% colnames(df))
-  lf <- raw_example %>% 
+  lf <- df %>% 
     mutate(gcat = psdAdd(total_length, common_name, what = "incremental")) %>% 
     group_by(type, area, common_name, method, waterbody_type, year) %>% 
     count(gcat) %>% 
@@ -204,7 +201,7 @@ Calculate Gabelhouse category for each fish record using length and species iden
 calculate_rw <- function(df){
   stopifnot(c("type", "area", "common_name", "method", "waterbody_type", "year", 
               "total_length", "weight") %in% colnames(df))
-  rw <- raw_example %>% 
+  rw <- df %>% 
     mutate(gcat = psdAdd(total_length, common_name, what = "incremental"), 
          relweight = wrAdd(wt = weight, len = total_length, spec = common_name)) %>% 
     group_by(type, area, common_name, method, waterbody_type, gcat) %>% 
@@ -224,8 +221,6 @@ calculate_rw <- function(df){
 ## Generate metrics dataset
 
 Run 3 functions on user input data, then combine into final dataset. 
-
-TODO: add count
 
 ```{r}
 counts <- raw_example %>% 
