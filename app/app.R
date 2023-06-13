@@ -815,6 +815,8 @@ Required columns in input dataframe:
   - `method` must exactly match one of the options in the first column
   - `effort` will contain a numeric value that has correct type and unit
 
+<center>
+  
 | **Method name**          | **Effort type** | **Unit** |
 |--------------------------|-----------------|----------|
 | boat_electrofishing      | Time            | seconds  |
@@ -831,82 +833,37 @@ Required columns in input dataframe:
 | stream_seine             | Number of nets  | number   |
 | backpack_electrofishing  | Area            | m2       |
 | snorkel                  | Area            | m2       |
-
+  
+</center>
 
 - **Type of water body**
   - `waterbody_type` must be one of the following: *large_standing_waters*, *small_standing_waters*, *two_story_standing_waters*, *wadeable_streams*, *rivers*
 - **Species** must be in `common_name` as species common name, which must match one of those listed below, as from `FSA::PSDlit`:
 
-| Species                     |
-|-----------------------------|
-| Arctic Grayling             |
-| Bighead Carp                |
-| Bigmouth Buffalo            |
-| Black Bullhead              |
-| Black Carp                  |
-| Black Crappie               |
-| Blue Catfish                |
-| Bluegill                    |
-| Brook Trout (lentic)        |
-| Brook Trout (lotic)         |
-| Brook Trout                 |
-| Brown Bullhead              |
-| Brown Trout (lentic)        |
-| Brown Trout (lotic)         |
-| Bull Trout                  |
-| Burbot                      |
-| Chain Pickerel              |
-| Channel Catfish             |
-| Chinook Salmon (landlocked) |
-| Common Carp                 |
-| Cutthroat Trout             |
-| Flathead Catfish            |
-| Freshwater Drum             |
-| Gizzard Shad                |
-| Golden Trout                |
-| Grass Carp                  |
-| Green Sunfish               |
-| Kokanee                     |
-| Lake Trout                  |
-| Largemouth Bass             |
-| Longnose Gar                |
-| Muskellunge                 |
-| Northern Pike               |
-| Paddlefish                  |
-| Pallid Sturgeon             |
-| Palmetto Bass               |
-| Palmetto Bass (original)    |
-| Pumpkinseed                 |
-| Rainbow Trout               |
-| Redear Sunfish              |
-| River Carpsucker            |
-| Rock Bass                   |
-| Ruffe                       |
-| Sauger                      |
-| Saugeye                     |
-| Shoal Bass                  |
-| Shorthead Redhorse          |
-| Silver Carp                 |
-| Smallmouth Bass             |
-| Smallmouth Buffalo          |
-| Splake                      |
-| Spotted Bass                |
-| Spotted Gar                 |
-| Striped Bass (landlocked)   |
-| Striped Bass (hybrid)       |
-| Striped Bass X White Bass   |
-| Suwannee Bass               |
-| Utah Chub                   |
-| Walleye                     |
-| Warmouth                    |
-| White Bass                  |
-| White Catfish               |
-| White Crappie               |
-| White Perch                 |
-| White Sucker                |
-| Yellow Perch                |
-| Yellow Bass                 |
-| Yellow Bullhead             |
+<center>
+  
+| Species                | Species                     | Species                     | Species                    |
+|------------------------|-----------------------------|-----------------------------|-----------------------------|
+| Arctic Grayling        | Channel Catfish             | Pallid Sturgeon             | Spotted Bass                |
+| Bighead Carp           | Chinook Salmon (landlocked) | Palmetto Bass               | Spotted Gar                 |
+| Bigmouth Buffalo       | Common Carp                 | Palmetto Bass (original)    | Striped Bass (landlocked)   |
+| Black Bullhead         | Cutthroat Trout             | Pumpkinseed                 | Striped Bass (hybrid)       |
+| Black Carp             | Flathead Catfish            | Rainbow Trout               | Striped Bass X White Bass   |
+| Black Crappie          | Freshwater Drum             | Redear Sunfish              | Suwannee Bass               |
+| Blue Catfish           | Gizzard Shad                | River Carpsucker            | Utah Chub                   |
+| Bluegill               | Golden Trout                | Rock Bass                   | Walleye                     |
+| Brook Trout (lentic)   | Grass Carp                  | Ruffe                       | Warmouth                    |
+| Brook Trout (lotic)    | Green Sunfish               | Sauger                      | White Bass                  |
+| Brook Trout            | Kokanee                     | Saugeye                     | White Catfish               |
+| Brown Bullhead         | Lake Trout                  | Shoal Bass                  | White Crappie               |
+| Brown Trout (lentic)   | Largemouth Bass             | Shorthead Redhorse          | White Perch                 |
+| Brown Trout (lotic)    | Longnose Gar                | Silver Carp                 | White Sucker                |
+| Bull Trout             | Muskellunge                 | Smallmouth Bass             | Yellow Perch                |
+| Burbot                 | Northern Pike               | Smallmouth Buffalo          | Yellow Bass                 |
+| Chain Pickerel         | Paddlefish                  | Splake                      | Yellow Bullhead             |
+
+
+</center>  
   
 ### Example dataset
   
