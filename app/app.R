@@ -85,16 +85,25 @@ ui <- navbarPage("AFS Standard Sampling App",
                             h2("About Standard Sampling", align = "center"),
                             h4("Standardization of sampling methods allows fisheries professionals to compare data across large spatial and temporal scales, encourages data sharing and improves communication. 
 In light of these benefits, the American Fisheries Society published Standard Methods for Sampling North American Freshwater Fishes in 2009. 
-The goals of this project, were to (1) recommend standardized freshwater fish sampling methods, and (2) provide an online database where existing and future data could be accessed. Since publication, numerous fisheries professionals have adopted the standard methods and many have noted the database as an important tool in management. 
+The goals of this project, were to:"),
+br(),
+h4("(1) recommend standardized freshwater fish sampling methods, and"),
+h4("(2) provide an online database where existing and future data could be accessed."),
+br(),
+h4("Since publication, numerous fisheries professionals have adopted the standard methods and many have noted the database as an important tool in management. 
 The database allows for comparison of fish metrics commonly used in management to assess population health including growth, condition, length-frequency, and catch per unit effort data collected using standard methods.
-When developing version two of the database we examined strengths and weaknesses of methods used for requesting, analyzing, and displaying data in an online format.
-We used this information to achieve our goals of maximizing use and providing simple means to update this program for comparison of fisheries data.
-Furthermore, our hope is that these methods can be adopted by others, particularly those in data-poor regions, in the development of their own standard methods and fisheries databases. "),
-                            h4 ("Sponsored by:"), 
-                            imageOutput("logo")
+When developing version two of the database, we examined the strengths and weaknesses of methods used for requesting, analyzing, and displaying data in an online format.
+We used this information to achieve our goals of maximizing use and providing simple means to update this program for comparison of fisheries data."),
+br(),
+h4("We hope that these methods can be adopted by others, particularly those in data-poor regions, to develop their own standard methods and fisheries databases. "),
+h4 ("Sponsored by:"), 
+imageOutput("logo"),
+
+h4("We encourage general feedback sent to ", a("Scott Bonar", href="mailto:SBonar@ag.arizona.edu"), 
+   ". To report bugs in this web application, please open an ", a("issue", href="https://github.com/erinetracy/AFS_database_code/issues"), ".")
                           )
                  ),
-                 
+
                  tabPanel(title = "Explore",
                           sidebarLayout(
                             sidebarPanel(
