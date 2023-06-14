@@ -790,9 +790,7 @@ server <- function(input, output) {
   
   callModule(plotDownload, "CPUE_plot", plotCPUE)
   
-  mtext <- "
-
-  ## How to format input data
+  mtext <- "## How to format input data 
 
 You can upload your own data to compare to the standardized data. This needs to be provided as a csv file that will have length and/or weight measurements with one row per observation (a single fish or multiple fish summed). This app will calculate the three metrics of interest for each unique combination of area, species, collection method, type of water body, and year. The three metrics are: 
 
@@ -810,17 +808,18 @@ Below are the details of the required columns in the data. The order of the colu
 
 Required columns in input dataframe: 
 
-- **Location**: need these two columns
+- **Location**: 
   - `type` is *all* or *state*
   - `area` is *North America* or state name, spelled out and capitalized
-- **Date**: only a numeric `year` column is needed
+- **Date**: 
+  - `year` is a four-digit numeric
 - **Measurements**: 
   - `total_length` is fish record length (mm)
   - `weight` is fish record weight (g)
   - `effort` is specified in **Collection method**
 - **Collection method**: see the table below for details
-  - `method` must exactly match one of the options in the first column
-  - `effort` will contain a numeric value that has correct type and unit
+  - `method` must exactly match one of the options in 'Method name'
+  - `effort` will contain a numeric value that corresponds to the associated 'Effort type' and 'Unit'
   
 <br>
   
@@ -847,9 +846,10 @@ Required columns in input dataframe:
   
 <br>
 
-- **Type of water body**
-  - `waterbody_type` must be one of the following: *large_standing_waters*, *small_standing_waters*, *two_story_standing_waters*, *wadeable_streams*, *rivers*
-- **Species** must be in `common_name` as species common name, which must match one of those listed below, as from `FSA::PSDlit`:
+- **Type of water body**:
+  - `waterbody_type` must exactly match one of the following: *large_standing_waters*, *small_standing_waters*, *two_story_standing_waters*, *wadeable_streams*, *rivers*
+- **Species**:
+  - `common_name` must exactly match one of following species, as from [`FSA::PSDlit`](https://fishr-core-team.github.io/FSA/):
 
 <br>
   
@@ -889,7 +889,10 @@ Required columns in input dataframe:
     HTML(markdown::markdownToHTML(file = tf))
   })
   
-  output$example <- renderDT(ex, options = list(lengthChange = FALSE, pageLength = 21))
+  output$example <- renderDT(datatable(ex, options = list(lengthChange = FALSE, 
+                                                pageLength = 25)) %>%
+                               formatRound(c(8:12), 0) %>%
+                               formatString(7))
   
   plotLengthFrequencyuser <- reactive({
     # uu_unfiltered() has a req() for uploaded data, so no more error messages
