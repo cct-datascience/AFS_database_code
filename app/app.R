@@ -77,14 +77,6 @@ ex <- read_csv("user_example.csv")
 # Create a "not in" function
 `%nin%` <- negate(`%in%`)
 
-# Test data
-
-foo <- metrics %>%
-  filter(area == "North America",
-         common_name == "Bluegill",
-         method == "backpack_electrofishing",
-         waterbody_type == "large_standing_waters")
-
 #Shiny App
 ui <- navbarPage("AFS Standard Sampling App",
                  theme = bslib::bs_theme(bootswatch = "sandstone"),
@@ -122,7 +114,7 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                                           multiple = TRUE,
                                           selected = 'Bluegill'),
                               selectInput(inputId = "methodchoice",
-                                          label = "Select method type(s):",
+                                          label = "Select method(s):",
                                           choices = c("All", uni.method),
                                           multiple = TRUE,
                                           selected = "boat_electrofishing"),
@@ -173,7 +165,7 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                                    choices = uni.spp,
                                    selected ='Bluegill'),
                        selectInput(inputId = "methodchoice2",
-                                   label = "Select method type:",
+                                   label = "Select method:",
                                    choices = uni.method,
                                    selected = "boat_electrofishing"),
                        selectInput(inputId = "watertypechoice2",
@@ -209,7 +201,7 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                                tabPanel("Instructions", 
                                         uiOutput("instructions"), 
                                         DTOutput("example")),
-                               tabPanel("Upload", 
+                               tabPanel("Comparisons", 
                                         plotDownloadUI("LF_plot_UU"),
                                         plotDownloadUI("RW_plot_UU"),
                                         plotDownloadUI("CPUE_plot_UU", height = "200px"))
@@ -288,14 +280,15 @@ server <- function(input, output) {
       mutate(types = case_when(type == "all" ~ "North America",
                                type == "ecoregion" ~ "Ecoregion",
                                type == "state" ~ "State/Province")) %>%
+      arrange(types) %>%
       pull(types)
     
     
     radioGroupButtons(inputId = "typechoice3",
                       label = "Show data by:",
-                      choices = union("North America", temp),
+                      choices = temp,
                       direction = "vertical",
-                      selected = "North America")
+                      selected = temp[1])
   })
   
   # Render a UI for selecting area depending on North America, Ecoregions, or State/Province for tab 3
@@ -327,8 +320,10 @@ server <- function(input, output) {
   # Render a UI for selecting species depending on user upload data in tab 3
   output$dyn_spp3 <- renderUI({
     req(input$upload)
+    req(input$areachoice3)
     
     temp <- uu_raw() %>%
+      filter(area == input$areachoice3) %>%
       select(common_name) %>%
       unique() %>%
       pull()
@@ -342,23 +337,33 @@ server <- function(input, output) {
   # Render a UI for selecting species depending on user upload data in tab 3
   output$dyn_method3 <- renderUI({
     req(input$upload)
+    req(input$areachoice3)
+    req(input$sppchoice3)
     
     temp <- uu_raw() %>%
+      filter(area == input$areachoice3,
+             common_name == input$sppchoice3) %>%
       select(method) %>%
       unique() %>%
       pull()
     
     selectInput(inputId = "methodchoice3",
-                label = "Select method type::",
+                label = "Select method:",
                 choices = temp,
                 selected = temp[1])
   })  
   
   # Render a UI for selecting species depending on user upload data in tab 3
   output$dyn_watertype3 <- renderUI({
-    req(input$upload)
+    req(input$upload) 
+    req(input$areachoice3)
+    req(input$sppchoice3)
+    req(input$methodchoice3)
     
     temp <- uu_raw() %>%
+      filter(area == input$areachoice3,
+             common_name == input$sppchoice3,
+             method == input$methodchoice3) %>%
       select(waterbody_type) %>%
       unique() %>%
       pull()
@@ -785,7 +790,9 @@ server <- function(input, output) {
   
   callModule(plotDownload, "CPUE_plot", plotCPUE)
   
-  mtext <- "## How to format input data
+  mtext <- "
+
+  ## How to format input data
 
 You can upload your own data to compare to the standardized data. This needs to be provided as a csv file that will have length and/or weight measurements with one row per observation (a single fish or multiple fish summed). This app will calculate the three metrics of interest for each unique combination of area, species, collection method, type of water body, and year. The three metrics are: 
 
@@ -814,7 +821,9 @@ Required columns in input dataframe:
 - **Collection method**: see the table below for details
   - `method` must exactly match one of the options in the first column
   - `effort` will contain a numeric value that has correct type and unit
-
+  
+<br>
+  
 <center>
   
 | **Method name**          | **Effort type** | **Unit** |
@@ -831,15 +840,19 @@ Required columns in input dataframe:
 | seine                    | Number of nets  | number   |
 | bag_seine                | Number of nets  | number   |
 | stream_seine             | Number of nets  | number   |
-| backpack_electrofishing  | Area            | m2       |
-| snorkel                  | Area            | m2       |
+| backpack_electrofishing  | Area            | m<sup>2</sup>       |
+| snorkel                  | Area            | m<sup>2</sup>       |
   
 </center>
+  
+<br>
 
 - **Type of water body**
   - `waterbody_type` must be one of the following: *large_standing_waters*, *small_standing_waters*, *two_story_standing_waters*, *wadeable_streams*, *rivers*
 - **Species** must be in `common_name` as species common name, which must match one of those listed below, as from `FSA::PSDlit`:
 
+<br>
+  
 <center>
   
 | **Species**            | **Species**                 | **Species**                 | **Species**                 |
@@ -866,7 +879,8 @@ Required columns in input dataframe:
 </center>  
   
 ### Example dataset
-  
+
+<br>  
 "
   
   output$instructions <- renderUI({
@@ -902,7 +916,7 @@ Required columns in input dataframe:
     if(nrow(stand_only) == 0){
       fig <- ggplot() +
         annotate("text", x = 1, y = 1, size = 8,
-                 label = "No standardized data corresponding to uploaded data") +
+                 label = "No standardized data \n corresponding to uploaded data") +
         theme_void()
       
     } else {
@@ -944,7 +958,7 @@ Required columns in input dataframe:
       
       fig <- ggplot() +
         annotate("text", x = 1, y = 1, size = 8,
-                 label = "No standardized data corresponding to uploaded data") +
+                 label = "No standardized data \n corresponding to uploaded data") +
         theme_void()
       
     } else {
@@ -986,7 +1000,7 @@ Required columns in input dataframe:
       mutate(data_source = case_when(data_source == 1 ~ "User upload", 
                                      data_source == 2 ~ "Standardized")) %>% 
       filter(metric == "CPUE")
-    
+    print("Check")
     print(temp, n = Inf)
     
     stand_N <- temp %>% 
@@ -1006,7 +1020,7 @@ Required columns in input dataframe:
       
       fig <- ggplot() +
         annotate("text", x = 1, y = 1, size = 8,
-                 label = "No standardized data corresponding to uploaded data") +
+                 label = "No standardized data \n corresponding to uploaded data") +
         theme_void()
       
     } else {
