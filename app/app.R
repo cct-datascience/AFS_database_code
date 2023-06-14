@@ -149,7 +149,7 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                                          textOutput("report_absent1"),
                                          textOutput("report_absent2")), 
                                 tabPanel("Preview", 
-                                         tableOutput("filtertable"))
+                                         DTOutput("filtertable"))
                                 )
                               )
                           )
@@ -208,7 +208,7 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                              tabsetPanel(
                                tabPanel("Instructions", 
                                         uiOutput("instructions"), 
-                                        tableOutput("example")),
+                                        DTOutput("example")),
                                tabPanel("Upload", 
                                         plotDownloadUI("LF_plot_UU"),
                                         plotDownloadUI("RW_plot_UU"),
@@ -528,7 +528,7 @@ server <- function(input, output) {
   )
   
   # Making the table look nice
-  output$filtertable <- renderTable({  
+  output$filtertable <- renderDT({  
     
     filtered() %>%
       mutate(method = str_replace_all(method, "_", " "),
@@ -842,7 +842,7 @@ Required columns in input dataframe:
 
 <center>
   
-| Species                | Species                     | Species                     | Species                    |
+| **Species**            | **Species**                 | **Species**                 | **Species**                 |
 |------------------------|-----------------------------|-----------------------------|-----------------------------|
 | Arctic Grayling        | Channel Catfish             | Pallid Sturgeon             | Spotted Bass                |
 | Bighead Carp           | Chinook Salmon (landlocked) | Palmetto Bass               | Spotted Gar                 |
@@ -875,7 +875,7 @@ Required columns in input dataframe:
     HTML(markdown::markdownToHTML(file = tf))
   })
   
-  output$example <- renderTable(ex)
+  output$example <- renderDT(ex, options = list(lengthChange = FALSE, pageLength = 21))
   
   plotLengthFrequencyuser <- reactive({
     # uu_unfiltered() has a req() for uploaded data, so no more error messages
