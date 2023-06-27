@@ -99,8 +99,8 @@ h4("We hope that these methods can be adopted by others, particularly those in d
 h4 ("Sponsored by:"), 
 imageOutput("logo"),
 
-h4("We encourage general feedback sent to ", a("Scott Bonar", href="mailto:SBonar@ag.arizona.edu"), 
-   ". To report bugs in this web application, please open an ", a("issue", href="https://github.com/erinetracy/AFS_database_code/issues"), ".")
+h4("We encourage general feedback sent to ", a("Scott Bonar", href="mailto:SBonar@ag.arizona.edu", .noWS = "outside"), 
+   ". To report bugs in this web application, please open an ", a("issue", href="https://github.com/erinetracy/AFS_database_code/issues", .noWS = "outside"), ".")
                           )
                  ),
 
@@ -831,11 +831,23 @@ Required columns in input dataframe:
 - **Collection method**: see the table below for details
   - `method` must exactly match one of the options in 'Method name'
   - `effort` will contain a numeric value that corresponds to the associated 'Effort type' and 'Unit'
-  
-<br>
-  
+
 <center>
-  
+
+<style>
+.basic-styling td,
+.basic-styling th {
+  border: 1px solid #999;
+  padding: 0.5rem;
+}
+</style>
+
+<div class='ox-hugo-table basic-styling'>
+<div></div>
+<div class='table-caption'>
+  <span class='table-number'></span>
+</div>
+
 | **Method name**          | **Effort type** | **Unit** |
 |--------------------------|-----------------|----------|
 | boat_electrofishing      | Time            | seconds  |
@@ -852,20 +864,32 @@ Required columns in input dataframe:
 | stream_seine             | Number of nets  | number   |
 | backpack_electrofishing  | Area            | m<sup>2</sup>       |
 | snorkel                  | Area            | m<sup>2</sup>       |
-  
+
+</div>
+
 </center>
-  
-<br>
 
 - **Type of water body**:
   - `waterbody_type` must exactly match one of the following: *large_standing_waters*, *small_standing_waters*, *two_story_standing_waters*, *wadeable_streams*, *rivers*
 - **Species**:
   - `common_name` must exactly match one of following species, as from [`FSA::PSDlit`](https://fishr-core-team.github.io/FSA/):
 
-<br>
-  
 <center>
-  
+
+<style>
+.basic-styling td,
+.basic-styling th {
+  border: 1px solid #999;
+  padding: 0.5rem;
+}
+</style>
+
+<div class='ox-hugo-table basic-styling'>
+<div></div>
+<div class='table-caption'>
+  <span class='table-number'></span>
+</div>
+
 | **Species**            | **Species**                 | **Species**                 | **Species**                 |
 |------------------------|-----------------------------|-----------------------------|-----------------------------|
 | Arctic Grayling        | Channel Catfish             | Pallid Sturgeon             | Spotted Bass                |
@@ -886,6 +910,7 @@ Required columns in input dataframe:
 | Burbot                 | Northern Pike               | Smallmouth Buffalo          | Yellow Bass                 |
 | Chain Pickerel         | Paddlefish                  | Splake                      | Yellow Bullhead             |
 
+</div>
 
 </center>  
   
