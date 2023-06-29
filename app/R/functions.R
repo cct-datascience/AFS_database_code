@@ -34,7 +34,7 @@ calculate_lf <- function(df){
     mutate(gcat = psdAdd(total_length, common_name, what = "incremental")) %>% 
     group_by(type, area, common_name, method, waterbody_type, year) %>% 
     count(gcat) %>% 
-    mutate(lenfreq = n / sum(n)) %>% 
+    mutate(lenfreq = (n / sum(n)) * 100) %>% 
     group_by(type, area, common_name, method, waterbody_type, gcat) %>% 
     summarize_at(vars(lenfreq), list(mean = mean, se = se), na.rm = TRUE) %>% 
     mutate(metric = "Length Frequency", 
