@@ -830,7 +830,7 @@ Required columns in input dataframe:
   - `effort` is specified in **Collection method**
 - **Collection method**: see the table below for details
   - `method` must exactly match one of the options in 'Method name'
-  - `effort` will contain a numeric value that corresponds to the associated 'Effort type' and 'Unit'
+  - `effort` will contain a numeric value that corresponds to the associated 'Effort type' and 'Unit'; this should be should be the sum of each transect effort by year
 
 <center>
 
@@ -927,7 +927,7 @@ Required columns in input dataframe:
   
   output$example <- renderDT(datatable(ex, options = list(lengthChange = FALSE, 
                                                 pageLength = 25)) %>%
-                               formatRound(c(8:12), 0) %>%
+                               formatRound(c(8:10), 0) %>%
                                formatString(7))
   
   plotLengthFrequencyuser <- reactive({

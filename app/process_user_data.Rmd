@@ -97,7 +97,8 @@ Simulate extra data for additional years for raw data.
 raw_y2 <- raw_y1 %>% 
   mutate(year = year + 1, 
          total_length = total_length + 50, 
-         effort = effort / 2)
+         effort = effort / 2, 
+         effort_transect = effort_transect / 2)
 ```
 
 Simulate North America data. 
@@ -113,7 +114,7 @@ Simplify dataset to include only necessary columns.
 ```{r}
 raw_example <- bind_rows(raw_y1, raw_y2, raw_y3) %>% 
   rename(area = state) %>% 
-  select(area, waterbody_name, common_name, method, waterbody_type, year, effort, effort_transect, transect, total_length, weight) %>% 
+  select(area, waterbody_name, common_name, method, waterbody_type, year, effort, total_length, weight) %>% 
   mutate(type = case_when(area == "Arizona" ~ "state", 
                           area == "North America" ~ "all")) %>% 
   relocate(type, .before = area)
