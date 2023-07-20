@@ -4,6 +4,8 @@
 
 The primary purpose of this application is to display data collected across North America on fish species, using a standardized collection approach and resulting comparable metrics by AFS. Additionally, users can upload their own data to compare to the provided standardized data.
 
+Link to the deployed app: [https://viz.datascience.arizona.edu/afs-standard-fish-data/](https://viz.datascience.arizona.edu/afs-standard-fish-data/)
+
 ### Repository file organization
 
 **Dashboard**
