@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/581326973.svg)](https://zenodo.org/badge/latestdoi/581326973)
+
 # AFS Standard Fish Data App
 
 The primary purpose of this application is to display data collected across North America on fish species, using a standardized collection approach and resulting comparable metrics by AFS. Additionally, users can upload their own data to compare to the provided standardized data.
