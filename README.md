@@ -39,6 +39,8 @@ The primary purpose of this application is to display data collected across Nort
 
 Please use the citation below if you use or modify this tool for research purposes.
 
+> Tracy, E., Guo, J., Riemer, K., & Bonar, S. (2023). Code for "AFS Standard Fish Data App" (Version 1.0.0) [Computer software]. https://doi.org/10.5281/zenodo.8169922
+
 ### How to contribute
 
 If you would like to suggest or make changes to this app, there are a few ways to do so. You can reach out via email to [Scott Bonar](mailto:SBonar@ag.arizona.edu) or the [CCT Data Science team](mailto:cct-datascience@arizona.edu) with suggestions.You can also create an issue describing a problem with the code or improvements. Because this is a forked repo, issues need to be made in the [upstream repo](https://github.com/erinetracy/AFS_database_code) under the "Issues" tab.
