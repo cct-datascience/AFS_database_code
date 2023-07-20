@@ -5,6 +5,8 @@ library(sf)
 library(leaflet)
 library(DT)
 library(leafpop)
+library(FSA)
+library(knitr)
 # library(periscope)
 
 # Module code
@@ -69,16 +71,11 @@ ecoregions_trans <- ecoregions %>%
 locs <- read_csv("Lat_long_AFSshiny_012023.csv") %>%
   select(-date) # not parseable as is
 
+# Read in example user upload data
+ex <- read_csv("user_example.csv")
+
 # Create a "not in" function
 `%nin%` <- negate(`%in%`)
-
-# Test data
-
-foo <- metrics %>%
-  filter(area == "North America",
-         common_name == "Bluegill",
-         method == "backpack_electrofishing",
-         waterbody_type == "large_standing_waters")
 
 #Shiny App
 ui <- navbarPage("AFS Standard Sampling App",
@@ -88,16 +85,25 @@ ui <- navbarPage("AFS Standard Sampling App",
                             h2("About Standard Sampling", align = "center"),
                             h4("Standardization of sampling methods allows fisheries professionals to compare data across large spatial and temporal scales, encourages data sharing and improves communication. 
 In light of these benefits, the American Fisheries Society published Standard Methods for Sampling North American Freshwater Fishes in 2009. 
-The goals of this project, were to (1) recommend standardized freshwater fish sampling methods, and (2) provide an online database where existing and future data could be accessed. Since publication, numerous fisheries professionals have adopted the standard methods and many have noted the database as an important tool in management. 
+The goals of this project, were to:"),
+br(),
+h4("(1) recommend standardized freshwater fish sampling methods, and"),
+h4("(2) provide an online database where existing and future data could be accessed."),
+br(),
+h4("Since publication, numerous fisheries professionals have adopted the standard methods and many have noted the database as an important tool in management. 
 The database allows for comparison of fish metrics commonly used in management to assess population health including growth, condition, length-frequency, and catch per unit effort data collected using standard methods.
-When developing version two of the database we examined strengths and weaknesses of methods used for requesting, analyzing, and displaying data in an online format.
-We used this information to achieve our goals of maximizing use and providing simple means to update this program for comparison of fisheries data.
-Furthermore, our hope is that these methods can be adopted by others, particularly those in data-poor regions, in the development of their own standard methods and fisheries databases. "),
-                            h4 ("Sponsored by:"), 
-                            imageOutput("logo")
+When developing version two of the database, we examined the strengths and weaknesses of methods used for requesting, analyzing, and displaying data in an online format.
+We used this information to achieve our goals of maximizing use and providing simple means to update this program for comparison of fisheries data."),
+br(),
+h4("We hope that these methods can be adopted by others, particularly those in data-poor regions, to develop their own standard methods and fisheries databases. "),
+h4 ("Sponsored by:"), 
+imageOutput("logo"),
+
+h4("We encourage general feedback sent to ", a("Scott Bonar", href="mailto:SBonar@ag.arizona.edu", .noWS = "outside"), 
+   ". To report bugs in this web application, please open an ", a("issue", href="https://github.com/erinetracy/AFS_database_code/issues", .noWS = "outside"), ".")
                           )
                  ),
-                 
+
                  tabPanel(title = "Explore",
                           sidebarLayout(
                             sidebarPanel(
@@ -117,7 +123,7 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                                           multiple = TRUE,
                                           selected = 'Bluegill'),
                               selectInput(inputId = "methodchoice",
-                                          label = "Select method type(s):",
+                                          label = "Select method(s):",
                                           choices = c("All", uni.method),
                                           multiple = TRUE,
                                           selected = "boat_electrofishing"),
@@ -144,7 +150,7 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                                          textOutput("report_absent1"),
                                          textOutput("report_absent2")), 
                                 tabPanel("Preview", 
-                                         tableOutput("filtertable"))
+                                         DTOutput("filtertable"))
                                 )
                               )
                           )
@@ -168,7 +174,7 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                                    choices = uni.spp,
                                    selected ='Bluegill'),
                        selectInput(inputId = "methodchoice2",
-                                   label = "Select method type:",
+                                   label = "Select method:",
                                    choices = uni.method,
                                    selected = "boat_electrofishing"),
                        selectInput(inputId = "watertypechoice2",
@@ -190,8 +196,10 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                              br(),
                              "Upload your fish data for comparison here: ", 
                              fileInput("upload", NULL,
-                                       buttonLabel =  "Upload Your Data",
-                                       multiple = FALSE, accept = (".csv")), 
+                                       buttonLabel =  "upload",
+                                       multiple = FALSE, 
+                                       accept = (".csv"), 
+                                       placeholder = ""), 
                              "To view plots of standard fish data, select one option from each menu below.",
                              uiOutput("dyn_type"),
                              uiOutput("dyn_area3"),
@@ -199,9 +207,18 @@ Furthermore, our hope is that these methods can be adopted by others, particular
                              uiOutput("dyn_method3"),
                              uiOutput("dyn_watertype3")
                            ),
-                           mainPanel(plotDownloadUI("LF_plot_UU"),
-                                     plotDownloadUI("RW_plot_UU"),
-                                     plotDownloadUI("CPUE_plot_UU", height = "200px"))
+                           mainPanel(
+                             tabsetPanel(
+                               tabPanel("Instructions", 
+                                        uiOutput("instructions"), 
+                                        DTOutput("example")),
+                               tabPanel("Comparisons", 
+                                        plotDownloadUI("LF_plot_UU"),
+                                        plotDownloadUI("RW_plot_UU"),
+                                        plotDownloadUI("CPUE_plot_UU", height = "200px"))
+                             )
+                           )
+                          
                          ), 
 
                  ) 
@@ -274,14 +291,15 @@ server <- function(input, output) {
       mutate(types = case_when(type == "all" ~ "North America",
                                type == "ecoregion" ~ "Ecoregion",
                                type == "state" ~ "State/Province")) %>%
+      arrange(types) %>%
       pull(types)
     
     
     radioGroupButtons(inputId = "typechoice3",
                       label = "Show data by:",
-                      choices = union("North America", temp),
+                      choices = temp,
                       direction = "vertical",
-                      selected = "North America")
+                      selected = temp[1])
   })
   
   # Render a UI for selecting area depending on North America, Ecoregions, or State/Province for tab 3
@@ -313,8 +331,10 @@ server <- function(input, output) {
   # Render a UI for selecting species depending on user upload data in tab 3
   output$dyn_spp3 <- renderUI({
     req(input$upload)
+    req(input$areachoice3)
     
     temp <- uu_raw() %>%
+      filter(area == input$areachoice3) %>%
       select(common_name) %>%
       unique() %>%
       pull()
@@ -328,23 +348,33 @@ server <- function(input, output) {
   # Render a UI for selecting species depending on user upload data in tab 3
   output$dyn_method3 <- renderUI({
     req(input$upload)
+    req(input$areachoice3)
+    req(input$sppchoice3)
     
     temp <- uu_raw() %>%
+      filter(area == input$areachoice3,
+             common_name == input$sppchoice3) %>%
       select(method) %>%
       unique() %>%
       pull()
     
     selectInput(inputId = "methodchoice3",
-                label = "Select method type::",
+                label = "Select method:",
                 choices = temp,
                 selected = temp[1])
   })  
   
   # Render a UI for selecting species depending on user upload data in tab 3
   output$dyn_watertype3 <- renderUI({
-    req(input$upload)
+    req(input$upload) 
+    req(input$areachoice3)
+    req(input$sppchoice3)
+    req(input$methodchoice3)
     
     temp <- uu_raw() %>%
+      filter(area == input$areachoice3,
+             common_name == input$sppchoice3,
+             method == input$methodchoice3) %>%
       select(waterbody_type) %>%
       unique() %>%
       pull()
@@ -514,7 +544,7 @@ server <- function(input, output) {
   )
   
   # Making the table look nice
-  output$filtertable <- renderTable({  
+  output$filtertable <- renderDT({  
     
     filtered() %>%
       mutate(method = str_replace_all(method, "_", " "),
@@ -555,10 +585,9 @@ server <- function(input, output) {
       select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
              se, `5%`, `25%`, `50%`, `75%`, `95%`)
     
-    
   })
   
-  uu_filtered <- reactive({
+  uu_processed <- reactive({
     # Suppresses error messages for plots until inputs are chosen
     req(input$areachoice3)
     req(input$sppchoice3)
@@ -569,7 +598,26 @@ server <- function(input, output) {
     uu <- read_csv(inFile$datapath)
     print("UU original")
     print(uu)
-    f_df <-  uu %>%
+    
+    # Calculate 3 metrics for user data
+    uu_counts <- uu %>% 
+      group_by(type, area, common_name, method, waterbody_type) %>%
+      summarise(N = n())
+    
+    uu_cpue <- calculate_cpue(uu)
+    uu_lf <- calculate_lf(uu)
+    uu_rw <- calculate_rw(uu)
+    
+    uu_process <- bind_rows(uu_cpue, uu_lf, uu_rw) %>% 
+      left_join(uu_counts, by = c("type", "area", "common_name", "method", "waterbody_type")) %>% 
+      mutate(gcat = case_when(gcat == "stock" ~ "S-Q",
+                              gcat == "quality" ~ "Q-P",
+                              gcat == "preferred" ~ "P-M",
+                              gcat == "memorable" ~ "M-T",
+                              gcat == "trophy" ~ "T") %>%
+               factor(levels = c("S-Q", "Q-P", "P-M", "M-T", "T")))
+
+    f_df <-  uu_process %>%
       filter(metric %in% uni.metric,
              area %in% input$areachoice3,
              common_name %in% input$sppchoice3,
@@ -578,10 +626,11 @@ server <- function(input, output) {
       arrange(common_name) %>%
       select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
              se, `5%`, `25%`, `50%`, `75%`, `95%`)
+
     print("UU filtered")
     print(f_df$metric)
     print(f_df, n = Inf)
-    
+
   })
   
   # Map of ecoregions and sites
@@ -752,16 +801,143 @@ server <- function(input, output) {
   
   callModule(plotDownload, "CPUE_plot", plotCPUE)
   
+  mtext <- "## How to format input data 
+
+You can upload your own data to compare to the standardized data. This needs to be provided as a csv file that will have length and/or weight measurements with one row per observation (a single fish or multiple fish summed). This app will calculate the three metrics of interest for each unique combination of area, species, collection method, type of water body, and year. The three metrics are: 
+
+1. [Catch per unit effort](https://en.wikipedia.org/wiki/Catch_per_unit_effort) (CPUE)
+2. Length frequency
+3. Relative weight
+
+### Column details
+
+Below are the details of the required columns in the data. The order of the columns does not matter. There is an example dataset at the bottom of the page with simulated data that may be a helpful guide. 
+
+1. CPUE requires `effort` column
+2. Length frequency requires `total_length` column 
+3. Relative weight requires `weight` and `total_length` columns
+
+Required columns in input dataframe: 
+
+- **Location**: 
+  - `type` is *all* or *state*
+  - `area` is *North America* or state name, spelled out and capitalized
+- **Date**: 
+  - `year` is a four-digit numeric
+- **Measurements**: 
+  - `total_length` is fish record length (mm)
+  - `weight` is fish record weight (g)
+  - `effort` is specified in **Collection method**
+- **Collection method**: see the table below for details
+  - `method` must exactly match one of the options in 'Method name'
+  - `effort` will contain a numeric value that corresponds to the associated 'Effort type' and 'Unit'; this should be should be the sum of each transect effort by year
+
+<center>
+
+<style>
+.basic-styling td,
+.basic-styling th {
+  border: 1px solid #999;
+  padding: 0.5rem;
+}
+</style>
+
+<div class='ox-hugo-table basic-styling'>
+<div></div>
+<div class='table-caption'>
+  <span class='table-number'></span>
+</div>
+
+| **Method name**          | **Effort type** | **Unit** |
+|--------------------------|-----------------|----------|
+| boat_electrofishing      | Time            | seconds  |
+| tow_barge_electrofishing | Time            | seconds  |
+| raft_electrofishing      | Time            | seconds  |
+| trawl                    | Time            | seconds  |
+| gill_net_fall            | Number of nets  | number   |
+| gill_net_fall            | Number of nets  | number   |
+| hoop_net                 | Number of nets  | number   |
+| small_catfish_hoopnet    | Number of nets  | number   |
+| large_catfish_hoopnet    | Number of nets  | number   |
+| seine                    | Number of nets  | number   |
+| bag_seine                | Number of nets  | number   |
+| stream_seine             | Number of nets  | number   |
+| backpack_electrofishing  | Area            | m<sup>2</sup>       |
+| snorkel                  | Area            | m<sup>2</sup>       |
+
+</div>
+
+</center>
+
+- **Type of water body**:
+  - `waterbody_type` must exactly match one of the following: *large_standing_waters*, *small_standing_waters*, *two_story_standing_waters*, *wadeable_streams*, *rivers*
+- **Species**:
+  - `common_name` must exactly match one of following species, as from [`FSA::PSDlit`](https://fishr-core-team.github.io/FSA/):
+
+<center>
+
+<style>
+.basic-styling td,
+.basic-styling th {
+  border: 1px solid #999;
+  padding: 0.5rem;
+}
+</style>
+
+<div class='ox-hugo-table basic-styling'>
+<div></div>
+<div class='table-caption'>
+  <span class='table-number'></span>
+</div>
+
+| **Species**            | **Species**                 | **Species**                 | **Species**                 |
+|------------------------|-----------------------------|-----------------------------|-----------------------------|
+| Arctic Grayling        | Channel Catfish             | Pallid Sturgeon             | Spotted Bass                |
+| Bighead Carp           | Chinook Salmon (landlocked) | Palmetto Bass               | Spotted Gar                 |
+| Bigmouth Buffalo       | Common Carp                 | Palmetto Bass (original)    | Striped Bass (landlocked)   |
+| Black Bullhead         | Cutthroat Trout             | Pumpkinseed                 | Striped Bass (hybrid)       |
+| Black Carp             | Flathead Catfish            | Rainbow Trout               | Striped Bass X White Bass   |
+| Black Crappie          | Freshwater Drum             | Redear Sunfish              | Suwannee Bass               |
+| Blue Catfish           | Gizzard Shad                | River Carpsucker            | Utah Chub                   |
+| Bluegill               | Golden Trout                | Rock Bass                   | Walleye                     |
+| Brook Trout (lentic)   | Grass Carp                  | Ruffe                       | Warmouth                    |
+| Brook Trout (lotic)    | Green Sunfish               | Sauger                      | White Bass                  |
+| Brook Trout            | Kokanee                     | Saugeye                     | White Catfish               |
+| Brown Bullhead         | Lake Trout                  | Shoal Bass                  | White Crappie               |
+| Brown Trout (lentic)   | Largemouth Bass             | Shorthead Redhorse          | White Perch                 |
+| Brown Trout (lotic)    | Longnose Gar                | Silver Carp                 | White Sucker                |
+| Bull Trout             | Muskellunge                 | Smallmouth Bass             | Yellow Perch                |
+| Burbot                 | Northern Pike               | Smallmouth Buffalo          | Yellow Bass                 |
+| Chain Pickerel         | Paddlefish                  | Splake                      | Yellow Bullhead             |
+
+</div>
+
+</center>  
+  
+### Example dataset
+
+<br>  
+"
+  
+  output$instructions <- renderUI({
+    tf <- tempfile()
+    knit(text = mtext, output = tf)
+    HTML(markdown::markdownToHTML(file = tf))
+  })
+  
+  output$example <- renderDT(datatable(ex, options = list(lengthChange = FALSE, 
+                                                pageLength = 25)) %>%
+                               formatRound(c(8:10), 0) %>%
+                               formatString(7))
+  
   plotLengthFrequencyuser <- reactive({
     # uu_unfiltered() has a req() for uploaded data, so no more error messages
-    temp <- uu_filtered() %>% 
+    temp <- uu_processed() %>% 
       bind_rows(filtered3(), .id = "id") %>% 
       rename(data_source = id) %>% 
       mutate(data_source = case_when(data_source == 1 ~ "User upload", 
                                      data_source == 2 ~ "Standardized")) %>% 
-      filter(metric == "Length Frequency") %>%
-      mutate(gcat = factor(gcat, 
-                           levels = c("stock", "quality", "preferred", "memorable", "trophy")))
+      filter(metric == "Length Frequency")
     
     stand_N <- temp %>% 
       filter(data_source == "Standardized") %>% 
@@ -773,21 +949,32 @@ server <- function(input, output) {
       distinct(N) %>% 
       pull(N)
     
-    fig <- ggplot(temp, aes(x = gcat, y = mean, fill = data_source)) +
-      geom_bar(stat = "identity", position = "dodge")  +
-      geom_errorbar(aes(ymin = mean - se,
-                        ymax = mean + se),
-                    position = position_dodge(width = 0.9), 
-                    width = 0) +
-      scale_y_continuous("Frequency (%)",
-                         limits = c(0, 100),
-                         expand = c(0, 0)) +
-      scale_fill_discrete("Data source") +
-      theme_classic(base_size = 16) +
-      theme(axis.title.x = element_blank(),
-            legend.position = c(0.85, 0.85)) +
-      ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
+    stand_only <- temp %>% 
+      filter(data_source == "Standardized")
     
+    if(nrow(stand_only) == 0){
+      fig <- ggplot() +
+        annotate("text", x = 1, y = 1, size = 8,
+                 label = "No standardized data \n corresponding to uploaded data") +
+        theme_void()
+      
+    } else {
+      fig <- ggplot(temp, aes(x = gcat, y = mean, fill = data_source)) +
+        geom_bar(stat = "identity", position = "dodge")  +
+        geom_errorbar(aes(ymin = mean - se,
+                          ymax = mean + se),
+                      position = position_dodge(width = 0.9),
+                      width = 0) +
+        scale_y_continuous("Frequency (%)",
+                           limits = c(0, 100),
+                           expand = c(0, 0)) +
+        scale_fill_discrete("Data source") +
+        theme_classic(base_size = 16) +
+        theme(axis.title.x = element_blank(),
+              legend.position = c(0.85, 0.85)) +
+        ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
+    }
+
     print(fig)
 
   })
@@ -796,15 +983,25 @@ server <- function(input, output) {
   
     plotRelativeWeightuser <- reactive({
     
-    temp <- uu_filtered() %>% 
+    temp <- uu_processed() %>% 
       bind_rows(filtered3(), .id = "id") %>% 
       rename(data_source = id) %>% 
       mutate(data_source = case_when(data_source == 1 ~ "User upload", 
                                      data_source == 2 ~ "Standardized")) %>% 
-      filter(metric == "Relative Weight") %>%
-      mutate(gcat = factor(gcat, 
-                           levels = c("stock", "quality", "preferred", "memorable", "trophy")))
+      filter(metric == "Relative Weight")
     
+    stand_only <- temp %>% 
+      filter(data_source == "Standardized")
+    
+    if(nrow(stand_only) == 0){
+      
+      fig <- ggplot() +
+        annotate("text", x = 1, y = 1, size = 8,
+                 label = "No standardized data \n corresponding to uploaded data") +
+        theme_void()
+      
+    } else {
+      
     fig <- ggplot(temp, aes(x = gcat)) +
       geom_point(aes(y = mean,
                      color = data_source),
@@ -827,6 +1024,8 @@ server <- function(input, output) {
       theme(axis.title.x = element_blank(),
             legend.position = "bottom") 
     
+    }
+    
     print(fig)
     
   })
@@ -834,13 +1033,13 @@ server <- function(input, output) {
     callModule(plotDownload, "RW_plot_UU", plotRelativeWeightuser)
     
     plotCPUEuser <- reactive({
-    temp <- uu_filtered() %>% 
+    temp <- uu_processed() %>% 
       bind_rows(filtered3(), .id = "id") %>% 
       rename(data_source = id) %>% 
       mutate(data_source = case_when(data_source == 1 ~ "User upload", 
                                      data_source == 2 ~ "Standardized")) %>% 
       filter(metric == "CPUE")
-    
+    print("Check")
     print(temp, n = Inf)
     
     stand_N <- temp %>% 
@@ -853,20 +1052,34 @@ server <- function(input, output) {
       distinct(N) %>% 
       pull(N)
     
-    fig <- ggplot(temp, aes(y = area, fill = data_source)) +
-      geom_boxplot(aes(xmin = `5%`,
-                       xlower = `25%`,
-                       xmiddle = `50%`,
-                       xupper = `75%`,
-                       xmax = `95%`),
-                   stat = "identity") +
-      scale_x_continuous("CPUE (fish / hour)") +
-      scale_fill_discrete("Data source") +
-      theme_classic(base_size = 16) +
-      theme(axis.title.y = element_blank(),
-            axis.text.y = element_blank(),
-            axis.ticks.y = element_blank()) +
-      ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
+    stand_only <- temp %>% 
+      filter(data_source == "Standardized")
+    
+    if(nrow(stand_only) == 0){
+      
+      fig <- ggplot() +
+        annotate("text", x = 1, y = 1, size = 8,
+                 label = "No standardized data \n corresponding to uploaded data") +
+        theme_void()
+      
+    } else {
+      
+      fig <- ggplot(temp, aes(y = area, fill = data_source)) +
+        geom_boxplot(aes(xmin = `5%`,
+                         xlower = `25%`,
+                         xmiddle = `50%`,
+                         xupper = `75%`,
+                         xmax = `95%`),
+                     stat = "identity") +
+        scale_x_continuous("CPUE (fish / hour)") +
+        scale_fill_discrete("Data source") +
+        theme_classic(base_size = 16) +
+        theme(axis.title.y = element_blank(),
+              axis.text.y = element_blank(),
+              axis.ticks.y = element_blank()) +
+        ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
+      
+    }
     
     print(fig)
     
