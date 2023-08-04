@@ -1,0 +1,271 @@
+---
+title: "Approach to process user upload data"
+author: "Kristina Riemer"
+date: '2023-01-20'
+output: html_document
+---
+
+## How to format input data
+
+You can upload your own data to compare to the standardized data. This needs to be provided as a csv file that will have length and/or weight measurements with one row per observation (a single fish or multiple fish summed). This app will calculate the three metrics of interest for each unique combination of area, species, collection method, type of water body, and year. The three metrics are: 
+
+1. [Catch per unit effort](https://en.wikipedia.org/wiki/Catch_per_unit_effort) (CPUE)
+2. Length frequency
+3. Relative weight
+
+### Column details
+
+Below are the details of the required columns in the data. The order of the columns does not matter. There is an example dataset at the bottom of the page with simulated data that may be a helpful guide. 
+
+1. CPUE requires `effort` column
+2. Length frequency requires `total_length` column 
+3. Relative weight requires `weight` and `total_length` columns
+
+Required columns in input dataframe: 
+
+- **Location**: need these two columns
+  - `type` is "all" or "state"
+  - `area` is "North America" or state name, spelled out and capitalized
+- **Date**: only a numeric `year` column is needed
+- **Measurements**: 
+  - `total_length` is fish record length (mm)
+  - `weight` is fish record weight (g)
+  - `effort` is specified in **Collection method**
+- **Collection method**: see the table below for details
+  - `method` must exactly match one of the options in the first column
+  - `effort` will contain a numeric value that has correct type and unit
+
+| **Method name**          | **Effort type** | **Unit** |
+|--------------------------|-----------------|----------|
+| boat_electrofishing      | Time            | seconds  |
+| tow_barge_electrofishing | Time            | seconds  |
+| raft_electrofishing      | Time            | seconds  |
+| trawl                    | Time            | seconds  |
+| gill_net_fall            | Number of nets  | number   |
+| gill_net_fall            | Number of nets  | number   |
+| hoop_net                 | Number of nets  | number   |
+| small_catfish_hoopnet    | Number of nets  | number   |
+| large_catfish_hoopnet    | Number of nets  | number   |
+| seine                    | Number of nets  | number   |
+| bag_seine                | Number of nets  | number   |
+| stream_seine             | Number of nets  | number   |
+| backpack_electrofishing  | Area            | m2       |
+| snorkel                  | Area            | m2       |
+
+- **Type of water body**
+  - `waterbody_type` must be one of the following: "large_standing_waters", "small_standing_waters", "two_story_standing_waters", "wadeable_streams", "rivers"
+- **Species** must be in `common_name` as species common name, which must match one of those listed below, as from `FSA::PSDlit`:
+
+```{r, echo=FALSE}
+species_list <- FSA::PSDlit
+print(species_list$species)
+```
+
+## Prepare to calculate metrics
+
+### Read in libraries
+```{r, warning=FALSE, message=FALSE}
+library(readxl)
+library(dplyr)
+library(stringr)
+library(FSA)
+library(ggplot2)
+```
+
+### Read in and modify example datasets
+
+Example of final dataset: 
+
+```{r, echo=FALSE}
+process_example <- read.csv("../input_examples/AFS_processed_test_data.csv")
+head(process_example)
+```
+
+Read in example dataset. 
+
+```{r}
+raw_y1 <- readxl::read_xlsx("../input_examples/AFS_test_data.xlsx") %>%
+  tidyr::separate(date, into = c("month", "day", "year"), sep = c(1, 3, 7)) %>% 
+  mutate(year = as.numeric(year), 
+         common_name = str_to_title(common_name), 
+         waterbody_type = str_replace_all(waterbody_type, " ", "_"))
+```
+
+Simulate extra data for additional years for raw data. 
+
+```{r}
+raw_y2 <- raw_y1 %>% 
+  mutate(year = year + 1, 
+         total_length = total_length + 50, 
+         effort = effort / 2, 
+         effort_transect = effort_transect / 2)
+```
+
+Simulate North America data. 
+
+```{r}
+raw_y3 <- raw_y2 %>% 
+  mutate(state = "North America", 
+         common_name = "Bluegill")
+```
+
+Simplify dataset to include only necessary columns. 
+
+```{r}
+raw_example <- bind_rows(raw_y1, raw_y2, raw_y3) %>% 
+  rename(area = state) %>% 
+  select(area, waterbody_name, common_name, method, waterbody_type, year, effort, total_length, weight) %>% 
+  mutate(type = case_when(area == "Arizona" ~ "state", 
+                          area == "North America" ~ "all")) %>% 
+  relocate(type, .before = area)
+```
+
+Save example user input dataset. 
+
+```{r}
+write.csv(raw_example, "../app/user_example.csv", row.names = FALSE)
+```
+
+
+## Functions to calculate metrics
+
+### 1. CPUE
+
+For time-based methods, convert effort from seconds to hours. Calculate CPUE by dividing number of fish records for each species by effort. 
+
+```{r}
+# average each lake, then calculate metric (number of fish and effort), then do average by state
+
+# get sampleID first = state, waterbody name, year, method
+# then average measurements by sampleID
+  # measurements = effort
+# n is for number of sampleIDs in a state/ecoregion
+
+non_net_methods <- c("boat_electrofishing", "tow_barge_electrofishing", 
+                     "raft_electrofishing", "small_mesh_trawl", "large_mesh_trawl")
+net_methods <- c("gill_net_spring", "stream_seine", "hoop_net", 
+                 "small_catfish_hoopnet", "drifting_trammel_net",
+                 "large_catfish_hoopnet", "seine", "bag_seine")
+bp_methods <- c("backpack_electrofishing")
+
+calculate_cpue <- function(df){
+  stopifnot(c("type", "area", "common_name", "method", "waterbody_type", 
+              "year", "effort") %in% colnames(df)) #todo check these
+  cpue <- df %>% 
+    group_by(type, area, waterbody_name, year, method, waterbody_type, common_name) %>% 
+    summarize(n_fish = n(), 
+              effort_sampleID = mean(effort)) %>% 
+    mutate(effort = case_when(method %in% non_net_methods ~ effort_sampleID / 3600, 
+                              method %in% net_methods ~ effort_sampleID)) %>% 
+    mutate(cpue = n_fish / effort) %>% # n is number of fish
+    group_by(type, area, common_name, method, waterbody_type) %>%
+    summarize_at(vars(cpue), list(mean = mean, se = se,
+                                `5%` = ~quantile(x = ., probs = 0.05),
+                                `25%` = ~quantile(x = ., probs = 0.25),
+                                `50%` = ~quantile(x = ., probs = 0.50),
+                                `75%` = ~quantile(x = ., probs = 0.75),
+                                `95%` = ~quantile(x = ., probs = 0.95)),
+               na.rm = TRUE) %>%
+    mutate(metric = "CPUE")
+  return(cpue)
+}
+```
+
+### 2. Length frequency
+
+Calculate Gabelhouse category for each fish record using length and species identity. For each species and each year, determine proportion of records in each category. Then calculate mean and standard error of length frequency for each species by category across years. 
+
+```{r}
+# lf by lake then averaged across state
+calculate_lf <- function(df){
+    stopifnot(c("type", "area", "common_name", "method", "waterbody_type", 
+                "year", "total_length") %in% colnames(df))
+  lf <- df %>% 
+    mutate(gcat = psdAdd(total_length, common_name, what = "incremental")) %>% 
+    group_by(type, area, common_name, method, waterbody_type, year) %>% 
+    count(gcat) %>% 
+    mutate(lenfreq = n / sum(n)) %>% 
+    group_by(type, area, common_name, method, waterbody_type, gcat) %>% 
+    summarize_at(vars(lenfreq), list(mean = mean, se = se), na.rm = TRUE) %>% 
+    mutate(metric = "Length Frequency", 
+           gcat = factor(gcat, levels = c("stock", "quality", "preferred",
+                                          "memorable", "trophy")))
+  return(lf)
+}
+```
+
+### 3. Relative weight
+
+Calculate Gabelhouse category for each fish record using length and species identity, and relative weight for each fish record using width, length, and species identity. Then calculate mean and standard error for relative weight for each species by category across years. 
+
+```{r}
+calculate_rw <- function(df){
+  stopifnot(c("type", "area", "common_name", "method", "waterbody_type", "year", 
+              "total_length", "weight") %in% colnames(df))
+  rw <- df %>% 
+    mutate(gcat = psdAdd(total_length, common_name, what = "incremental"), 
+         relweight = wrAdd(wt = weight, len = total_length, spec = common_name)) %>% 
+    group_by(type, area, common_name, method, waterbody_type, gcat) %>% 
+    summarize_at(vars(relweight), list(mean = mean, se = se, 
+                                `5%` = ~quantile(x = ., probs = 0.05),
+                                `25%` = ~quantile(x = ., probs = 0.25),
+                                `50%` = ~quantile(x = ., probs = 0.50),
+                                `75%` = ~quantile(x = ., probs = 0.75),
+                                `95%` = ~quantile(x = ., probs = 0.95)), na.rm = TRUE) %>% 
+    mutate(metric = "Relative Weight", 
+           gcat = factor(gcat, levels = c("stock", "quality", "preferred",
+                                          "memorable", "trophy")))
+  return(rw)
+}
+```
+
+## Generate metrics dataset
+
+Run 3 functions on user input data, then combine into final dataset. 
+
+```{r}
+counts <- raw_example %>% 
+  group_by(type, area, common_name, method, waterbody_type) %>%
+  summarise(N = n())
+```
+
+
+```{r}
+cpue_example <- calculate_cpue(raw_example)
+lf_example <- calculate_lf(raw_example)
+rw_example <- calculate_rw(raw_example)
+
+final_example <- bind_rows(cpue_example, lf_example, rw_example) %>% 
+  left_join(counts, by = c("type", "area", "common_name", "method", "waterbody_type"))
+```
+
+### Plot metrics dataset
+
+```{r}
+ggplot(cpue_example, aes(y = area)) +
+        geom_boxplot(aes(xmin = `5%`,
+                         xlower = `25%`,
+                         xmiddle = `50%`,
+                         xupper = `75%`,
+                         xmax = `95%`),
+                     stat = "identity") +
+  facet_wrap(vars(common_name))
+```
+
+```{r}
+ggplot(lf_example, aes(x = gcat, y = mean)) +
+  geom_bar(stat = "identity") +
+  scale_x_discrete(drop = FALSE) +
+  facet_wrap(vars(common_name)) +
+        geom_errorbar(aes(ymin = mean - se,
+                          ymax = mean + se),
+                      width = 0)
+```
+
+```{r}
+ggplot(rw_example, aes(x = gcat)) +
+  geom_point(aes(y = mean)) +
+  geom_line(aes(y = mean)) +
+  scale_x_discrete(drop = FALSE) +
+  facet_wrap(vars(common_name))
+```
