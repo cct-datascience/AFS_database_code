@@ -104,8 +104,15 @@ h4("We hope that these methods can be adopted by others, particularly those in d
 h4 ("Sponsored by:"), 
 imageOutput("logo"),
 
-h4("We encourage general feedback sent to ", a("Scott Bonar", href="mailto:SBonar@ag.arizona.edu", .noWS = "outside"), 
-   ". To report bugs in this web application, please open an ", a("issue", href="https://github.com/erinetracy/AFS_database_code/issues", .noWS = "outside"), ".")
+h4("These data were collected by ", 
+   a("Scott Bonar's lab", href="https://azcfwru.wixsite.com/azcfwru", .noWS = "outside"), 
+   ". All feedback on this app is greatly appreciated, and can be provided by sending an email to ", 
+   a("Dr. Bonar", href="mailto:SBonar@ag.arizona.edu", .noWS = "outside"), 
+   " or by submitting an ", 
+   a("issue", href="https://github.com/cct-datascience/AFS_database_code/issues", .noWS = "outside"), 
+   " through the project's ", 
+   a("GitHub repository", href="https://github.com/cct-datascience/AFS_database_code", .noWS = "outside"), 
+   ", which is also where the code is located.")
                           )
                  ),
 
