@@ -82,6 +82,11 @@ ui <- navbarPage("AFS Standard Sampling App",
                  theme = bslib::bs_theme(bootswatch = "sandstone"),
                  tabPanel("About",
                           wellPanel(
+                            tags$head(tags$style(
+                              type="text/css",
+                              "#pics img {display: block; margin-left: auto; margin-right: auto; max-height: 90%; height: 90%; max-width: 100%, width: auto}"
+                            )),
+                            imageOutput("pics"),
                             h2("About Standard Sampling", align = "center"),
                             h4("Standardization of sampling methods allows fisheries professionals to compare data across large spatial and temporal scales, encourages data sharing and improves communication. 
 In light of these benefits, the American Fisheries Society published Standard Methods for Sampling North American Freshwater Fishes in 2009. 
@@ -96,11 +101,23 @@ When developing version two of the database, we examined the strengths and weakn
 We used this information to achieve our goals of maximizing use and providing simple means to update this program for comparison of fisheries data."),
 br(),
 h4("We hope that these methods can be adopted by others, particularly those in data-poor regions, to develop their own standard methods and fisheries databases. "),
+h2("Details About App Usage", align = "center"), 
+h4("A ", strong("data set (N)"), " is defined as data collected with AFS standard gears and methods during routine monitoring programs of an entire fish community or entire populations of specific fish ", strong("in a single waterbody conducted once during a year"), ". For example, data collected from Bass Lake (a small standing water body) sampled by boat electrofishing for Largemouth Bass in 2014 would represent 1 data set. In some cases, data sets included multi-day surveys of the same waterbody (e.g., large reservoirs) where the effort was summed across all sampling days. This excludes surveys targeting specific size groups or those with other biases (e.g., egg counts, juveniles fish surveys)."), 
+h4("Most of the app components can be translated into another language by going to ", 
+   a("Google Translate", href="https://translate.google.com/?sl=auto&tl=en&op=websites", .noWS = "outside"), 
+   " and entering the URL for the app, then selecting the desired language. Maps and plot can only currently be generated using the original version of the app. "), 
+h2("How to Provide Feedback", align = "center"), 
+h4("These data were collected by ", 
+   a("Scott Bonar's lab", href="https://azcfwru.wixsite.com/azcfwru", .noWS = "outside"), 
+   ". All feedback on this app is greatly appreciated, and can be provided by sending an email to ", 
+   a("Dr. Bonar", href="mailto:SBonar@ag.arizona.edu", .noWS = "outside"), 
+   " or by submitting an ", 
+   a("issue", href="https://github.com/cct-datascience/AFS_database_code/issues", .noWS = "outside"), 
+   " through the project's ", 
+   a("GitHub repository", href="https://github.com/cct-datascience/AFS_database_code", .noWS = "outside"), 
+   ", which is also where the code is located."), 
 h4 ("Sponsored by:"), 
-imageOutput("logo"),
-
-h4("We encourage general feedback sent to ", a("Scott Bonar", href="mailto:SBonar@ag.arizona.edu", .noWS = "outside"), 
-   ". To report bugs in this web application, please open an ", a("issue", href="https://github.com/erinetracy/AFS_database_code/issues", .noWS = "outside"), ".")
+imageOutput("logo")
                           )
                  ),
 
@@ -229,6 +246,15 @@ h4("We encourage general feedback sent to ", a("Scott Bonar", href="mailto:SBona
 
 
 server <- function(input, output) {
+  
+  output$pics <- renderImage({
+    list(
+      src = file.path("www/fish_pics.png"), 
+      contentType = "image/png", 
+      height = 365, 
+      width = 819
+    )
+  }, deleteFile = FALSE)
   
   output$logo <- renderImage({
     list(
