@@ -82,6 +82,11 @@ ui <- navbarPage("AFS Standard Sampling App",
                  theme = bslib::bs_theme(bootswatch = "sandstone"),
                  tabPanel("About",
                           wellPanel(
+                            tags$head(tags$style(
+                              type="text/css",
+                              "#pics img {display: block; margin-left: auto; margin-right: auto; max-height: 100%; height: 100%; max-width: 100%, width: auto}"
+                            )),
+                            imageOutput("pics"),
                             h2("About Standard Sampling", align = "center"),
                             h4("Standardization of sampling methods allows fisheries professionals to compare data across large spatial and temporal scales, encourages data sharing and improves communication. 
 In light of these benefits, the American Fisheries Society published Standard Methods for Sampling North American Freshwater Fishes in 2009. 
@@ -229,6 +234,15 @@ h4("We encourage general feedback sent to ", a("Scott Bonar", href="mailto:SBona
 
 
 server <- function(input, output) {
+  
+  output$pics <- renderImage({
+    list(
+      src = file.path("www/fish_pics.png"), 
+      contentType = "image/png", 
+      height = 365, 
+      width = 819
+    )
+  }, deleteFile = FALSE)
   
   output$logo <- renderImage({
     list(
