@@ -827,7 +827,10 @@ server <- function(input, output) {
   
   callModule(plotDownload, "CPUE_plot", plotCPUE)
   
-  mtext <- "## How to format input data 
+  mtext <- "
+<br>
+  
+<center><b>How to Format Input Data</b></center>
 
 You can upload your own data to compare to the standardized data. This needs to be provided as a csv file that will have length and/or weight measurements with one row per observation (a single fish or multiple fish summed). This app will calculate the three metrics of interest for each unique combination of area, species, collection method, type of water body, and year. The three metrics are: 
 
@@ -835,7 +838,7 @@ You can upload your own data to compare to the standardized data. This needs to 
 2. Length frequency
 3. Relative weight
 
-### Column details
+<center><b>Column Details</b></center>
 
 Below are the details of the required columns in the data. The order of the columns does not matter. There is an example dataset at the bottom of the page with simulated data that may be a helpful guide. 
 
@@ -939,8 +942,10 @@ Required columns in input dataframe:
 </div>
 
 </center>  
-  
-### Example dataset
+
+<br>
+
+<center><b>Example Dataset</b></center>
 
 <br>  
 "
