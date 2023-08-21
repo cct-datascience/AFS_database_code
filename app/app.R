@@ -68,7 +68,7 @@ ecoregions_trans <- ecoregions %>%
   st_transform("+proj=longlat +datum=WGS84")
 
 # Read in lat/longs
-locs <- read_csv("Lat_long_AFSshiny_012023.csv") %>%
+locs <- read_csv("AZ_test.csv") %>%
   select(-date) # not parseable as is
 
 # Read in example user upload data
