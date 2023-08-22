@@ -112,6 +112,14 @@ What are we looking for in code documentation for an app?
 ## Suggestions/comments (so far)
 
 - License/citation on the "About" page of the app
-- Explanation of X axes on plots
+- Explanation of X axes on plots - see:
+
+```r  
+gcat = case_when(gcat == "stock" ~ "S-Q",
+                              gcat == "quality" ~ "Q-P",
+                              gcat == "preferred" ~ "P-M",
+                              gcat == "memorable" ~ "M-T",
+                              gcat == "trophy" ~ "T")
+```
 - Doc of instructions + necessary files to get the app to run locally
     - _I am happy to take a go at this._

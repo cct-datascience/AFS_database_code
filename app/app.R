@@ -10,6 +10,9 @@ library(knitr)
 # library(periscope)
 
 # Module code
+
+#### Functions for plots with download buttons #### 
+# function to create a UI for a plot + a download button
 plotDownloadUI <- function(id, height = 400) {
   ns <- NS(id)
   tagList(
@@ -26,6 +29,7 @@ plotDownloadUI <- function(id, height = 400) {
   )
 }
 
+# function to add a plot and a download button to an output
 plotDownload <- function(input, output, session, plotFun) {
   output$plot <- renderPlot({
     plotFun()
@@ -41,7 +45,8 @@ plotDownload <- function(input, output, session, plotFun) {
   )
 }
 
-# Read in summary fish metrics
+#### Reading in and preparing data ####
+# Read in summary fish metrics - main data source
 metrics <- read_csv('Test_results_full_012723.csv') %>%
   relocate(area) %>%
   relocate(N, .after = last_col()) %>%
@@ -51,7 +56,7 @@ metrics <- read_csv('Test_results_full_012723.csv') %>%
                           gcat == "Memorable-Trophy" ~ "M-T",
                           gcat == "Trophy" ~ "T") %>%
            factor(levels = c("S-Q", "Q-P", "P-M", "M-T", "T")))
-# Develop vectors of unique entries
+# Develop vectors of unique entries - for use in UI
 uni.type <- c("North America", "Ecoregion", "State/Province")
 uni.area <- sort(unique(metrics$area))
 uni.spp <- sort(unique(metrics$common_name))
@@ -60,6 +65,7 @@ uni.watertype <- sort(unique(metrics$waterbody_type))
 uni.metric <- c("Length Frequency", "Relative Weight", "CPUE") 
 
 # Read in ecoregions shapefiles
+# If the ecoregion shapefiles are not present, run `app/download_map_data.R` to get them.
 ecoregions <- read_sf("ecoregions1/NA_CEC_Eco_Level1.shp")
 ecoregions_crs <- "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs"
 ecoregions_trans <- ecoregions %>% 
@@ -68,18 +74,31 @@ ecoregions_trans <- ecoregions %>%
   st_transform("+proj=longlat +datum=WGS84")
 
 # Read in lat/longs
+# Lat/longs are the locations of sampling sites for datasets included in the summary metrics.
+# They are used for the plot on the "Explore" page of the app and otherwise do not affect functionality.
+# They are not included in this repo for data privacy reasons.
+# To get the app to run, read in the `AZ_test.csv` file to populate this data object with fake data.
+
+# # Read in lat/longs
+# locs <- read_csv("Lat_long_AFSshiny_012023.csv") %>%
+#   select(-date) # not parseable as is
+
 locs <- read_csv("AZ_test.csv") %>%
   select(-date) # not parseable as is
 
 # Read in example user upload data
+# Used in the Instructions tab of the "Compare your data" module
 ex <- read_csv("user_example.csv")
 
 # Create a "not in" function
 `%nin%` <- negate(`%in%`)
 
+#### UI ####
+
 #Shiny App
 ui <- navbarPage("AFS Standard Sampling App",
                  theme = bslib::bs_theme(bootswatch = "sandstone"),
+# "About" panel
                  tabPanel("About",
                           wellPanel(
                             tags$head(tags$style(
@@ -120,9 +139,10 @@ h4 ("Sponsored by:"),
 imageOutput("logo")
                           )
                  ),
-
+# "Explore" panel
                  tabPanel(title = "Explore",
                           sidebarLayout(
+                            # Sidebar with data filtering options + download buttons
                             sidebarPanel(
                               "Welcome to the American Fisheries Society Standard Sampling Database App!", 
                               br(),
@@ -157,24 +177,27 @@ imageOutput("logo")
                               downloadButton("filterdownload", "Download filtered"),
                               downloadButton("alldownload", "Download all")
                             ),
-                            
+                            # Map and preview panels
                             mainPanel(
                               tabsetPanel(
+                                # Map of sites with data within the filtered dataset
                                 tabPanel("Map", 
                                          leafletOutput("plotSites",
                                                        width = 700,
                                                        height = 500),
                                          textOutput("report_absent1"),
                                          textOutput("report_absent2")), 
+                                # Data table of filtered data
                                 tabPanel("Preview", 
                                          DTOutput("filtertable"))
                                 )
                               )
                           )
                           ), 
-
+                # "View tab"
                  tabPanel(title = "View",
                    sidebarLayout(
+                    # Sidebar with filtering options + download buttons
                      sidebarPanel(
                        "Welcome to the American Fisheries Society Standard Sampling Database App!", 
                        br(), 
@@ -199,14 +222,17 @@ imageOutput("logo")
                                    choices = uni.watertype,
                                    selected = "large_standing_waters")
                        ),
+                    # Panel with plots (filtered according to sidebar options)
                      mainPanel(plotDownloadUI("LF_plot"),
                                plotDownloadUI("RW_plot"),
                                plotDownloadUI("CPUE_plot", height = "200px")
                                )
                      )
                    ),
+                # "Compare your data" tab
                 tabPanel(title = "Compare Your Data",
                          sidebarLayout(
+                          # Sidebar with upload interface
                            sidebarPanel(
                              "Welcome to the American Fisheries Society Standard Sampling Database App!",
                              br(),
@@ -224,11 +250,14 @@ imageOutput("logo")
                              uiOutput("dyn_method3"),
                              uiOutput("dyn_watertype3")
                            ),
+                           # Main panel
                            mainPanel(
                              tabsetPanel(
+                              # Instructions for data formatting + example dataset
                                tabPanel("Instructions", 
                                         uiOutput("instructions"), 
                                         DTOutput("example")),
+                              # Plots comparing uploaded data to in-app data
                                tabPanel("Comparisons", 
                                         plotDownloadUI("LF_plot_UU"),
                                         plotDownloadUI("RW_plot_UU"),
@@ -243,10 +272,11 @@ imageOutput("logo")
 )
 
 
-
+#### Server ####
 
 server <- function(input, output) {
   
+  # Fish pics - rendered in "About" panel
   output$pics <- renderImage({
     list(
       src = file.path("www/fish_pics.png"), 
@@ -256,6 +286,7 @@ server <- function(input, output) {
     )
   }, deleteFile = FALSE)
   
+  # Logo - rendered in "About" panel
   output$logo <- renderImage({
     list(
       src = file.path("www/AFS_sponsor_3.png"), 
@@ -265,7 +296,9 @@ server <- function(input, output) {
     )
   }, deleteFile = FALSE)
   
+  #### UIs for dynamic maps ####
   # Render a UI for selecting area depending on North America, Ecoregions, or State/Province
+  # The first one is rendered in the Explore tab
   output$dyn_area <- renderUI({
     if(input$typechoice == "North America") {
       temp <- "North America"
@@ -284,6 +317,7 @@ server <- function(input, output) {
   })
   
   # Render a UI for selecting area depending on North America, Ecoregions, or State/Province for tab2
+  # Rendered in the View tab
   output$dyn_area2 <- renderUI({
     if(input$typechoice2 == "North America") {
       temp <- "North America"
@@ -300,18 +334,18 @@ server <- function(input, output) {
                 selected = temp[1])
   })
 
-  # Read in raw user upload data to be used in reactive UI's
+  # Read in raw user upload data to be used in "Compare your data" reactive UIs
   uu_raw <- reactive({
     inFile <- input$upload
     uu <- read_csv(inFile$datapath)
     
   })
   
-  # Render a UI for selecting area 
+  # Render a UI for selecting area based on user uploaded data
   output$dyn_type <- renderUI({
     req(input$upload)
     
-    temp <-  uu_raw() %>% # 
+    temp <-  uu_raw() %>% 
       select(type) %>%
       unique() %>%
       mutate(types = case_when(type == "all" ~ "North America",
@@ -329,6 +363,7 @@ server <- function(input, output) {
   })
   
   # Render a UI for selecting area depending on North America, Ecoregions, or State/Province for tab 3
+  # Used for "Compare your data"; incorporates user uploaded data
   output$dyn_area3 <- renderUI({
     req(input$upload)
     
@@ -371,7 +406,7 @@ server <- function(input, output) {
                 selected = temp[1])
   })  
   
-  # Render a UI for selecting species depending on user upload data in tab 3
+  # Render a UI for selecting survey method depending on user upload data in tab 3
   output$dyn_method3 <- renderUI({
     req(input$upload)
     req(input$areachoice3)
@@ -390,7 +425,7 @@ server <- function(input, output) {
                 selected = temp[1])
   })  
   
-  # Render a UI for selecting species depending on user upload data in tab 3
+  # Render a UI for selecting body of water type depending on user upload data in tab 3
   output$dyn_watertype3 <- renderUI({
     req(input$upload) 
     req(input$areachoice3)
@@ -411,8 +446,11 @@ server <- function(input, output) {
                 selected = temp[1])
   }) 
   
+#### Explore tab ####
 
-  # make filtered, a reactive data object for tab 1 explore, multiple combos okay
+  # Filter metrics data according to user selected inputs.
+  # To show and/or download in "Explore" tab.
+  # Multiple combos OK. 
   filtered <- reactive({
     
     f_df <-  metrics %>%
@@ -429,7 +467,9 @@ server <- function(input, output) {
              se, `5%`, `25%`, `50%`, `75%`, `95%`)
     
   })
-  
+
+#### RMD PICK UP HERE ####
+
   # For downloading the entire dataset for tab 1 explore
   all <- reactive({
     
