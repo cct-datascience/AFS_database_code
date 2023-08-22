@@ -68,14 +68,50 @@ _For code review in general - I would define this as a section on "app expected 
 
 - "Explore" page:
   - "Map" tab
-    - Displays a map of points of sampling locations colored by ecoregion. The map zooms and if you click will show you a) the ecoregion or b) the sampling site (if you click on a specific dot). The dots shown on the map will correspond to datasets included in the filters you select. The dots get their lat/long data from the `locs` file, which for review only has one site in AZ.
-    - Masks locations if anonymity is not possible [more detail here]
-    - Has data filtering options 
+    - [x] Displays a map of points of sampling locations colored by ecoregion. The map zooms and if you click will show you a) the ecoregion or b) the sampling site (if you click on a specific dot). The dots shown on the map will correspond to datasets included in the filters you select. The dots get their lat/long data from the `locs` file, which for review only has one site in AZ.
+    - _Can't test with current toy data; could make a dataset designed to test it_. Masks locations if anonymity is not possible [more detail here]
+    - [x] Has data filtering options that control which dots/locations show up on the map.
   - "Preview" tab
-    - Shows data available for download accounting for filters.
+    - [x] Shows the filtered data that would be available for download given current filters. _Could try to break this filtering but it works appropriately given some 
+  - "Download filtered" and "Download all" buttons
+    - [x] Download filtered data/all data.
+- "View" page:
+  - Shows plots of fish metrics
+  - [x] Plots update based on data filtration options
+  - [x] May show 'No [] data for selected options' 
+- "Compare your data" tab
+  - "Instructions"
+    - [x] Instructions for formatting a dataset so that it can be uploaded to compare to the in-app data
+      - _I tested this using the supplied "user_example.csv"; I could make a new dataset following instructions to make sure that that works_
+  - "Comparisons"
+    - [x] Shows comparison plots - user data show up in different colors than corresponding in-app data
+    - [x] If user data don't meet needs in Instructions, plots fail to render with various errors.
 
 ### User-facing documentation
 
+- [ ] X axes for the plots - I don't know what these mean ("S-Q", "Q-P", "P-M", M-T", "T"). That might be standard fish stuff, though, and not problematic for the intended user base.
+- [ ] Instructions for uploading data are sufficient to get comparisons plots to render
+- [x] It's clear where to get help
+- [ ] License/attribution instructions for downloaded data in the app itself?
+
 ### Code documentation
 
-(Probably least important, tbh)
+What are we looking for in code documentation for an app?
+
+- [ ] File structure is explained
+- [ ] It's possible to run the code locally as-is
+      - _Not currently, RMD can contribute some short files/instructions for running locally. My current impression is that the only thing that breaks if you have fake data for the lat/longs is the map on the Explore page._
+- [ ] Files that are present have a clear purpose
+      - _Are the `analysis_scripts` and `input_examples` directories needed in the current iteration, or are they notetaking/archival? If so they're not hurting anything, just a clarity/tidying up thing._
+- [ ] Scripts that are used are documented and readable
+      - _To my understanding, the ones to focus on are:_
+      - [ ] `app/r/functions.R`
+      - [ ] `app/app.R`
+
+
+## Suggestions/comments (so far)
+
+- License/citation on the "About" page of the app
+- Explanation of X axes on plots
+- Doc of instructions + necessary files to get the app to run locally
+    - _I am happy to take a go at this._
