@@ -133,7 +133,7 @@ Running under: macOS Monterey 12.5.1
 Both of these seem optional:
 
 - The in-app user documentation doesn't include a citation or license. Consider adding one, especially for data downloaded using the app?
-- I couldn't find a user-facing explanation for the X axes of the plots. Going into the code, it looks like the letters correspond to fish size classifications. This might be a standard designation that fish biologists all already know, but if not, consider adding a key to the X axes?
+- Not having a fish background, it took me a while to figure out that the x-axes for the size plots correspond to Gabelhouse lengths. This PR adds "Gabelhouse length" to the axes to help clarify.
 
 ### Developer-facing documentation
 

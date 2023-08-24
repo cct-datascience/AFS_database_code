@@ -448,6 +448,9 @@ server <- function(input, output) {
   
 #### Explore tab ####
 
+# Create data frames of metrics data for display and download
+
+# Create `filtered`, data filtered according to inputs for viewing/download in the Explore tab
   # Filter metrics data according to user selected inputs.
   # To show and/or download in "Explore" tab.
   # Multiple combos OK. 
@@ -468,9 +471,7 @@ server <- function(input, output) {
     
   })
 
-#### RMD PICK UP HERE ####
-
-  # For downloading the entire dataset for tab 1 explore
+  # Prepare metrics data for "all" download in the Explore tab
   all <- reactive({
     
     all_df <-  metrics %>%
@@ -479,6 +480,7 @@ server <- function(input, output) {
              se, `5%`, `25%`, `50%`, `75%`, `95%`) 
   })
   
+  # Download handler for "all" download in the Explore tab
   output$alldownload <- downloadHandler(
     filename = function() {
       paste0("AFS-all-", Sys.Date(), ".csv")
@@ -488,8 +490,20 @@ server <- function(input, output) {
       write.csv(all(), file)
     }
   )
+
+# Download handler for "filtered" download in the Explore tab
+  output$filterdownload <- downloadHandler(
+    filename = function() {
+      paste0("AFS-filtered-", Sys.Date(), ".csv")
+    },
+    
+    content = function(file) {
+      write_csv(filtered(), file)
+    }
+  )
   
-  # make locations, a reactive data object for tab 1, only locations that are selected
+  # Filter the `locs` dataframe to pull out only locations that meet filtering criteria
+
   locate <- reactive({
     if(input$typechoice == "North America") {
       l_df <-  locs %>%
@@ -579,36 +593,7 @@ server <- function(input, output) {
       }
     })
   
-  # make filtered, a reactive data object for tab 2, single combos only
-  filtered2 <- reactive({
 
-    f_df <-  metrics %>%
-      filter(metric %in% uni.metric,
-             area %in% input$areachoice2,
-             common_name %in% input$sppchoice2,
-             method %in% input$methodchoice2,
-             waterbody_type %in% input$watertypechoice2) %>%
-      arrange(common_name) %>%
-      select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
-             se, `5%`, `25%`, `50%`, `75%`, `95%`)
-    print(f_df)
-    
-  })
-
-  observeEvent(input$areachoice2, {
-    print(paste0("You have chosen: ", input$areachoice2))
-  })
-  
-  output$filterdownload <- downloadHandler(
-    filename = function() {
-      paste0("AFS-filtered-", Sys.Date(), ".csv")
-    },
-    
-    content = function(file) {
-      write_csv(filtered(), file)
-    }
-  )
-  
   # Making the table look nice
   output$filtertable <- renderDT({  
     
@@ -639,67 +624,7 @@ server <- function(input, output) {
                     "95%" = `95%`)
   })
 
-  filtered3 <- reactive({
-    
-    f_df <-  metrics %>%
-      filter(metric %in% uni.metric,
-             area %in% input$areachoice3,
-             common_name %in% input$sppchoice3,
-             method %in% input$methodchoice3,
-             waterbody_type %in% input$watertypechoice3) %>%
-      arrange(common_name) %>%
-      select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
-             se, `5%`, `25%`, `50%`, `75%`, `95%`)
-    
-  })
-  
-  uu_processed <- reactive({
-    # Suppresses error messages for plots until inputs are chosen
-    req(input$areachoice3)
-    req(input$sppchoice3)
-    req(input$methodchoice3)
-    req(input$watertypechoice3)
-    
-    inFile <- input$upload
-    uu <- read_csv(inFile$datapath)
-    print("UU original")
-    print(uu)
-    
-    # Calculate 3 metrics for user data
-    uu_counts <- uu %>% 
-      group_by(type, area, common_name, method, waterbody_type) %>%
-      summarise(N = n())
-    
-    uu_cpue <- calculate_cpue(uu)
-    uu_lf <- calculate_lf(uu)
-    uu_rw <- calculate_rw(uu)
-    
-    uu_process <- bind_rows(uu_cpue, uu_lf, uu_rw) %>% 
-      left_join(uu_counts, by = c("type", "area", "common_name", "method", "waterbody_type")) %>% 
-      mutate(gcat = case_when(gcat == "stock" ~ "S-Q",
-                              gcat == "quality" ~ "Q-P",
-                              gcat == "preferred" ~ "P-M",
-                              gcat == "memorable" ~ "M-T",
-                              gcat == "trophy" ~ "T") %>%
-               factor(levels = c("S-Q", "Q-P", "P-M", "M-T", "T")))
-
-    f_df <-  uu_process %>%
-      filter(metric %in% uni.metric,
-             area %in% input$areachoice3,
-             common_name %in% input$sppchoice3,
-             method %in% input$methodchoice3,
-             waterbody_type %in% input$watertypechoice3) %>%
-      arrange(common_name) %>%
-      select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
-             se, `5%`, `25%`, `50%`, `75%`, `95%`)
-
-    print("UU filtered")
-    print(f_df$metric)
-    print(f_df, n = Inf)
-
-  })
-  
-  # Map of ecoregions and sites
+  # Map of ecoregions and sites for the Explore tab
   output$plotSites <- renderLeaflet({
     
     # Remove 'exclude()' from plot_data if only 1 site or 1 year is represented
@@ -728,6 +653,7 @@ server <- function(input, output) {
   
   })
   
+  # Messages describing sites removed for anonymity/missing coords
   # Text to describe insufficient sample size for anonymity
   output$report_absent1 <- renderText({
     paste0(nrow(exclude()), " site(s) not shown to maintain data anonymity. ")
@@ -747,8 +673,37 @@ server <- function(input, output) {
     }
     
   })
-  
-  
+
+  #### View tab #### 
+
+  # Prepare metrics data for display
+  # Filter it
+
+# Print selected area to the console (no effect on app behavior)
+  observeEvent(input$areachoice2, {
+    print(paste0("You have chosen: ", input$areachoice2))
+  })
+   
+
+  # Filter data to be used in plots for tab 2
+  # Single combinations only
+  filtered2 <- reactive({
+
+    f_df <-  metrics %>%
+      filter(metric %in% uni.metric,
+             area %in% input$areachoice2,
+             common_name %in% input$sppchoice2,
+             method %in% input$methodchoice2,
+             waterbody_type %in% input$watertypechoice2) %>%
+      arrange(common_name) %>%
+      select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
+             se, `5%`, `25%`, `50%`, `75%`, `95%`)
+    print(f_df)
+    
+  })
+
+# Plot metrics data
+  # Length frequency plot
   plotLengthFrequency <- reactive({
     temp <- filtered2() %>%
       filter(metric == "Length Frequency")
@@ -772,16 +727,18 @@ server <- function(input, output) {
                            limits = c(0, 100),
                            expand = c(0, 0)) +
         theme_classic(base_size = 16) +
-        theme(axis.title.x = element_blank(), 
-              legend.position = "none") +
+        xlab("Gabelhouse length")
+        theme(legend.position = "none") +
         ggtitle(paste0("N = ", N))
     }
     
     print(fig)
     
   })
-  
+  # Length frequency download
   callModule(plotDownload, "LF_plot", plotLengthFrequency)
+
+
   
   plotRelativeWeight <- reactive({
     
@@ -818,8 +775,8 @@ server <- function(input, output) {
         scale_y_continuous("Relative weight") +
         scale_color_manual(values = c("darkblue", "darkred", "black")) +
         theme_classic(base_size = 16) +
-        theme(axis.title.x = element_blank(),
-              legend.position = "bottom",
+        xlab("Gabelhouse length") +
+        theme(legend.position = "bottom",
               legend.title = element_blank()) +
         guides(color = guide_legend(override.aes = 
                                       list(shape = c(NA, NA, 16),
@@ -866,7 +823,78 @@ server <- function(input, output) {
   })
   
   callModule(plotDownload, "CPUE_plot", plotCPUE)
+
+#### Compare Data tab ####
+
+# Data prep
+# Filter in-app data for comparison to user data
+  filtered3 <- reactive({
+    
+    f_df <-  metrics %>%
+      filter(metric %in% uni.metric,
+             area %in% input$areachoice3,
+             common_name %in% input$sppchoice3,
+             method %in% input$methodchoice3,
+             waterbody_type %in% input$watertypechoice3) %>%
+      arrange(common_name) %>%
+      select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
+             se, `5%`, `25%`, `50%`, `75%`, `95%`)
+    
+  })
   
+  # Process user-supplied data 
+  uu_processed <- reactive({
+    # Suppresses error messages for plots until inputs are chosen
+    req(input$areachoice3)
+    req(input$sppchoice3)
+    req(input$methodchoice3)
+    req(input$watertypechoice3)
+    
+    inFile <- input$upload
+    uu <- read_csv(inFile$datapath)
+    print("UU original")
+    print(uu)
+    
+    # Calculate 3 metrics for user data
+    uu_counts <- uu %>% 
+      group_by(type, area, common_name, method, waterbody_type) %>%
+      summarise(N = n())
+    
+    # Metric calculation functions are in `app/R/functions.R`
+    uu_cpue <- calculate_cpue(uu)
+    uu_lf <- calculate_lf(uu)
+    uu_rw <- calculate_rw(uu)
+    
+    # Stack calculated metrics and add to uu_counts
+    uu_process <- bind_rows(uu_cpue, uu_lf, uu_rw) %>% 
+      left_join(uu_counts, by = c("type", "area", "common_name", "method", "waterbody_type")) %>% 
+      mutate(gcat = case_when(gcat == "stock" ~ "S-Q",
+                              gcat == "quality" ~ "Q-P",
+                              gcat == "preferred" ~ "P-M",
+                              gcat == "memorable" ~ "M-T",
+                              gcat == "trophy" ~ "T") %>%
+               factor(levels = c("S-Q", "Q-P", "P-M", "M-T", "T")))
+
+    # Filter processed data to needed metrics and filter selections
+    f_df <-  uu_process %>%
+      filter(metric %in% uni.metric,
+             area %in% input$areachoice3,
+             common_name %in% input$sppchoice3,
+             method %in% input$methodchoice3,
+             waterbody_type %in% input$watertypechoice3) %>%
+      arrange(common_name) %>%
+      select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
+             se, `5%`, `25%`, `50%`, `75%`, `95%`)
+
+    print("UU filtered")
+    print(f_df$metric)
+    print(f_df, n = Inf)
+
+  })
+  
+# Instructions panel
+
+# Text
   mtext <- "
 <br>
   
@@ -989,7 +1017,7 @@ Required columns in input dataframe:
 
 <br>  
 "
-  
+  # Instructions panel with text and example data
   output$instructions <- renderUI({
     tf <- tempfile()
     knit(text = mtext, output = tf)
@@ -1001,6 +1029,8 @@ Required columns in input dataframe:
                                formatRound(c(8:10), 0) %>%
                                formatString(7))
   
+  # Plots for metrics showing in-app data in comparison to user-supplied data 
+
   plotLengthFrequencyuser <- reactive({
     # uu_unfiltered() has a req() for uploaded data, so no more error messages
     temp <- uu_processed() %>% 
@@ -1041,8 +1071,8 @@ Required columns in input dataframe:
                            expand = c(0, 0)) +
         scale_fill_discrete("Data source") +
         theme_classic(base_size = 16) +
-        theme(axis.title.x = element_blank(),
-              legend.position = c(0.85, 0.85)) +
+        xlab("Gabelhouse length") +
+        theme(legend.position = c(0.85, 0.85)) +
         ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
     }
 
@@ -1092,8 +1122,8 @@ Required columns in input dataframe:
       scale_y_continuous("Relative weight") +
       scale_color_discrete("Data source") +
       theme_classic(base_size = 16) +
-      theme(axis.title.x = element_blank(),
-            legend.position = "bottom") 
+        xlab("Gabelhouse length") +
+      theme(legend.position = "bottom") 
     
     }
     
