@@ -107,19 +107,40 @@ What are we looking for in code documentation for an app?
       - _To my understanding, the ones to focus on are:_
       - [ ] `app/r/functions.R`
       - [ ] `app/app.R`
+          - _In reading through `app.R` I added comments and moved some code chunks around so that code relating to each section of the app is grouped together. These don't change any functionality, but make the code more readable to an external user._
 
 
-## Suggestions/comments (so far)
+## Review feedback
 
-- License/citation on the "About" page of the app
-- Explanation of X axes on plots - see:
+### Reproducibility
 
-```r  
-gcat = case_when(gcat == "stock" ~ "S-Q",
-                              gcat == "quality" ~ "Q-P",
-                              gcat == "preferred" ~ "P-M",
-                              gcat == "memorable" ~ "M-T",
-                              gcat == "trophy" ~ "T")
+- The original codebase needs some supporting files to run locally. The review PR includes a fix (instructions file + toy data files to mimic the private supporting files).
+
+### Functionality
+
+- Everything works great! 
+
+My session info:
+
 ```
-- Doc of instructions + necessary files to get the app to run locally
-    - _I am happy to take a go at this._
+R version 4.2.1 (2022-06-23)
+Platform: aarch64-apple-darwin20 (64-bit)
+Running under: macOS Monterey 12.5.1
+```
+
+### User-facing documentation
+
+Both of these seem optional:
+
+- The in-app user documentation doesn't include a citation or license. Consider adding one, especially for data downloaded using the app?
+- I couldn't find a user-facing explanation for the X axes of the plots. Going into the code, it looks like the letters correspond to fish size classifications. This might be a standard designation that fish biologists all already know, but if not, consider adding a key to the X axes?
+
+### Developer-facing documentation
+
+- The README is really helpful for understanding the file strucure & purposes of the files.
+- In reading through `app.R`, I added comments and moved some code chunks around so that code relating to each section of the app is grouped together. These changes don't affect functionality, but make the code more readable for an external user. 
+
+
+### Code health/stability/longevity
+
+- Per the README, there are several files that aren't used in the final iteration of the app. These could be deleted to tidy up (but aren't otherwise hurting anything, and could reasonably stay for archival purposes).
