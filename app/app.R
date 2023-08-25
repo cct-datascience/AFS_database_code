@@ -68,9 +68,17 @@ ecoregions_trans <- ecoregions %>%
   st_transform("+proj=longlat +datum=WGS84")
 
 # Read in lat/longs
-locs <- read_csv("Lat_long_AFSshiny_012023.csv") %>%
-  select(-date) # not parseable as is
+# Lat/longs are the locations of sampling sites for datasets included in the summary metrics.
+# They are used for the plot on the "Explore" page of the app and otherwise do not affect functionality.
+# They are not included in this repo for data privacy reasons.
+# To get the app to run, read in the `toy_locs.csv` file to populate this data object with fake data.
 
+# # Read in lat/longs
+# locs <- read_csv("Lat_long_AFSshiny_012023.csv") %>%
+#   select(-date) # not parseable as is
+
+locs <- read_csv("toy_locs.csv") %>%
+  select(-date) # not parseable as is
 # Read in example user upload data
 ex <- read_csv("user_example.csv")
 
@@ -732,8 +740,8 @@ server <- function(input, output) {
                            limits = c(0, 100),
                            expand = c(0, 0)) +
         theme_classic(base_size = 16) +
-        theme(axis.title.x = element_blank(), 
-              legend.position = "none") +
+        xlab("Gabelhouse length")
+        theme(legend.position = "none") +
         ggtitle(paste0("N = ", N))
     }
     
@@ -778,8 +786,8 @@ server <- function(input, output) {
         scale_y_continuous("Relative weight") +
         scale_color_manual(values = c("darkblue", "darkred", "black")) +
         theme_classic(base_size = 16) +
-        theme(axis.title.x = element_blank(),
-              legend.position = "bottom",
+        xlab("Gabelhouse length") +
+        theme(legend.position = "bottom",
               legend.title = element_blank()) +
         guides(color = guide_legend(override.aes = 
                                       list(shape = c(NA, NA, 16),
@@ -851,6 +859,7 @@ Required columns in input dataframe:
 - **Location**: 
   - `type` is *all* or *state*
   - `area` is *North America* or state name, spelled out and capitalized
+    - `waterbody_name` is the name of the water body
 - **Date**: 
   - `year` is a four-digit numeric
 - **Measurements**: 
@@ -1001,8 +1010,8 @@ Required columns in input dataframe:
                            expand = c(0, 0)) +
         scale_fill_discrete("Data source") +
         theme_classic(base_size = 16) +
-        theme(axis.title.x = element_blank(),
-              legend.position = c(0.85, 0.85)) +
+        xlab("Gabelhouse length") +
+        theme(legend.position = c(0.85, 0.85)) +
         ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
     }
 
@@ -1052,8 +1061,8 @@ Required columns in input dataframe:
       scale_y_continuous("Relative weight") +
       scale_color_discrete("Data source") +
       theme_classic(base_size = 16) +
-      theme(axis.title.x = element_blank(),
-            legend.position = "bottom") 
+      xlab("Gabelhouse length") +
+      theme(legend.position = "bottom") 
     
     }
     
