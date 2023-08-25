@@ -1,0 +1,40 @@
+type,area,year,total_length,weight,effort,method,waterbody_type,common_name,waterbody_name
+all,North America,2023,367.621877,5418.991409,800,boat_electrofishing,small_standing_waters,Largemouth Bass,Howell's Pond
+all,North America,2023,439.9193835,5129.992832,800,boat_electrofishing,small_standing_waters,Largemouth Bass,Howell's Pond
+all,North America,2023,407.2359982,6454.732821,800,boat_electrofishing,small_standing_waters,Largemouth Bass,Howell's Pond
+all,North America,2023,426.21089,4580.030118,800,boat_electrofishing,small_standing_waters,Largemouth Bass,Howell's Pond
+all,North America,2023,417.2665961,4849.427217,800,boat_electrofishing,small_standing_waters,Largemouth Bass,Howell's Pond
+all,North America,2023,413.4570361,5168.340943,800,boat_electrofishing,small_standing_waters,Largemouth Bass,Howell's Pond
+all,North America,2023,403.3815219,5629.092807,800,boat_electrofishing,small_standing_waters,Largemouth Bass,Howell's Pond
+all,North America,2023,383.391797,5560.666908,800,boat_electrofishing,small_standing_waters,Largemouth Bass,Howell's Pond
+all,North America,2023,378.6317993,5283.855331,800,boat_electrofishing,small_standing_waters,Largemouth Bass,Howell's Pond
+all,North America,2023,407.9705641,3196.398279,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
+all,North America,2023,362.8723161,2847.881339,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
+all,North America,2023,398.3410915,2472.670162,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
+all,North America,2023,381.5576175,3185.523024,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
+all,North America,2023,354.139446,2487.88325,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
+all,North America,2023,370.4594976,2753.223592,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
+all,North America,2023,325.5052781,2565.476359,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
+all,North America,2023,407.9002598,2448.961213,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
+all,North America,2023,377.166607,2857.927291,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
+all,North America,2023,384.7598619,2986.626235,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
+state,Connecticut,2023,419.4666852,6149.283372,800,boat_electrofishing,small_standing_waters,Largemouth Bass,Howell's Pond
+state,Connecticut,2023,412.570092,5117.676377,800,boat_electrofishing,small_standing_waters,Largemouth Bass,Howell's Pond
+state,Connecticut,2023,404.371547,4820.89394,800,boat_electrofishing,small_standing_waters,Largemouth Bass,Howell's Pond
+state,Connecticut,2023,337.2694353,5248.107862,800,boat_electrofishing,small_standing_waters,Largemouth Bass,Howell's Pond
+state,Connecticut,2023,439.0610337,6224.721144,800,boat_electrofishing,small_standing_waters,Largemouth Bass,Howell's Pond
+state,Connecticut,2023,359.7564644,5270.333509,800,boat_electrofishing,small_standing_waters,Largemouth Bass,Howell's Pond
+state,Connecticut,2023,397.1094462,5148.081658,800,boat_electrofishing,small_standing_waters,Largemouth Bass,Howell's Pond
+state,Connecticut,2023,377.6915282,6276.690762,800,boat_electrofishing,small_standing_waters,Largemouth Bass,Howell's Pond
+state,Connecticut,2023,393.2300904,5602.51229,800,boat_electrofishing,small_standing_waters,Largemouth Bass,Howell's Pond
+state,Connecticut,2023,395.4260416,6284.306922,800,boat_electrofishing,small_standing_waters,Largemouth Bass,Howell's Pond
+state,Connecticut,2023,313.9807678,2923.60567,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
+state,Connecticut,2023,400.4659944,3590.208572,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
+state,Connecticut,2023,392.889583,2682.292324,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
+state,Connecticut,2023,313.6414566,2487.388055,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
+state,Connecticut,2023,356.9629678,2844.33882,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
+state,Connecticut,2023,350.0461813,2696.220146,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
+state,Connecticut,2023,416.0965624,2724.465238,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
+state,Connecticut,2023,431.9068592,2925.777402,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
+state,Connecticut,2023,364.3664583,2586.120255,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
+state,Connecticut,2023,344.3954556,2509.773665,800,boat_electrofishing,small_standing_waters,Smallmouth Bass,Howell's Pond
