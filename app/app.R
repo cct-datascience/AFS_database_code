@@ -919,6 +919,7 @@ Required columns in input dataframe:
 - **Location**: 
   - `type` is *all* or *state*
   - `area` is *North America* or state name, spelled out and capitalized
+  - `waterbody_name` is the name of the water body
 - **Date**: 
   - `year` is a four-digit numeric
 - **Measurements**: 

@@ -55,7 +55,7 @@ First I had to run `app/download_map_data.R` to get the ecoregions shapefile.
 
 The `app/Lat_long_AFSshiny_012023.csv` data file is not publicly available (endangered species/data distribution concerns). 
 
-I copied the `AZ_test.csv` file from `input_examples` to `app` and changed line 71 of `app.R` to read in `AZ_test`. 
+I created `toy_locs.csv` by copying the `AZ_test.csv` file from `input_examples` to `app`. I changed the "Ecoregion" column to "10 North American Deserts" to get points to show up in the ecoregion display of the Explore tab. I then changed line 71 of `app.R` to read in `toy_locs`. 
 With those changes, the app runs.
 
 ## Once the app is running
@@ -82,15 +82,15 @@ _For code review in general - I would define this as a section on "app expected 
 - "Compare your data" tab
   - "Instructions"
     - [x] Instructions for formatting a dataset so that it can be uploaded to compare to the in-app data
-      - _I tested this using the supplied "user_example.csv"; I could make a new dataset following instructions to make sure that that works_
+      - [x]_I tested this using the supplied "user_example.csv"; I could make a new dataset following instructions to make sure that that works_
   - "Comparisons"
     - [x] Shows comparison plots - user data show up in different colors than corresponding in-app data
     - [x] If user data don't meet needs in Instructions, plots fail to render with various errors.
 
 ### User-facing documentation
 
-- [ ] X axes for the plots - I don't know what these mean ("S-Q", "Q-P", "P-M", M-T", "T"). That might be standard fish stuff, though, and not problematic for the intended user base.
-- [ ] Instructions for uploading data are sufficient to get comparisons plots to render
+- [x] X axes for the plots - I don't know what these mean ("S-Q", "Q-P", "P-M", M-T", "T"). That might be standard fish stuff, though, and not problematic for the intended user base.
+- [x] Instructions for uploading data are sufficient to get comparisons plots to render
 - [x] It's clear where to get help
 - [ ] License/attribution instructions for downloaded data in the app itself?
 
@@ -134,6 +134,7 @@ Both of these seem optional:
 
 - The in-app user documentation doesn't include a citation or license. Consider adding one, especially for data downloaded using the app?
 - Not having a fish background, it took me a while to figure out that the x-axes for the size plots correspond to Gabelhouse lengths. This PR adds "Gabelhouse length" to the axes to help clarify.
+- `waterbody_name` is a required column for user-uploaded data in the "Compare Your Data" tab, but not listed in the list of required columns. This PR adds it to the list of required columns in the "Instructions" tab.
 
 ### Developer-facing documentation
 
@@ -143,4 +144,7 @@ Both of these seem optional:
 
 ### Code health/stability/longevity
 
-- Per the README, there are several files that aren't used in the final iteration of the app. These could be deleted to tidy up (but aren't otherwise hurting anything, and could reasonably stay for archival purposes).
+- Per the README, there are several files that aren't used in the final iteration of the app. These could be deleted to tidy up (but aren't otherwise hurting anything, and could reasonably stay for archival purposes):
+    - The `analysis_scripts` directory
+    - The `input_examples` directory
+    - `app/process_user_data.Rmd`
