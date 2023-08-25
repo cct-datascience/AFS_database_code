@@ -77,13 +77,13 @@ ecoregions_trans <- ecoregions %>%
 # Lat/longs are the locations of sampling sites for datasets included in the summary metrics.
 # They are used for the plot on the "Explore" page of the app and otherwise do not affect functionality.
 # They are not included in this repo for data privacy reasons.
-# To get the app to run, read in the `AZ_test.csv` file to populate this data object with fake data.
+# To get the app to run, read in the `toy_locs.csv` file to populate this data object with fake data.
 
 # # Read in lat/longs
 # locs <- read_csv("Lat_long_AFSshiny_012023.csv") %>%
 #   select(-date) # not parseable as is
 
-locs <- read_csv("AZ_test.csv") %>%
+locs <- read_csv("toy_locs.csv") %>%
   select(-date) # not parseable as is
 
 # Read in example user upload data
