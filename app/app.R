@@ -80,7 +80,7 @@ ecoregions_trans <- ecoregions %>%
 locs <- read_csv("toy_locs.csv") %>%
   select(-date) # not parseable as is
 # Read in example user upload data
-ex <- read_csv("user_example.csv")
+ex <- read_csv("Alamo_Lake_test_data.csv")
 
 # Create a "not in" function
 `%nin%` <- negate(`%in%`)
@@ -97,27 +97,29 @@ ui <- navbarPage("AFS Standard Sampling App",
                             imageOutput("pics"),
                             h2("About Standard Sampling", align = "center"),
                             h4("Standardization of sampling methods allows fisheries professionals to compare data across large spatial and temporal scales, encourages data sharing and improves communication. 
-In light of these benefits, the American Fisheries Society published Standard Methods for Sampling North American Freshwater Fishes in 2009. 
-The goals of this project, were to:"),
+In light of these benefits, the American Fisheries Society published the first edition of Standard Methods for Sampling North American Freshwater Fishes in 2009. 
+A new edition of these methods will be published Winter 2023-2024. 
+The goals of this project were to:"),
 br(),
-h4("(1) recommend standardized freshwater fish sampling methods, and"),
-h4("(2) provide an online database where existing and future data could be accessed."),
+h4("(1) recommend standardized freshwater fish sampling methods for North America, and"),
+h4("(2) provide an online database of fish data collected using AFS recommended standard methods where data from individual water bodies could be compared to existing rangewide, ecoregion, and state standards."),
 br(),
 h4("Since publication, numerous fisheries professionals have adopted the standard methods and many have noted the database as an important tool in management. 
 The database allows for comparison of fish metrics commonly used in management to assess population health including growth, condition, length-frequency, and catch per unit effort data collected using standard methods.
 When developing version two of the database, we examined the strengths and weaknesses of methods used for requesting, analyzing, and displaying data in an online format.
 We used this information to achieve our goals of maximizing use and providing simple means to update this program for comparison of fisheries data."),
 br(),
-h4("We hope that these methods can be adopted by others, particularly those in data-poor regions, to develop their own standard methods and fisheries databases. "),
+h4("We hope that these methods can be adopted by others, particularly those in data-poor regions, to maximize the ability to compare data. "),
 h2("Details About App Usage", align = "center"), 
-h4("A ", strong("data set (N)"), " is defined as data collected with AFS standard gears and methods during routine monitoring programs of an entire fish community or entire populations of specific fish ", strong("in a single waterbody conducted once during a year"), ". For example, data collected from Bass Lake (a small standing water body) sampled by boat electrofishing for Largemouth Bass in 2014 would represent 1 data set. In some cases, data sets included multi-day surveys of the same waterbody (e.g., large reservoirs) where the effort was summed across all sampling days. This excludes surveys targeting specific size groups or those with other biases (e.g., egg counts, juveniles fish surveys)."), 
+h4("Here, you can compare your data from an individual water body, collected using a standard AFS method to averages across the range of the species, ecoregion, and statewide.  This tool will help you assess if fish you have collected are high, average or low for the metric in question."),
+h4("We collected thousands of data sets on fishes from across Canada, the United States, and some from Mexico to build comparison summaries. A ", strong("data set (N)"), " is defined as data collected with AFS standard gears and methods during routine monitoring programs of an entire fish community or entire populations of specific fish ", strong("in a single waterbody conducted once during a year"), ". For example, data collected from Bass Lake (a small standing water body) sampled by boat electrofishing for Largemouth Bass in 2014 would represent 1 data set. In some cases, data sets included multi-day surveys of the same waterbody (e.g., large reservoirs) where the effort was summed across all sampling days. This excludes surveys targeting specific size groups or those with other biases (e.g., egg counts, juveniles fish surveys)."), 
 h4("Most of the app components can be translated into another language by going to ", 
    a("Google Translate", href="https://translate.google.com/?sl=auto&tl=en&op=websites", .noWS = "outside"), 
    " and entering the URL for the app, then selecting the desired language. Maps and plot can only currently be generated using the original version of the app. "), 
 h2("How to Provide Feedback", align = "center"), 
-h4("These data were collected by ", 
+h4("These data sets were collected and compiled by ", 
    a("Scott Bonar's lab", href="https://azcfwru.wixsite.com/azcfwru", .noWS = "outside"), 
-   ". All feedback on this app is greatly appreciated, and can be provided by sending an email to ", 
+   ". Only summaries can be shared. Individual data sets cannot be shared with others because of legal restrictions on their use. All feedback on this app is greatly appreciated, and can be provided by sending an email to ", 
    a("Dr. Bonar", href="mailto:SBonar@ag.arizona.edu", .noWS = "outside"), 
    " or by submitting an ", 
    a("issue", href="https://github.com/cct-datascience/AFS_database_code/issues", .noWS = "outside"), 
@@ -257,7 +259,7 @@ server <- function(input, output) {
   
   output$pics <- renderImage({
     list(
-      src = file.path("www/fish_pics.png"), 
+      src = file.path("www/fish_circles2.png"), 
       contentType = "image/png", 
       height = 365, 
       width = 819
