@@ -86,6 +86,8 @@ locs <- read_csv("Lat_long_AFSshiny_012023.csv") %>%
 # locs <- read_csv("toy_locs.csv") %>%
 #   select(-date) # not parseable as is
 
+locs <- read_csv("toy_locs.csv") %>%
+  select(-date) # not parseable as is
 # Read in example user upload data
 # Used in the Instructions tab of the "Compare your data" module
 ex <- read_csv("user_example.csv")
@@ -1123,7 +1125,7 @@ Required columns in input dataframe:
       scale_y_continuous("Relative weight") +
       scale_color_discrete("Data source") +
       theme_classic(base_size = 16) +
-        xlab("Gabelhouse length") +
+      xlab("Gabelhouse length") +
       theme(legend.position = "bottom") 
     
     }
