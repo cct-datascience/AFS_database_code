@@ -79,12 +79,12 @@ ecoregions_trans <- ecoregions %>%
 # They are not included in this repo for data privacy reasons.
 # To get the app to run, read in the `toy_locs.csv` file to populate this data object with fake data.
 
-# # Read in lat/longs
-# locs <- read_csv("Lat_long_AFSshiny_012023.csv") %>%
-#   select(-date) # not parseable as is
-
-locs <- read_csv("toy_locs.csv") %>%
+# Read in lat/longs
+locs <- read_csv("Lat_long_AFSshiny_012023.csv") %>%
   select(-date) # not parseable as is
+# 
+# locs <- read_csv("toy_locs.csv") %>%
+#   select(-date) # not parseable as is
 
 # Read in example user upload data
 # Used in the Instructions tab of the "Compare your data" module
@@ -727,7 +727,7 @@ server <- function(input, output) {
                            limits = c(0, 100),
                            expand = c(0, 0)) +
         theme_classic(base_size = 16) +
-        xlab("Gabelhouse length")
+        xlab("Gabelhouse length") +
         theme(legend.position = "none") +
         ggtitle(paste0("N = ", N))
     }
