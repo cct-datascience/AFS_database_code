@@ -31,15 +31,16 @@ calculate_lf <- function(df){
   stopifnot(c("type", "area", "common_name", "method", "waterbody_type", 
               "year", "total_length") %in% colnames(df))
   lf <- df %>% 
-    mutate(gcat = psdAdd(total_length, common_name, what = "incremental")) %>% 
+    mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental")) %>% 
     group_by(type, area, common_name, method, waterbody_type, year) %>% 
     count(gcat) %>% 
     mutate(lenfreq = (n / sum(n)) * 100) %>% 
     group_by(type, area, common_name, method, waterbody_type, gcat) %>% 
-    summarize_at(vars(lenfreq), list(mean = mean, se = se), na.rm = TRUE) %>% 
+    summarize_at(vars(lenfreq), list(mean = mean, se = FSA::se), na.rm = TRUE) %>% 
     mutate(metric = "Length Frequency", 
            gcat = factor(gcat, levels = c("stock", "quality", "preferred",
-                                          "memorable", "trophy")))
+                                          "memorable", "trophy"))) %>%
+    filter(!is.na(gcat))
   return(lf)
 }
 
@@ -47,10 +48,11 @@ calculate_rw <- function(df){
   stopifnot(c("type", "area", "common_name", "method", "waterbody_type", "year", 
               "total_length", "weight") %in% colnames(df))
   rw <- df %>% 
-    mutate(gcat = psdAdd(total_length, common_name, what = "incremental"), 
-           relweight = wrAdd(wt = weight, len = total_length, spec = common_name)) %>% 
+    mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental"), 
+           relweight = FSA::wrAdd(wt = weight, len = total_length, spec = common_name)) %>% 
+    filter(!is.na(relweight)) %>%
     group_by(type, area, common_name, method, waterbody_type, gcat) %>% 
-    summarize_at(vars(relweight), list(mean = mean, se = se, 
+    summarize_at(vars(relweight), list(mean = mean, se = FSA::se, 
                                        `5%` = ~quantile(x = ., probs = 0.05),
                                        `25%` = ~quantile(x = ., probs = 0.25),
                                        `50%` = ~quantile(x = ., probs = 0.50),
@@ -58,6 +60,7 @@ calculate_rw <- function(df){
                                        `95%` = ~quantile(x = ., probs = 0.95)), na.rm = TRUE) %>% 
     mutate(metric = "Relative Weight", 
            gcat = factor(gcat, levels = c("stock", "quality", "preferred",
-                                          "memorable", "trophy")))
+                                          "memorable", "trophy"))) %>%
+    filter(!is.na(gcat))
   return(rw)
 }
