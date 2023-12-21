@@ -74,11 +74,9 @@ ecoregions_trans <- ecoregions %>%
 # To get the app to run, read in the `toy_locs.csv` file to populate this data object with fake data.
 
 # # Read in lat/longs
-# locs <- read_csv("Lat_long_AFSshiny_012023.csv") %>%
-#   select(-date) # not parseable as is
-
-locs <- read_csv("toy_locs.csv") %>%
+locs <- read_csv("Lat_long_AFSshiny_012023.csv") %>%
   select(-date) # not parseable as is
+
 # Read in example user upload data
 ex <- read_csv("Alamo_Lake_test_data.csv")
 
