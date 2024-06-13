@@ -45,6 +45,6 @@ Please use the citation below if you use or modify this tool for research purpos
 
 ### How to contribute
 
-If you would like to suggest or make changes to this app, there are a few ways to do so. You can reach out via email to [Scott Bonar](mailto:SBonar@ag.arizona.edu) or the [CCT Data Science team](mailto:cct-datascience@arizona.edu) with suggestions.You can also create an issue describing a problem with the code or improvements. Because this is a forked repo, issues need to be made in the [upstream repo](https://github.com/erinetracy/AFS_database_code) under the "Issues" tab.
+If you would like to suggest or make changes to this app, there are a few ways to do so. You can reach out via email to [Scott Bonar](mailto:SBonar@ag.arizona.edu) or the [CCT Data Science team](mailto:cct-datascience@arizona.edu) with suggestions.You can also create an issue describing a problem with the code or improvements under the "Issues" tab.
 
 If you can make changes to the code yourself, feel free to fork this repo and make a pull request. To run the code locally, follow the instructions in `run_locally.md`. It will be necessary to download the ecoregions map data by running `app/download_map_data.R` and have access to the standardized fish records location data file `app/Lat_long_AFSshiny_012023.csv`. Package versions and dependencies are tracked with `renv`. 
