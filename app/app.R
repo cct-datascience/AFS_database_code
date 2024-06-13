@@ -740,7 +740,7 @@ server <- function(input, output) {
                            limits = c(0, 100),
                            expand = c(0, 0)) +
         theme_classic(base_size = 16) +
-        xlab("Gabelhouse length")
+        xlab("Gabelhouse length") +
         theme(legend.position = "none") +
         ggtitle(paste0("N = ", N))
     }
