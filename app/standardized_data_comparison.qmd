@@ -1,0 +1,67 @@
+---
+title: "Standardized Fish Data Comparison"
+format: html
+editor: visual
+---
+
+## Datasets
+
+Current dataset is called `Test_results_full_012723.csv` and new dataset is called `AFS_data_all_060524_FINAL.csv`. Erin Tracy sent the new dataset on June 5, 2024. 
+
+## Catalogue of dataset differences
+
+- General
+    - New dataset has about 40% of the occurrences of the current
+- Columns
+    - They are in a different order
+    - Three columns have different names: gcat -> Gabelhouse, mean -> Mean, se -> SE
+- Observations
+    - Method names and waterbody types separated by space instead of underscore
+    - Gabelhouse categories are acronyms instead of full names
+    - Mean and SE are rounded to one decimal instead of having many values beyond decimal
+
+## Exploratory code
+
+```{r}
+library(dplyr)
+library(readr)
+```
+
+### Read in two datasets
+
+```{r}
+current <- read_csv("Test_results_full_012723.csv")
+new <- read_csv("AFS_data_all_060524_FINAL.csv")
+```
+
+### Compare datasets
+
+```{r}
+all_equal(new, current)
+```
+
+Created a copy of the new dataset and manually moved columns into right order. Copy is named `new_hand_edit.csv`. 
+
+```{r}
+new_edited <- readr::read_csv("new_hand_edit.csv")
+
+all_equal(new_edited, current)
+waldo::compare(new_edited, current)
+```
+
+### Observations comparison
+
+```{r}
+wi_bg_new <- filter(new, area == "Wisconsin", common_name == "Bluegill")
+wi_bg_old <- filter(current, area == "Wisconsin", common_name == "Bluegill", waterbody_type == "wadeable_streams", metric == "Length Frequency")
+
+sort(table(current$common_name))
+sort(table(new$common_name))
+
+length(unique(current$common_name))
+length(unique(new$common_name))
+
+unique(current$method)
+unique(new$method)
+
+```
