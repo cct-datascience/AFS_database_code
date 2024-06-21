@@ -869,6 +869,7 @@ Required columns in input dataframe:
 - **Collection method**: see the table below for details
   - `method` must exactly match one of the options in 'Method name'
   - `effort` will contain a numeric value that corresponds to the associated 'Effort type' and 'Unit'; this should be should be the sum of each transect effort by year
+  - The 'gill_net_spring' method is for gill netting done between January and June (months 1 - 6), and 'gill_net_fall' is for between July and December (months 7 - 12)
 
 <center>
 
@@ -886,14 +887,13 @@ Required columns in input dataframe:
   <span class='table-number'></span>
 </div>
 
-| **Method name**          | **Effort type** | **Unit** |
+| **Method**          | **Effort** | **Unit** |
 |--------------------------|-----------------|----------|
 | boat_electrofishing      | Time            | seconds  |
-| tow_barge_electrofishing | Time            | seconds  |
 | raft_electrofishing      | Time            | seconds  |
 | trawl                    | Time            | seconds  |
 | gill_net_fall            | Number of nets  | number   |
-| gill_net_fall            | Number of nets  | number   |
+| gill_net_spring         | Number of nets  | number   |
 | hoop_net                 | Number of nets  | number   |
 | small_catfish_hoopnet    | Number of nets  | number   |
 | large_catfish_hoopnet    | Number of nets  | number   |
@@ -902,6 +902,7 @@ Required columns in input dataframe:
 | stream_seine             | Number of nets  | number   |
 | backpack_electrofishing  | Area            | m<sup>2</sup>       |
 | snorkel                  | Area            | m<sup>2</sup>       |
+| tow_barge_electrofishing | Area            | m<sup>2</sup>       |
 
 </div>
 
