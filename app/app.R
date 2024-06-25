@@ -848,7 +848,7 @@ You can upload your own data to compare to the standardized data. This needs to 
 
 <center><b>Column Details</b></center>
 
-Below are the details of the required columns in the data. The order of the columns does not matter. There is an example dataset at the bottom of the page with simulated data that may be a helpful guide. 
+Below are the details of the required columns in the data. The order of the columns does not matter <b>BUT</b> the column names are <b>case sensitive and must be lower case</b>. Additionally, only upload data from <b>one</b> waterbody sampling effort at a time (under the column `waterbody_name`). There is an example dataset at the bottom of the page with simulated data that may be a helpful guide.
 
 1. CPUE requires `effort` column
 2. Length frequency requires `total_length` column 
