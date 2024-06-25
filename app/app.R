@@ -42,7 +42,7 @@ plotDownload <- function(input, output, session, plotFun) {
 }
 
 # Read in summary fish metrics
-metrics <- read_csv('Test_results_full_012723.csv') %>%
+metrics <- read_csv('standardized_fish_data.csv') %>%
   relocate(area) %>%
   relocate(N, .after = last_col()) %>%
   mutate(gcat = case_when(gcat == "Stock-Quality" ~ "S-Q",
@@ -50,7 +50,9 @@ metrics <- read_csv('Test_results_full_012723.csv') %>%
                           gcat == "Preferred-Memorable" ~ "P-M",
                           gcat == "Memorable-Trophy" ~ "M-T",
                           gcat == "Trophy" ~ "T") %>%
-           factor(levels = c("S-Q", "Q-P", "P-M", "M-T", "T")))
+           factor(levels = c("S-Q", "Q-P", "P-M", "M-T", "T"))) %>% 
+  mutate(method = str_replace_all(method, " ", "_"), 
+         waterbody_type = str_replace_all(waterbody_type, " ", "_"))
 # Develop vectors of unique entries
 uni.type <- c("North America", "Ecoregion", "State/Province")
 uni.area <- sort(unique(metrics$area))

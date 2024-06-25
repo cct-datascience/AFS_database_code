@@ -11,13 +11,13 @@ Current dataset is called `Test_results_full_012723.csv` and new dataset is call
 ## Catalogue of dataset differences
 
 - General
-    - New dataset has about 40% of the occurrences of the current
+    - **CORRECT** New dataset has about 40% of the occurrences of the current -- this is due to them retaining only occurrences with an N >= 5, which is in accordance with book data
 - Columns
-    - They are in a different order
-    - Three columns have different names: gcat -> Gabelhouse, mean -> Mean, se -> SE
+    - **FIXED** They are in a different order
+    - **FIXED** Three columns have different names: gcat -> Gabelhouse, mean -> Mean, se -> SE
 - Observations
     - Method names and waterbody types separated by space instead of underscore
-    - Gabelhouse categories are acronyms instead of full names
+    - **FIXED** Gabelhouse categories are acronyms instead of full names
     - Mean and SE are rounded to one decimal instead of having many values beyond decimal
 
 ## Exploratory code
@@ -30,8 +30,8 @@ library(readr)
 ### Read in two datasets
 
 ```{r}
-current <- read_csv("Test_results_full_012723.csv")
-new <- read_csv("AFS_data_all_060524_FINAL.csv")
+current <- read_csv("app/Test_results_full_012723.csv")
+new <- read_csv("app/standardized_fish_data.csv")
 ```
 
 ### Compare datasets
@@ -40,19 +40,15 @@ new <- read_csv("AFS_data_all_060524_FINAL.csv")
 all_equal(new, current)
 ```
 
-Created a copy of the new dataset and manually moved columns into right order. Copy is named `new_hand_edit.csv`. 
-
 ```{r}
-new_edited <- readr::read_csv("new_hand_edit.csv")
-
-all_equal(new_edited, current)
-waldo::compare(new_edited, current)
+waldo::compare(new, current)
 ```
 
 ### Observations comparison
 
 ```{r}
 wi_bg_new <- filter(new, area == "Wisconsin", common_name == "Bluegill")
+wi_bg_old_all <- filter(current, area == "Wisconsin", common_name == "Bluegill")
 wi_bg_old <- filter(current, area == "Wisconsin", common_name == "Bluegill", waterbody_type == "wadeable_streams", metric == "Length Frequency")
 
 sort(table(current$common_name))
@@ -63,5 +59,4 @@ length(unique(new$common_name))
 
 unique(current$method)
 unique(new$method)
-
 ```
