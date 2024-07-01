@@ -76,11 +76,11 @@ ecoregions_trans <- ecoregions %>%
 # To get the app to run, read in the `toy_locs.csv` file to populate this data object with fake data.
 
 # # Read in lat/longs
-locs <- read_csv("Lat_long_AFSshiny_012023.csv") %>%
+locs <- read_csv("sites.csv") %>%
   select(-date) # not parseable as is
 
 # Read in example user upload data
-ex <- read_csv("Alamo_Lake_test_data.csv")
+ex <- read_csv("example_user_upload_data.csv")
 
 # Create a "not in" function
 `%nin%` <- negate(`%in%`)

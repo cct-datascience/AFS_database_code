@@ -11,9 +11,10 @@ Link to the deployed app: [https://viz.datascience.arizona.edu/afs-standard-fish
 **Dashboard**
 
 -   `app/app.R`: file that generates dashboard showing standardized fish data and allows user to upload data to compare
--   `app/Test_results_full_012723.csv`: standardized fish data file
+-   `app/standardized_fish_data.csv`: standardized fish data file
 -   `app/R/functions.R`: functions to calculate three metrics of interest
 -   `app/www/AFS_sponsor_3.png`: image file with sponsor logo displayed on dashboard "About" page
+- `app/example_user_upload_data.csv`: simulated example data to show how user uploaded datasets should be formatted
 
 **Data prep**
 
@@ -47,4 +48,4 @@ Please use the citation below if you use or modify this tool for research purpos
 
 If you would like to suggest or make changes to this app, there are a few ways to do so. You can reach out via email to [Scott Bonar](mailto:SBonar@ag.arizona.edu) or the [CCT Data Science team](mailto:cct-datascience@arizona.edu) with suggestions.You can also create an issue describing a problem with the code or improvements under the "Issues" tab.
 
-If you can make changes to the code yourself, feel free to fork this repo and make a pull request. To run the code locally, follow the instructions in `run_locally.md`. It will be necessary to download the ecoregions map data by running `app/download_map_data.R`. Additionally, running the app locally requires the standardized fish records location data file `app/Lat_long_AFSshiny_012023.csv`, which is not available in the repo due to sensitive information. Package versions and dependencies are tracked with `renv`. 
+If you can make changes to the code yourself, feel free to fork this repo and make a pull request. To run the code locally, follow the instructions in `run_locally.md`. It will be necessary to download the ecoregions map data by running `app/download_map_data.R`. Additionally, running the app locally requires the standardized fish records location data file `app/sites.csv`, which is not available in the repo due to sensitive information. Package versions and dependencies are tracked with `renv`. 
