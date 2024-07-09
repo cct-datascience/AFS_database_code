@@ -42,7 +42,7 @@ plotDownload <- function(input, output, session, plotFun) {
 }
 
 # Read in summary fish metrics
-metrics <- read_csv('Test_results_full_012723.csv') %>%
+metrics <- read_csv('standardized_fish_data.csv') %>%
   relocate(area) %>%
   relocate(N, .after = last_col()) %>%
   mutate(gcat = case_when(gcat == "Stock-Quality" ~ "S-Q",
@@ -50,7 +50,9 @@ metrics <- read_csv('Test_results_full_012723.csv') %>%
                           gcat == "Preferred-Memorable" ~ "P-M",
                           gcat == "Memorable-Trophy" ~ "M-T",
                           gcat == "Trophy" ~ "T") %>%
-           factor(levels = c("S-Q", "Q-P", "P-M", "M-T", "T")))
+           factor(levels = c("S-Q", "Q-P", "P-M", "M-T", "T"))) %>% 
+  mutate(method = str_replace_all(method, " ", "_"), 
+         waterbody_type = str_replace_all(waterbody_type, " ", "_"))
 # Develop vectors of unique entries
 uni.type <- c("North America", "Ecoregion", "State/Province")
 uni.area <- sort(unique(metrics$area))
@@ -74,11 +76,11 @@ ecoregions_trans <- ecoregions %>%
 # To get the app to run, read in the `toy_locs.csv` file to populate this data object with fake data.
 
 # # Read in lat/longs
-locs <- read_csv("Lat_long_AFSshiny_012023.csv") %>%
+locs <- read_csv("sites.csv") %>%
   select(-date) # not parseable as is
 
 # Read in example user upload data
-ex <- read_csv("Alamo_Lake_test_data.csv")
+ex <- read_csv("example_user_upload_data.csv")
 
 # Create a "not in" function
 `%nin%` <- negate(`%in%`)
@@ -848,7 +850,7 @@ You can upload your own data to compare to the standardized data. This needs to 
 
 <center><b>Column Details</b></center>
 
-Below are the details of the required columns in the data. The order of the columns does not matter. There is an example dataset at the bottom of the page with simulated data that may be a helpful guide. 
+Below are the details of the required columns in the data. The order of the columns does not matter <b>BUT</b> the column names are <b>case sensitive and must be lower case</b>. Additionally, only upload data from <b>one</b> waterbody sampling effort at a time (under the column `waterbody_name`). There is an example dataset at the bottom of the page with simulated data that may be a helpful guide.
 
 1. CPUE requires `effort` column
 2. Length frequency requires `total_length` column 
@@ -869,6 +871,7 @@ Required columns in input dataframe:
 - **Collection method**: see the table below for details
   - `method` must exactly match one of the options in 'Method name'
   - `effort` will contain a numeric value that corresponds to the associated 'Effort type' and 'Unit'; this should be should be the sum of each transect effort by year
+  - The 'gill_net_spring' method is for gill netting done between January and June (months 1 - 6), and 'gill_net_fall' is for between July and December (months 7 - 12)
 
 <center>
 
@@ -886,14 +889,13 @@ Required columns in input dataframe:
   <span class='table-number'></span>
 </div>
 
-| **Method name**          | **Effort type** | **Unit** |
+| **Method**          | **Effort** | **Unit** |
 |--------------------------|-----------------|----------|
 | boat_electrofishing      | Time            | seconds  |
-| tow_barge_electrofishing | Time            | seconds  |
 | raft_electrofishing      | Time            | seconds  |
 | trawl                    | Time            | seconds  |
 | gill_net_fall            | Number of nets  | number   |
-| gill_net_fall            | Number of nets  | number   |
+| gill_net_spring         | Number of nets  | number   |
 | hoop_net                 | Number of nets  | number   |
 | small_catfish_hoopnet    | Number of nets  | number   |
 | large_catfish_hoopnet    | Number of nets  | number   |
@@ -902,6 +904,7 @@ Required columns in input dataframe:
 | stream_seine             | Number of nets  | number   |
 | backpack_electrofishing  | Area            | m<sup>2</sup>       |
 | snorkel                  | Area            | m<sup>2</sup>       |
+| tow_barge_electrofishing | Area            | m<sup>2</sup>       |
 
 </div>
 
