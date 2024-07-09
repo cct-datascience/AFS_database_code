@@ -988,10 +988,10 @@ Required columns in input dataframe:
       
     } else {
       fig <- ggplot(temp, aes(x = gcat, y = mean, fill = data_source)) +
-        geom_bar(stat = "identity", position = "dodge")  +
+        geom_bar(stat = "identity", position = position_dodge(preserve = "single"))  +
         geom_errorbar(aes(ymin = mean - se,
                           ymax = mean + se),
-                      position = position_dodge(width = 0.9),
+                      position = position_dodge(width = 0.9, preserve = "single"),
                       width = 0) +
         scale_y_continuous("Frequency (%)",
                            limits = c(0, 100),
