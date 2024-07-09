@@ -758,7 +758,7 @@ server <- function(input, output) {
     temp <- filtered2() %>%
       filter(metric == "Relative Weight")
       
-    ypos <- min(temp$`25%`,  na.rm = TRUE) - 2
+    ypos <- min(temp$mean - temp$se,  na.rm = TRUE) - 2
 
     if(nrow(temp) == 0){
       fig <- ggplot() +
@@ -767,33 +767,18 @@ server <- function(input, output) {
         theme_void()
     } else {
       fig <- ggplot(temp, aes(x = gcat)) +
-        geom_point(aes(y = mean,
-                       color = "Mean"),
+        geom_point(aes(y = mean),
                    size = 2.5) +
-        geom_line(aes(y = mean,
-                      group = metric, 
-                      color = "Mean"),
-                  size = 0.75) +
         geom_text(aes(y = ypos,
                       label = N),
                   vjust = 0.5) +
-        geom_line(aes(y = `25%`,
-                      group = metric,
-                      color = "25th percentile"),
-                  lty = 2) +
-        geom_line(aes(y = `75%`,
-                      group = metric,
-                      color = "75th percentile"),
-                  lty = 2) +
+        geom_errorbar(aes(ymin = mean - se, ymax = mean + se), 
+                      width = 0) +
         scale_y_continuous("Relative weight") +
-        scale_color_manual(values = c("darkblue", "darkred", "black")) +
         theme_classic(base_size = 16) +
         xlab("Gabelhouse length") +
         theme(legend.position = "bottom",
-              legend.title = element_blank()) +
-        guides(color = guide_legend(override.aes = 
-                                      list(shape = c(NA, NA, 16),
-                                           lty = c(2, 2, 1))))  
+              legend.title = element_blank())  
     }    
 
     print(fig)
@@ -1048,19 +1033,13 @@ Required columns in input dataframe:
     fig <- ggplot(temp, aes(x = gcat)) +
       geom_point(aes(y = mean,
                      color = data_source),
-                 size = 2.5) +
-      geom_line(aes(y = mean,
-                    group = data_source, 
-                    color = data_source),
-                size = 0.75) +
-      geom_line(aes(y = `25%`,
-                    group = data_source,
-                    color = data_source),
-                lty = 2) +
-      geom_line(aes(y = `75%`,
-                    group = data_source,
-                    color = data_source),
-                lty = 2) +
+                 size = 2.5, 
+                 position = position_dodge(width = 0.05)) +
+      geom_errorbar(aes(ymin = mean - se, 
+                        ymax = mean + se, 
+                        color = data_source),
+                    width = 0, 
+                    position = position_dodge(width = 0.05)) +
       scale_y_continuous("Relative weight") +
       scale_color_discrete("Data source") +
       theme_classic(base_size = 16) +
