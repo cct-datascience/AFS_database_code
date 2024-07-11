@@ -209,8 +209,13 @@ imageOutput("logo")
                                    choices = uni.watertype,
                                    selected = "large_standing_waters")
                        ),
-                     mainPanel(plotDownloadUI("LF_plot"),
+                     mainPanel(p("Proportional Size Distribution Length Frequency Graph. Black lines indicate standard error."),
+                               plotDownloadUI("LF_plot"),
+                               hr(),
+                               p("Proportional Size Distribution Relative Weight Graph. Points indicate means and lines indicate standard error."),
                                plotDownloadUI("RW_plot"),
+                               hr(), 
+                               p("Catch Per Unit Effort Graph. The box represents the middle 50% of the data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and individual points outside are outliers. "),
                                plotDownloadUI("CPUE_plot", height = "200px")
                                )
                      )
@@ -240,8 +245,13 @@ imageOutput("logo")
                                         uiOutput("instructions"), 
                                         DTOutput("example")),
                                tabPanel("Comparisons", 
+                                        p("Proportional Size Distribution Length Frequency Graph. Black lines indicate standard error."),
                                         plotDownloadUI("LF_plot_UU"),
+                                        hr(),
+                                        p("Proportional Size Distribution Relative Weight Graph. Points indicate means and lines indicate standard error."),
                                         plotDownloadUI("RW_plot_UU"),
+                                        hr(),
+                                        p("Catch Per Unit Effort Graph. The box represents the middle 50% of the data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and individual points outside are outliers. "),
                                         plotDownloadUI("CPUE_plot_UU", height = "200px"))
                              )
                            )
@@ -742,9 +752,9 @@ server <- function(input, output) {
                            limits = c(0, 100),
                            expand = c(0, 0)) +
         theme_classic(base_size = 16) +
-        xlab("Proportional size distribution")
+        xlab("Proportional size distribution") +
         theme(legend.position = "none") +
-        ggtitle(paste0("N = ", N))
+        annotate("text", x = 5, y = 90, label = paste0("N = ", N), size = unit(9, "pt"))
     }
     
     print(fig)
