@@ -733,8 +733,8 @@ server <- function(input, output) {
                  label = "No length frequency data for selected options") +
         theme_void()
     } else {
-      fig <- ggplot(temp, aes(x = gcat, y = mean, fill = "#F8766D")) +
-        geom_bar(stat = "identity") +
+      fig <- ggplot(temp, aes(x = gcat, y = mean)) +
+        geom_bar(stat = "identity", fill = "#F8766D") +
         geom_errorbar(aes(ymin = mean - se,
                           ymax = mean + se),
                       width = 0) +
@@ -742,7 +742,7 @@ server <- function(input, output) {
                            limits = c(0, 100),
                            expand = c(0, 0)) +
         theme_classic(base_size = 16) +
-        xlab("Gabelhouse length")
+        xlab("Proportional size distribution")
         theme(legend.position = "none") +
         ggtitle(paste0("N = ", N))
     }
@@ -768,15 +768,17 @@ server <- function(input, output) {
     } else {
       fig <- ggplot(temp, aes(x = gcat)) +
         geom_point(aes(y = mean),
-                   size = 2.5) +
+                   size = 2.5, 
+                   color = "#F8766D") +
         geom_text(aes(y = ypos,
                       label = N),
                   vjust = 0.5) +
         geom_errorbar(aes(ymin = mean - se, ymax = mean + se), 
-                      width = 0) +
+                      width = 0, 
+                      color = "#F8766D") +
         scale_y_continuous("Relative weight") +
         theme_classic(base_size = 16) +
-        xlab("Gabelhouse length") +
+        xlab("Proportional size distribution") +
         theme(legend.position = "bottom",
               legend.title = element_blank())  
     }    
@@ -807,7 +809,8 @@ server <- function(input, output) {
                          xmiddle = `50%`,
                          xupper = `75%`,
                          xmax = `95%`),
-                     stat = "identity") +
+                     stat = "identity", 
+                     fill = "#F8766D") +
         scale_x_continuous("CPUE (fish / hour)") +
         theme_classic(base_size = 16) +
         theme(axis.title.y = element_blank(),
@@ -998,7 +1001,7 @@ Required columns in input dataframe:
                            expand = c(0, 0)) +
         scale_fill_discrete("Data source") +
         theme_classic(base_size = 16) +
-        xlab("Gabelhouse length") +
+        xlab("Proportional size distribution") +
         theme(legend.position = c(0.85, 0.85)) +
         ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
     }
@@ -1043,7 +1046,7 @@ Required columns in input dataframe:
       scale_y_continuous("Relative weight") +
       scale_color_discrete("Data source") +
       theme_classic(base_size = 16) +
-      xlab("Gabelhouse length") +
+      xlab("Proportional size distribution") +
       theme(legend.position = "bottom") 
     
     }
