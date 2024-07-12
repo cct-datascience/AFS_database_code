@@ -209,8 +209,13 @@ imageOutput("logo")
                                    choices = uni.watertype,
                                    selected = "large_standing_waters")
                        ),
-                     mainPanel(plotDownloadUI("LF_plot"),
+                     mainPanel(p("Proportional Size Distribution Length Frequency Graph. Black lines indicate standard error."),
+                               plotDownloadUI("LF_plot"),
+                               hr(),
+                               p("Proportional Size Distribution Relative Weight Graph. Points indicate means and lines indicate standard error."),
                                plotDownloadUI("RW_plot"),
+                               hr(), 
+                               p("Catch Per Unit Effort Graph. The box represents the middle 50% of the data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and individual points outside are outliers. "),
                                plotDownloadUI("CPUE_plot", height = "200px")
                                )
                      )
@@ -240,8 +245,13 @@ imageOutput("logo")
                                         uiOutput("instructions"), 
                                         DTOutput("example")),
                                tabPanel("Comparisons", 
+                                        p("Proportional Size Distribution Length Frequency Graph. Black lines indicate standard error."),
                                         plotDownloadUI("LF_plot_UU"),
+                                        hr(),
+                                        p("Proportional Size Distribution Relative Weight Graph. Points indicate means and lines indicate standard error."),
                                         plotDownloadUI("RW_plot_UU"),
+                                        hr(),
+                                        p("Catch Per Unit Effort Graph. The box represents the middle 50% of the data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and individual points outside are outliers. "),
                                         plotDownloadUI("CPUE_plot_UU", height = "200px"))
                              )
                            )
@@ -733,8 +743,8 @@ server <- function(input, output) {
                  label = "No length frequency data for selected options") +
         theme_void()
     } else {
-      fig <- ggplot(temp, aes(x = gcat, y = mean, fill = "#F8766D")) +
-        geom_bar(stat = "identity") +
+      fig <- ggplot(temp, aes(x = gcat, y = mean)) +
+        geom_bar(stat = "identity", fill = "#F8766D") +
         geom_errorbar(aes(ymin = mean - se,
                           ymax = mean + se),
                       width = 0) +
@@ -742,9 +752,9 @@ server <- function(input, output) {
                            limits = c(0, 100),
                            expand = c(0, 0)) +
         theme_classic(base_size = 16) +
-        xlab("Gabelhouse length")
+        xlab("Proportional size distribution") +
         theme(legend.position = "none") +
-        ggtitle(paste0("N = ", N))
+        annotate("text", x = 5, y = 90, label = paste0("N = ", N), size = unit(9, "pt"))
     }
     
     print(fig)
@@ -758,7 +768,7 @@ server <- function(input, output) {
     temp <- filtered2() %>%
       filter(metric == "Relative Weight")
       
-    ypos <- min(temp$`25%`,  na.rm = TRUE) - 2
+    ypos <- min(temp$mean - temp$se,  na.rm = TRUE) - 2
 
     if(nrow(temp) == 0){
       fig <- ggplot() +
@@ -767,33 +777,20 @@ server <- function(input, output) {
         theme_void()
     } else {
       fig <- ggplot(temp, aes(x = gcat)) +
-        geom_point(aes(y = mean,
-                       color = "Mean"),
-                   size = 2.5) +
-        geom_line(aes(y = mean,
-                      group = metric, 
-                      color = "Mean"),
-                  size = 0.75) +
+        geom_point(aes(y = mean),
+                   size = 2.5, 
+                   color = "#F8766D") +
         geom_text(aes(y = ypos,
                       label = N),
                   vjust = 0.5) +
-        geom_line(aes(y = `25%`,
-                      group = metric,
-                      color = "25th percentile"),
-                  lty = 2) +
-        geom_line(aes(y = `75%`,
-                      group = metric,
-                      color = "75th percentile"),
-                  lty = 2) +
+        geom_errorbar(aes(ymin = mean - se, ymax = mean + se), 
+                      width = 0, 
+                      color = "#F8766D") +
         scale_y_continuous("Relative weight") +
-        scale_color_manual(values = c("darkblue", "darkred", "black")) +
         theme_classic(base_size = 16) +
-        xlab("Gabelhouse length") +
+        xlab("Proportional size distribution") +
         theme(legend.position = "bottom",
-              legend.title = element_blank()) +
-        guides(color = guide_legend(override.aes = 
-                                      list(shape = c(NA, NA, 16),
-                                           lty = c(2, 2, 1))))  
+              legend.title = element_blank())  
     }    
 
     print(fig)
@@ -822,7 +819,8 @@ server <- function(input, output) {
                          xmiddle = `50%`,
                          xupper = `75%`,
                          xmax = `95%`),
-                     stat = "identity") +
+                     stat = "identity", 
+                     fill = "#F8766D") +
         scale_x_continuous("CPUE (fish / hour)") +
         theme_classic(base_size = 16) +
         theme(axis.title.y = element_blank(),
@@ -1003,17 +1001,17 @@ Required columns in input dataframe:
       
     } else {
       fig <- ggplot(temp, aes(x = gcat, y = mean, fill = data_source)) +
-        geom_bar(stat = "identity", position = "dodge")  +
+        geom_bar(stat = "identity", position = position_dodge(preserve = "single"))  +
         geom_errorbar(aes(ymin = mean - se,
                           ymax = mean + se),
-                      position = position_dodge(width = 0.9),
+                      position = position_dodge(width = 0.9, preserve = "single"),
                       width = 0) +
         scale_y_continuous("Frequency (%)",
                            limits = c(0, 100),
                            expand = c(0, 0)) +
         scale_fill_discrete("Data source") +
         theme_classic(base_size = 16) +
-        xlab("Gabelhouse length") +
+        xlab("Proportional size distribution") +
         theme(legend.position = c(0.85, 0.85)) +
         ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
     }
@@ -1048,23 +1046,17 @@ Required columns in input dataframe:
     fig <- ggplot(temp, aes(x = gcat)) +
       geom_point(aes(y = mean,
                      color = data_source),
-                 size = 2.5) +
-      geom_line(aes(y = mean,
-                    group = data_source, 
-                    color = data_source),
-                size = 0.75) +
-      geom_line(aes(y = `25%`,
-                    group = data_source,
-                    color = data_source),
-                lty = 2) +
-      geom_line(aes(y = `75%`,
-                    group = data_source,
-                    color = data_source),
-                lty = 2) +
+                 size = 2.5, 
+                 position = position_dodge(width = 0.05)) +
+      geom_errorbar(aes(ymin = mean - se, 
+                        ymax = mean + se, 
+                        color = data_source),
+                    width = 0, 
+                    position = position_dodge(width = 0.05)) +
       scale_y_continuous("Relative weight") +
       scale_color_discrete("Data source") +
       theme_classic(base_size = 16) +
-      xlab("Gabelhouse length") +
+      xlab("Proportional size distribution") +
       theme(legend.position = "bottom") 
     
     }
