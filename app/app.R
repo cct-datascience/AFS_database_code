@@ -100,37 +100,37 @@ ui <- navbarPage("AFS Standard Sampling App",
 In light of these benefits, the American Fisheries Society published the first edition of Standard Methods for Sampling North American Freshwater Fishes in 2009. 
 A new edition of these methods will be published Winter 2023-2024. 
 The goals of this project were to:"),
-br(),
-h4("(1) recommend standardized freshwater fish sampling methods for North America, and"),
-h4("(2) provide an online database of fish data collected using AFS recommended standard methods where data from individual water bodies could be compared to existing rangewide, ecoregion, and state standards."),
-br(),
-h4("Since publication, numerous fisheries professionals have adopted the standard methods and many have noted the database as an important tool in management. 
+                            br(),
+                            h4("(1) recommend standardized freshwater fish sampling methods for North America, and"),
+                            h4("(2) provide an online database of fish data collected using AFS recommended standard methods where data from individual water bodies could be compared to existing rangewide, ecoregion, and state standards."),
+                            br(),
+                            h4("Since publication, numerous fisheries professionals have adopted the standard methods and many have noted the database as an important tool in management. 
 The database allows for comparison of fish metrics commonly used in management to assess population health including growth, condition, length-frequency, and catch per unit effort data collected using standard methods.
 When developing version two of the database, we examined the strengths and weaknesses of methods used for requesting, analyzing, and displaying data in an online format.
 We used this information to achieve our goals of maximizing use and providing simple means to update this program for comparison of fisheries data."),
-br(),
-h4("We hope that these methods can be adopted by others, particularly those in data-poor regions, to maximize the ability to compare data. "),
-h2("Details About App Usage", align = "center"), 
-h4("Here, you can compare your data from an individual water body, collected using a standard AFS method to averages across the range of the species, ecoregion, and statewide.  This tool will help you assess if fish you have collected are high, average or low for the metric in question."),
-h4("We collected thousands of data sets on fishes from across Canada, the United States, and some from Mexico to build comparison summaries. A ", strong("data set (N)"), " is defined as data collected with AFS standard gears and methods during routine monitoring programs of an entire fish community or entire populations of specific fish ", strong("in a single waterbody conducted once during a year"), ". For example, data collected from Bass Lake (a small standing water body) sampled by boat electrofishing for Largemouth Bass in 2014 would represent 1 data set. In some cases, data sets included multi-day surveys of the same waterbody (e.g., large reservoirs) where the effort was summed across all sampling days. This excludes surveys targeting specific size groups or those with other biases (e.g., egg counts, juveniles fish surveys)."), 
-h4("Most of the app components can be translated into another language by going to ", 
-   a("Google Translate", href="https://translate.google.com/?sl=auto&tl=en&op=websites", .noWS = "outside"), 
-   " and entering the URL for the app, then selecting the desired language. Maps and plot can only currently be generated using the original version of the app. "), 
-h2("How to Provide Feedback", align = "center"), 
-h4("These data sets were collected and compiled by ", 
-   a("Scott Bonar's lab", href="https://azcfwru.wixsite.com/azcfwru", .noWS = "outside"), 
-   ". Only summaries can be shared. Individual data sets cannot be shared with others because of legal restrictions on their use. All feedback on this app is greatly appreciated, and can be provided by sending an email to ", 
-   a("Dr. Bonar", href="mailto:SBonar@ag.arizona.edu", .noWS = "outside"), 
-   " or by submitting an ", 
-   a("issue", href="https://github.com/cct-datascience/AFS_database_code/issues", .noWS = "outside"), 
-   " through the project's ", 
-   a("GitHub repository", href="https://github.com/cct-datascience/AFS_database_code", .noWS = "outside"), 
-   ", which is also where the code is located."), 
-h4 ("Sponsored by:"), 
-imageOutput("logo")
+                            br(),
+                            h4("We hope that these methods can be adopted by others, particularly those in data-poor regions, to maximize the ability to compare data. "),
+                            h2("Details About App Usage", align = "center"), 
+                            h4("Here, you can compare your data from an individual water body, collected using a standard AFS method to averages across the range of the species, ecoregion, and statewide.  This tool will help you assess if fish you have collected are high, average or low for the metric in question."),
+                            h4("We collected thousands of data sets on fishes from across Canada, the United States, and some from Mexico to build comparison summaries. A ", strong("data set (N)"), " is defined as data collected with AFS standard gears and methods during routine monitoring programs of an entire fish community or entire populations of specific fish ", strong("in a single waterbody conducted once during a year"), ". For example, data collected from Bass Lake (a small standing water body) sampled by boat electrofishing for Largemouth Bass in 2014 would represent 1 data set. In some cases, data sets included multi-day surveys of the same waterbody (e.g., large reservoirs) where the effort was summed across all sampling days. This excludes surveys targeting specific size groups or those with other biases (e.g., egg counts, juveniles fish surveys)."), 
+                            h4("Most of the app components can be translated into another language by going to ", 
+                               a("Google Translate", href="https://translate.google.com/?sl=auto&tl=en&op=websites", .noWS = "outside"), 
+                               " and entering the URL for the app, then selecting the desired language. Maps and plot can only currently be generated using the original version of the app. "), 
+                            h2("How to Provide Feedback", align = "center"), 
+                            h4("These data sets were collected and compiled by ", 
+                               a("Scott Bonar's lab", href="https://azcfwru.wixsite.com/azcfwru", .noWS = "outside"), 
+                               ". Only summaries can be shared. Individual data sets cannot be shared with others because of legal restrictions on their use. All feedback on this app is greatly appreciated, and can be provided by sending an email to ", 
+                               a("Dr. Bonar", href="mailto:SBonar@ag.arizona.edu", .noWS = "outside"), 
+                               " or by submitting an ", 
+                               a("issue", href="https://github.com/cct-datascience/AFS_database_code/issues", .noWS = "outside"), 
+                               " through the project's ", 
+                               a("GitHub repository", href="https://github.com/cct-datascience/AFS_database_code", .noWS = "outside"), 
+                               ", which is also where the code is located."), 
+                            h4 ("Sponsored by:"), 
+                            imageOutput("logo")
                           )
                  ),
-
+                 
                  tabPanel(title = "Explore",
                           sidebarLayout(
                             sidebarPanel(
@@ -178,88 +178,88 @@ imageOutput("logo")
                                          textOutput("report_absent2")), 
                                 tabPanel("Preview", 
                                          DTOutput("filtertable"))
-                                )
                               )
+                            )
                           )
-                          ), 
-
+                 ), 
+                 
                  tabPanel(title = "View",
-                   sidebarLayout(
-                     sidebarPanel(
-                       "Welcome to the American Fisheries Society Standard Sampling Database App!", 
-                       br(), 
-                       br(),
-                       "To view plots of standard fish data, select one option from each menu below.",
-                       radioGroupButtons(inputId = "typechoice2",
-                                         label = "Show data by:",
-                                         choices = uni.type,
-                                         direction = "vertical",
-                                         selected = "North America"),
-                       uiOutput("dyn_area2"),
-                       selectInput(inputId = "sppchoice2",
-                                   label = "Select species:",
-                                   choices = uni.spp,
-                                   selected ='Bluegill'),
-                       selectInput(inputId = "methodchoice2",
-                                   label = "Select method:",
-                                   choices = uni.method,
-                                   selected = "boat_electrofishing"),
-                       selectInput(inputId = "watertypechoice2",
-                                   label = "Select waterbody type:",
-                                   choices = uni.watertype,
-                                   selected = "large_standing_waters")
-                       ),
-                     mainPanel(p("Proportional Size Distribution Length Frequency Graph. Black lines indicate standard error."),
-                               plotDownloadUI("LF_plot"),
-                               hr(),
-                               p("Proportional Size Distribution Relative Weight Graph. Points indicate means and lines indicate standard error."),
-                               plotDownloadUI("RW_plot"),
-                               hr(), 
-                               p("Catch Per Unit Effort Graph. The box represents the middle 50% of the data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and individual points outside are outliers. "),
-                               plotDownloadUI("CPUE_plot", height = "200px")
-                               )
-                     )
-                   ),
-                tabPanel(title = "Compare Your Data",
-                         sidebarLayout(
-                           sidebarPanel(
-                             "Welcome to the American Fisheries Society Standard Sampling Database App!",
-                             br(),
-                             br(),
-                             "Upload your fish data for comparison here: ", 
-                             fileInput("upload", NULL,
-                                       buttonLabel =  "upload",
-                                       multiple = FALSE, 
-                                       accept = (".csv"), 
-                                       placeholder = ""), 
-                             "To view plots of standard fish data, select one option from each menu below.",
-                             uiOutput("dyn_type"),
-                             uiOutput("dyn_area3"),
-                             uiOutput("dyn_spp3"),
-                             uiOutput("dyn_method3"),
-                             uiOutput("dyn_watertype3")
-                           ),
-                           mainPanel(
-                             tabsetPanel(
-                               tabPanel("Instructions", 
-                                        uiOutput("instructions"), 
-                                        DTOutput("example")),
-                               tabPanel("Comparisons", 
-                                        p("Proportional Size Distribution Length Frequency Graph. Black lines indicate standard error."),
-                                        plotDownloadUI("LF_plot_UU"),
-                                        hr(),
-                                        p("Proportional Size Distribution Relative Weight Graph. Points indicate means and lines indicate standard error."),
-                                        plotDownloadUI("RW_plot_UU"),
-                                        hr(),
-                                        p("Catch Per Unit Effort Graph. The box represents the middle 50% of the data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and individual points outside are outliers. "),
-                                        plotDownloadUI("CPUE_plot_UU", height = "200px"))
-                             )
-                           )
+                          sidebarLayout(
+                            sidebarPanel(
+                              "Welcome to the American Fisheries Society Standard Sampling Database App!", 
+                              br(), 
+                              br(),
+                              "To view plots of standard fish data, select one option from each menu below.",
+                              radioGroupButtons(inputId = "typechoice2",
+                                                label = "Show data by:",
+                                                choices = uni.type,
+                                                direction = "vertical",
+                                                selected = "North America"),
+                              uiOutput("dyn_area2"),
+                              selectInput(inputId = "sppchoice2",
+                                          label = "Select species:",
+                                          choices = uni.spp,
+                                          selected ='Bluegill'),
+                              selectInput(inputId = "methodchoice2",
+                                          label = "Select method:",
+                                          choices = uni.method,
+                                          selected = "boat_electrofishing"),
+                              selectInput(inputId = "watertypechoice2",
+                                          label = "Select waterbody type:",
+                                          choices = uni.watertype,
+                                          selected = "large_standing_waters")
+                            ),
+                            mainPanel(p("Proportional Size Distribution Length Frequency Graph. Black lines indicate standard error."),
+                                      plotDownloadUI("LF_plot"),
+                                      hr(),
+                                      p("Proportional Size Distribution Relative Weight Graph. Points indicate means and lines indicate standard error."),
+                                      plotDownloadUI("RW_plot"),
+                                      hr(), 
+                                      p("Catch Per Unit Effort Graph. The box represents the middle 50% of the data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and individual points outside are outliers. "),
+                                      plotDownloadUI("CPUE_plot", height = "200px")
+                            )
+                          )
+                 ),
+                 tabPanel(title = "Compare Your Data",
+                          sidebarLayout(
+                            sidebarPanel(
+                              "Welcome to the American Fisheries Society Standard Sampling Database App!",
+                              br(),
+                              br(),
+                              "Upload your fish data for comparison here: ", 
+                              fileInput("upload", NULL,
+                                        buttonLabel =  "upload",
+                                        multiple = FALSE, 
+                                        accept = (".csv"), 
+                                        placeholder = ""), 
+                              "To view plots of standard fish data, select one option from each menu below.",
+                              uiOutput("dyn_type"),
+                              uiOutput("dyn_area3"),
+                              uiOutput("dyn_spp3"),
+                              uiOutput("dyn_method3"),
+                              uiOutput("dyn_watertype3")
+                            ),
+                            mainPanel(
+                              tabsetPanel(
+                                tabPanel("Instructions", 
+                                         uiOutput("instructions"), 
+                                         DTOutput("example")),
+                                tabPanel("Comparisons", 
+                                         p("Proportional Size Distribution Length Frequency Graph. Black lines indicate standard error."),
+                                         plotDownloadUI("LF_plot_UU"),
+                                         hr(),
+                                         p("Proportional Size Distribution Relative Weight Graph. Points indicate means and lines indicate standard error."),
+                                         plotDownloadUI("RW_plot_UU"),
+                                         hr(),
+                                         p("Catch Per Unit Effort Graph. The box represents the middle 50% of the data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and individual points outside are outliers. "),
+                                         plotDownloadUI("CPUE_plot_UU", height = "200px"))
+                              )
+                            )
+                            
+                          ), 
                           
-                         ), 
-
                  ) 
-
+                 
 )
 
 
@@ -319,7 +319,7 @@ server <- function(input, output) {
                 choices = temp,
                 selected = temp[1])
   })
-
+  
   # Read in raw user upload data to be used in reactive UI's
   uu_raw <- reactive({
     inFile <- input$upload
@@ -431,7 +431,7 @@ server <- function(input, output) {
                 selected = temp[1])
   }) 
   
-
+  
   # make filtered, a reactive data object for tab 1 explore, multiple combos okay
   filtered <- reactive({
     
@@ -488,7 +488,7 @@ server <- function(input, output) {
         ungroup()%>%
         select(-coords)
       
-      } else if(input$typechoice == "Ecoregion") {
+    } else if(input$typechoice == "Ecoregion") {
       l_df <-  locs %>%
         filter(ecoregion %in% input$areachoice,
                case_when("All" %in% input$sppchoice ~ common_name %in% uni.spp,
@@ -506,7 +506,7 @@ server <- function(input, output) {
         ungroup()%>%
         select(-coords)
       
-      } else if(input$typechoice == "State/Province") {
+    } else if(input$typechoice == "State/Province") {
       l_df <-  locs %>%
         filter(state %in% input$areachoice,
                case_when("All" %in% input$sppchoice ~ common_name %in% uni.spp,
@@ -524,8 +524,8 @@ server <- function(input, output) {
         ungroup() %>%
         select(-coords)
       
-      }
-    })
+    }
+  })
   
   # Create excluded dataframe for combinations with only one site and one year
   exclude <- reactive({
@@ -538,7 +538,7 @@ server <- function(input, output) {
                Nsurveys_tot == 1) %>%
         select(-Nlocs, -Nsurveys_tot)
       
-      } else if(input$typechoice == "Ecoregion") {
+    } else if(input$typechoice == "Ecoregion") {
       e_df <- locate() %>%
         group_by(ecoregion, common_name, method, waterbody_type) %>%
         summarize(Nlocs = length(waterbody_name),
@@ -547,7 +547,7 @@ server <- function(input, output) {
                Nsurveys_tot == 1) %>%
         select(-Nlocs, -Nsurveys_tot)
       
-      } else if(input$typechoice == "State/Province") {
+    } else if(input$typechoice == "State/Province") {
       e_df <- locate() %>%
         group_by(state, common_name, method, waterbody_type) %>%
         summarize(Nlocs = length(waterbody_name),
@@ -556,12 +556,12 @@ server <- function(input, output) {
                Nsurveys_tot == 1) %>%
         select(-Nlocs, -Nsurveys_tot)
       
-      }
-    })
+    }
+  })
   
   # make filtered, a reactive data object for tab 2, single combos only
   filtered2 <- reactive({
-
+    
     f_df <-  metrics %>%
       filter(metric %in% uni.metric,
              area %in% input$areachoice2,
@@ -574,7 +574,7 @@ server <- function(input, output) {
     print(f_df)
     
   })
-
+  
   observeEvent(input$areachoice2, {
     print(paste0("You have chosen: ", input$areachoice2))
   })
@@ -618,7 +618,7 @@ server <- function(input, output) {
                     "75%" = `75%`,
                     "95%" = `95%`)
   })
-
+  
   filtered3 <- reactive({
     
     f_df <-  metrics %>%
@@ -662,7 +662,7 @@ server <- function(input, output) {
                               gcat == "memorable" ~ "M-T",
                               gcat == "trophy" ~ "T") %>%
                factor(levels = c("S-Q", "Q-P", "P-M", "M-T", "T")))
-
+    
     f_df <-  uu_process %>%
       filter(metric %in% uni.metric,
              area %in% input$areachoice3,
@@ -672,11 +672,11 @@ server <- function(input, output) {
       arrange(common_name) %>%
       select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
              se, `5%`, `25%`, `50%`, `75%`, `95%`)
-
+    
     print("UU filtered")
     print(f_df$metric)
     print(f_df, n = Inf)
-
+    
   })
   
   # Map of ecoregions and sites
@@ -704,8 +704,8 @@ server <- function(input, output) {
                                             row.numbers = FALSE,
                                             feature.id = FALSE))
     }
-      print(map)
-  
+    print(map)
+    
   })
   
   # Text to describe insufficient sample size for anonymity
@@ -736,7 +736,7 @@ server <- function(input, output) {
     N <- temp %>% 
       distinct(N) %>% 
       pull(N)
-
+    
     if(nrow(temp) == 0){
       fig <- ggplot() +
         annotate("text", x = 1, y = 1, size = 8,
@@ -767,9 +767,9 @@ server <- function(input, output) {
     
     temp <- filtered2() %>%
       filter(metric == "Relative Weight")
-      
+    
     ypos <- min(temp$mean - temp$se,  na.rm = TRUE) - 2
-
+    
     if(nrow(temp) == 0){
       fig <- ggplot() +
         annotate("text", x = 1, y = 1, size = 8,
@@ -792,7 +792,7 @@ server <- function(input, output) {
         theme(legend.position = "bottom",
               legend.title = element_blank())  
     }    
-
+    
     print(fig)
     
   })
@@ -804,9 +804,9 @@ server <- function(input, output) {
     
     temp <- filtered2() %>%
       filter(metric == "CPUE") 
-
+    
     N <- unique(temp$N)
-
+    
     if(nrow(temp) == 0){
       fig <- ggplot() +
         annotate("text", x = 1, y = 1, size = 8,
@@ -828,7 +828,7 @@ server <- function(input, output) {
               axis.ticks.y = element_blank()) +
         ggtitle(paste0("N = ", N))  
     }
-
+    
     print(fig)
     
   })
@@ -959,90 +959,95 @@ Required columns in input dataframe:
 
 <br>  
 "
-  
-  output$instructions <- renderUI({
-    tf <- tempfile()
-    knit(text = mtext, output = tf)
-    HTML(markdown::markdownToHTML(file = tf))
-  })
-  
-  output$example <- renderDT(datatable(ex, options = list(lengthChange = FALSE, 
-                                                pageLength = 25)) %>%
-                               formatRound(c(8:10), 0) %>%
-                               formatString(7))
-  
-  plotLengthFrequencyuser <- reactive({
-    # uu_unfiltered() has a req() for uploaded data, so no more error messages
-    temp <- uu_processed() %>% 
-      bind_rows(filtered3(), .id = "id") %>% 
-      rename(data_source = id) %>% 
-      mutate(data_source = case_when(data_source == 1 ~ "User upload", 
-                                     data_source == 2 ~ "Standardized")) %>% 
-      filter(metric == "Length Frequency")
-    
-    stand_N <- temp %>% 
-      filter(data_source == "Standardized") %>% 
-      distinct(N) %>% 
-      pull(N)
 
-    user_N <- temp %>% 
-      filter(data_source == "User upload") %>% 
-      distinct(N) %>% 
-      pull(N)
-    
-    stand_only <- temp %>% 
-      filter(data_source == "Standardized")
-    
-    if(nrow(stand_only) == 0){
-      fig <- ggplot() +
-        annotate("text", x = 1, y = 1, size = 8,
-                 label = "No standardized data \n corresponding to uploaded data") +
-        theme_void()
-      
-    } else {
-      fig <- ggplot(temp, aes(x = gcat, y = mean, fill = data_source)) +
-        geom_bar(stat = "identity", position = position_dodge(preserve = "single"))  +
-        geom_errorbar(aes(ymin = mean - se,
-                          ymax = mean + se),
-                      position = position_dodge(width = 0.9, preserve = "single"),
-                      width = 0) +
-        scale_y_continuous("Frequency (%)",
-                           limits = c(0, 100),
-                           expand = c(0, 0)) +
-        scale_fill_discrete("Data source") +
-        theme_classic(base_size = 16) +
-        xlab("Proportional size distribution") +
-        theme(legend.position = c(0.85, 0.85)) +
-        ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
-    }
+output$instructions <- renderUI({
+  tf <- tempfile()
+  knit(text = mtext, output = tf)
+  HTML(markdown::markdownToHTML(file = tf))
+})
 
-    print(fig)
+output$example <- renderDT(datatable(ex, options = list(lengthChange = FALSE, 
+                                                        pageLength = 25)) %>%
+                             formatRound(c(8:10), 0) %>%
+                             formatString(7))
 
-  })
+plotLengthFrequencyuser <- reactive({
+  # uu_unfiltered() has a req() for uploaded data, so no more error messages
+  temp <- uu_processed() %>% 
+    bind_rows(filtered3(), .id = "id") %>% 
+    rename(data_source = id) %>% 
+    mutate(data_source = case_when(data_source == 1 ~ "User upload", 
+                                   data_source == 2 ~ "Standardized")) %>% 
+    filter(metric == "Length Frequency")
   
-  callModule(plotDownload, "LF_plot_UU", plotLengthFrequencyuser)
+  stand_N <- temp %>% 
+    filter(data_source == "Standardized") %>% 
+    distinct(N) %>% 
+    pull(N)
   
-    plotRelativeWeightuser <- reactive({
+  stand_N_label <- paste0("Standardized average length frequency (N = ", stand_N, " datasets)")
+  
+  user_N <- temp %>% 
+    filter(data_source == "User upload") %>% 
+    distinct(N) %>% 
+    pull(N)
+  
+  user_N_label <- paste0("Waterbody length frequency (n = ", user_N, " fish)")
+  
+  stand_only <- temp %>% 
+    filter(data_source == "Standardized")
+  
+  if(nrow(stand_only) == 0){
+    fig <- ggplot() +
+      annotate("text", x = 1, y = 1, size = 8,
+               label = "No standardized data \n corresponding to uploaded data") +
+      theme_void()
     
-    temp <- uu_processed() %>% 
-      bind_rows(filtered3(), .id = "id") %>% 
-      rename(data_source = id) %>% 
-      mutate(data_source = case_when(data_source == 1 ~ "User upload", 
-                                     data_source == 2 ~ "Standardized")) %>% 
-      filter(metric == "Relative Weight")
+  } else {
+    fig <- ggplot(temp, aes(x = gcat, y = mean, fill = data_source)) +
+      geom_bar(stat = "identity", position = position_dodge(preserve = "single"))  +
+      geom_errorbar(aes(ymin = mean - se,
+                        ymax = mean + se),
+                    position = position_dodge(width = 0.9, preserve = "single"),
+                    width = 0) +
+      scale_y_continuous("Frequency (%)",
+                         limits = c(0, 100),
+                         expand = c(0, 0)) +
+      scale_fill_discrete(name = "Data source", 
+                          labels = c(str_wrap(stand_N_label, width = 23), 
+                                     str_wrap(user_N_label, width = 23))) +
+      theme_classic(base_size = 16) +
+      xlab("Proportional size distribution") +
+      theme(legend.position = c(0.85, 0.85))
+  }
+  
+  print(fig)
+  
+})
+
+callModule(plotDownload, "LF_plot_UU", plotLengthFrequencyuser)
+
+plotRelativeWeightuser <- reactive({
+  
+  temp <- uu_processed() %>% 
+    bind_rows(filtered3(), .id = "id") %>% 
+    rename(data_source = id) %>% 
+    mutate(data_source = case_when(data_source == 1 ~ "User upload", 
+                                   data_source == 2 ~ "Standardized")) %>% 
+    filter(metric == "Relative Weight")
+  
+  stand_only <- temp %>% 
+    filter(data_source == "Standardized")
+  
+  if(nrow(stand_only) == 0){
     
-    stand_only <- temp %>% 
-      filter(data_source == "Standardized")
+    fig <- ggplot() +
+      annotate("text", x = 1, y = 1, size = 8,
+               label = "No standardized data \n corresponding to uploaded data") +
+      theme_void()
     
-    if(nrow(stand_only) == 0){
-      
-      fig <- ggplot() +
-        annotate("text", x = 1, y = 1, size = 8,
-                 label = "No standardized data \n corresponding to uploaded data") +
-        theme_void()
-      
-    } else {
-      
+  } else {
+    
     fig <- ggplot(temp, aes(x = gcat)) +
       geom_point(aes(y = mean,
                      color = data_source),
@@ -1059,69 +1064,69 @@ Required columns in input dataframe:
       xlab("Proportional size distribution") +
       theme(legend.position = "bottom") 
     
-    }
-    
-    print(fig)
-    
-  })
-    
-    callModule(plotDownload, "RW_plot_UU", plotRelativeWeightuser)
-    
-    plotCPUEuser <- reactive({
-    temp <- uu_processed() %>% 
-      bind_rows(filtered3(), .id = "id") %>% 
-      rename(data_source = id) %>% 
-      mutate(data_source = case_when(data_source == 1 ~ "User upload", 
-                                     data_source == 2 ~ "Standardized")) %>% 
-      filter(metric == "CPUE")
-    print("Check")
-    print(temp, n = Inf)
-    
-    stand_N <- temp %>% 
-      filter(data_source == "Standardized") %>% 
-      distinct(N) %>% 
-      pull(N)
-    
-    user_N <- temp %>% 
-      filter(data_source == "User upload") %>% 
-      distinct(N) %>% 
-      pull(N)
-    
-    stand_only <- temp %>% 
-      filter(data_source == "Standardized")
-    
-    if(nrow(stand_only) == 0){
-      
-      fig <- ggplot() +
-        annotate("text", x = 1, y = 1, size = 8,
-                 label = "No standardized data \n corresponding to uploaded data") +
-        theme_void()
-      
-    } else {
-      
-      fig <- ggplot(temp, aes(y = area, fill = data_source)) +
-        geom_boxplot(aes(xmin = `5%`,
-                         xlower = `25%`,
-                         xmiddle = `50%`,
-                         xupper = `75%`,
-                         xmax = `95%`),
-                     stat = "identity") +
-        scale_x_continuous("CPUE (fish / hour)") +
-        scale_fill_discrete("Data source") +
-        theme_classic(base_size = 16) +
-        theme(axis.title.y = element_blank(),
-              axis.text.y = element_blank(),
-              axis.ticks.y = element_blank()) +
-        ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
-      
-    }
-    
-    print(fig)
-    
-  })
-    
-    callModule(plotDownload, "CPUE_plot_UU", plotCPUEuser)
+  }
   
+  print(fig)
+  
+})
+
+callModule(plotDownload, "RW_plot_UU", plotRelativeWeightuser)
+
+plotCPUEuser <- reactive({
+  temp <- uu_processed() %>% 
+    bind_rows(filtered3(), .id = "id") %>% 
+    rename(data_source = id) %>% 
+    mutate(data_source = case_when(data_source == 1 ~ "User upload", 
+                                   data_source == 2 ~ "Standardized")) %>% 
+    filter(metric == "CPUE")
+  print("Check")
+  print(temp, n = Inf)
+  
+  stand_N <- temp %>% 
+    filter(data_source == "Standardized") %>% 
+    distinct(N) %>% 
+    pull(N)
+  
+  user_N <- temp %>% 
+    filter(data_source == "User upload") %>% 
+    distinct(N) %>% 
+    pull(N)
+  
+  stand_only <- temp %>% 
+    filter(data_source == "Standardized")
+  
+  if(nrow(stand_only) == 0){
+    
+    fig <- ggplot() +
+      annotate("text", x = 1, y = 1, size = 8,
+               label = "No standardized data \n corresponding to uploaded data") +
+      theme_void()
+    
+  } else {
+    
+    fig <- ggplot(temp, aes(y = area, fill = data_source)) +
+      geom_boxplot(aes(xmin = `5%`,
+                       xlower = `25%`,
+                       xmiddle = `50%`,
+                       xupper = `75%`,
+                       xmax = `95%`),
+                   stat = "identity") +
+      scale_x_continuous("CPUE (fish / hour)") +
+      scale_fill_discrete("Data source") +
+      theme_classic(base_size = 16) +
+      theme(axis.title.y = element_blank(),
+            axis.text.y = element_blank(),
+            axis.ticks.y = element_blank()) +
+      ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
+    
+  }
+  
+  print(fig)
+  
+})
+
+callModule(plotDownload, "CPUE_plot_UU", plotCPUEuser)
+
 }
 
 shinyApp(ui, server)
