@@ -7,6 +7,7 @@ library(DT)
 library(leafpop)
 library(FSA)
 library(knitr)
+library(ggtext)
 # library(periscope)
 
 # Module code
@@ -112,7 +113,7 @@ We used this information to achieve our goals of maximizing use and providing si
                             h4("We hope that these methods can be adopted by others, particularly those in data-poor regions, to maximize the ability to compare data. "),
                             h2("Details About App Usage", align = "center"), 
                             h4("Here, you can compare your data from an individual water body, collected using a standard AFS method to averages across the range of the species, ecoregion, and statewide.  This tool will help you assess if fish you have collected are high, average or low for the metric in question."),
-                            h4("We collected thousands of data sets on fishes from across Canada, the United States, and some from Mexico to build comparison summaries. A ", strong("data set (N)"), " is defined as data collected with AFS standard gears and methods during routine monitoring programs of an entire fish community or entire populations of specific fish ", strong("in a single waterbody conducted once during a year"), ". For example, data collected from Bass Lake (a small standing water body) sampled by boat electrofishing for Largemouth Bass in 2014 would represent 1 data set. In some cases, data sets included multi-day surveys of the same waterbody (e.g., large reservoirs) where the effort was summed across all sampling days. This excludes surveys targeting specific size groups or those with other biases (e.g., egg counts, juveniles fish surveys)."), 
+                            h4("We collected thousands of data sets on fishes from across Canada, the United States, and some from Mexico to build comparison summaries. A ", strong("data set (", .noWS = "after"), em("N"), strong(")", .noWS = "before"), " is defined as data collected with AFS standard gears and methods during routine monitoring programs of an entire fish community or entire populations of specific fish ", strong("in a single waterbody conducted once during a year"), ". For example, data collected from Bass Lake (a small standing water body) sampled by boat electrofishing for Largemouth Bass in 2014 would represent 1 data set. In some cases, data sets included multi-day surveys of the same waterbody (e.g., large reservoirs) where the effort was summed across all sampling days. This excludes surveys targeting specific size groups or those with other biases (e.g., egg counts, juveniles fish surveys)."), 
                             h4("Most of the app components can be translated into another language by going to ", 
                                a("Google Translate", href="https://translate.google.com/?sl=auto&tl=en&op=websites", .noWS = "outside"), 
                                " and entering the URL for the app, then selecting the desired language. Maps and plot can only currently be generated using the original version of the app. "), 
@@ -754,7 +755,7 @@ server <- function(input, output) {
         theme_classic(base_size = 16) +
         xlab("Proportional size distribution") +
         theme(legend.position = "none") +
-        annotate("text", x = 5, y = 90, label = paste0("N = ", N), size = unit(9, "pt"))
+        geom_richtext(x = 5, y = 90, label = paste0("<i>N</i> = ", N), size = 7, fill = NA, label.color = NA)
     }
     
     print(fig)
@@ -823,10 +824,11 @@ server <- function(input, output) {
                      fill = "#F8766D") +
         scale_x_continuous("CPUE (fish / hour)") +
         theme_classic(base_size = 16) +
+        labs(title = paste0("*N* = ", N)) +
         theme(axis.title.y = element_blank(),
               axis.text.y = element_blank(),
-              axis.ticks.y = element_blank()) +
-        ggtitle(paste0("N = ", N))  
+              axis.ticks.y = element_blank(), 
+              plot.title = ggtext::element_markdown())
     }
     
     print(fig)
@@ -985,14 +987,14 @@ plotLengthFrequencyuser <- reactive({
     distinct(N) %>% 
     pull(N)
   
-  stand_N_label <- paste0("Standardized average length frequency (N = ", stand_N, " datasets)")
+  stand_N_label <- paste0("Standardized average <br> length frequency <br> (*N* = ", stand_N, " datasets)")
   
   user_N <- temp %>% 
     filter(data_source == "User upload") %>% 
     distinct(N) %>% 
     pull(N)
   
-  user_N_label <- paste0("Waterbody length frequency (n = ", user_N, " fish)")
+  user_N_label <- paste0("Waterbody length <br> frequency <br> (n = ", user_N, " fish)")
   
   stand_only <- temp %>% 
     filter(data_source == "Standardized")
@@ -1014,11 +1016,11 @@ plotLengthFrequencyuser <- reactive({
                          limits = c(0, 100),
                          expand = c(0, 0)) +
       scale_fill_discrete(name = "Data source", 
-                          labels = c(str_wrap(stand_N_label, width = 23), 
-                                     str_wrap(user_N_label, width = 23))) +
+                          labels = c(stand_N_label, user_N_label)) +
       theme_classic(base_size = 16) +
       xlab("Proportional size distribution") +
-      theme(legend.position = c(0.85, 0.85))
+      theme(legend.position = c(0.85, 0.85), 
+            legend.text = ggtext::element_markdown())
   }
   
   print(fig)
