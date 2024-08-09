@@ -210,14 +210,14 @@ We used this information to achieve our goals of maximizing use and providing si
                                           choices = uni.watertype,
                                           selected = "large_standing_waters")
                             ),
-                            mainPanel(p("Proportional Size Distribution Length Frequency Graph. Black lines indicate standard error."),
-                                      plotDownloadUI("LF_plot"),
+                            mainPanel(plotDownloadUI("LF_plot"),
+                                      p("Proportional Size Distribution Length Frequency Graph. Black lines indicate standard error."),
                                       hr(),
-                                      p("Proportional Size Distribution Relative Weight Graph. Points indicate means and lines indicate standard error."),
                                       plotDownloadUI("RW_plot"),
+                                      p("Proportional Size Distribution Relative Weight Graph. Points indicate means and lines indicate standard error."),
                                       hr(), 
-                                      p("Catch Per Unit Effort Graph. The box represents the middle 50% of the data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and individual points outside are outliers. "),
-                                      plotDownloadUI("CPUE_plot", height = "200px")
+                                      plotDownloadUI("CPUE_plot", height = "200px"), 
+                                      p("Catch Per Unit Effort Graph. The box represents the middle 50% of the data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers. ")
                             )
                           )
                  ),
@@ -246,14 +246,14 @@ We used this information to achieve our goals of maximizing use and providing si
                                          uiOutput("instructions"), 
                                          DTOutput("example")),
                                 tabPanel("Comparisons", 
-                                         p("Proportional Size Distribution Length Frequency Graph. Black lines indicate standard error."),
                                          plotDownloadUI("LF_plot_UU"),
+                                         p("Proportional Size Distribution Length Frequency Graph. Black lines indicate standard error."),
                                          hr(),
-                                         p("Proportional Size Distribution Relative Weight Graph. Points indicate means and lines indicate standard error."),
                                          plotDownloadUI("RW_plot_UU"),
+                                         p("Proportional Size Distribution Relative Weight Graph. Points indicate means and lines indicate standard error."),
                                          hr(),
-                                         p("Catch Per Unit Effort Graph. The box represents the middle 50% of the data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and individual points outside are outliers. "),
-                                         plotDownloadUI("CPUE_plot_UU", height = "200px"))
+                                         plotDownloadUI("CPUE_plot_UU", height = "200px"), 
+                                         p("Catch Per Unit Effort Graph. The box represents the middle 50% of the data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers. "))
                               )
                             )
                             
@@ -753,7 +753,7 @@ server <- function(input, output) {
                            limits = c(0, 100),
                            expand = c(0, 0)) +
         theme_classic(base_size = 16) +
-        xlab("Proportional size distribution") +
+        xlab("Proportional size distribution categories") +
         theme(legend.position = "none") +
         geom_richtext(x = 5, y = 90, label = paste0("<i>N</i> = ", N), size = 7, fill = NA, label.color = NA)
     }
@@ -787,11 +787,13 @@ server <- function(input, output) {
         geom_errorbar(aes(ymin = mean - se, ymax = mean + se), 
                       width = 0, 
                       color = "#F8766D") +
-        scale_y_continuous("Relative weight") +
+        geom_hline(yintercept = c(50, 100), linetype = "dashed", col = "grey") +
+        labs(y = "Relative weight (<i>W<sub>r</sub></i>)") +
         theme_classic(base_size = 16) +
-        xlab("Proportional size distribution") +
+        xlab("Relative weight by proportional size distribution categories") +
         theme(legend.position = "bottom",
-              legend.title = element_blank())  
+              legend.title = element_blank(), 
+              axis.title.y = ggtext::element_markdown())
     }    
     
     print(fig)
@@ -1018,7 +1020,7 @@ plotLengthFrequencyuser <- reactive({
       scale_fill_discrete(name = "Data source", 
                           labels = c(stand_N_label, user_N_label)) +
       theme_classic(base_size = 16) +
-      xlab("Proportional size distribution") +
+      xlab("Proportional size distribution categories") +
       theme(legend.position = c(0.85, 0.85), 
             legend.text = ggtext::element_markdown())
   }
@@ -1060,11 +1062,13 @@ plotRelativeWeightuser <- reactive({
                         color = data_source),
                     width = 0, 
                     position = position_dodge(width = 0.05)) +
-      scale_y_continuous("Relative weight") +
+      geom_hline(yintercept = c(50, 100), linetype = "dashed", col = "grey") +
+      labs(y = "Relative weight (<i>W<sub>r</sub></i>)") +
       scale_color_discrete("Data source") +
       theme_classic(base_size = 16) +
-      xlab("Proportional size distribution") +
-      theme(legend.position = "bottom") 
+      xlab("Relative weight by proportional size distribution categories") +
+      theme(legend.position = "bottom", 
+            axis.title.y = ggtext::element_markdown()) 
     
   }
   
