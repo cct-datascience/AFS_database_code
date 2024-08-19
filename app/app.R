@@ -94,6 +94,8 @@ ui <- navbarPage("AFS Standard Sampling App",
                               type="text/css",
                               "#pics img {display: block; margin-left: auto; margin-right: auto; max-height: 90%; height: 90%; max-width: 100%, width: auto}"
                             )),
+                            h1(strong("Website is in active development and will be complete September 7, 2024"), align = "center"), 
+                            hr(), 
                             imageOutput("pics"),
                             h2("About Standard Sampling", align = "center"),
                             h4("Standardization of sampling methods allows fisheries professionals to compare data across large spatial and temporal scales, encourages data sharing and improves communication. 
