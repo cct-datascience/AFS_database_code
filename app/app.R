@@ -982,7 +982,10 @@ plotLengthFrequencyuser <- reactive({
     rename(data_source = id) %>% 
     mutate(data_source = case_when(data_source == 1 ~ "User upload", 
                                    data_source == 2 ~ "Standardized")) %>% 
-    filter(metric == "Length Frequency")
+    filter(metric == "Length Frequency") %>% 
+    mutate(mean_label = case_when(data_source == "User upload" ~ as.character(round(mean, 1)), 
+                                  data_source == "Standardized" ~ " "))
+  print(temp)
   
   stand_N <- temp %>% 
     filter(data_source == "Standardized") %>% 
@@ -1014,6 +1017,7 @@ plotLengthFrequencyuser <- reactive({
                         ymax = mean + se),
                     position = position_dodge(width = 0.9, preserve = "single"),
                     width = 0) +
+      geom_text(aes(label = mean_label), vjust = -0.5, hjust = -0.4) +
       scale_y_continuous("Frequency (%)",
                          limits = c(0, 100),
                          expand = c(0, 0)) +
