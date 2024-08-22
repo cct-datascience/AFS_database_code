@@ -771,8 +771,6 @@ server <- function(input, output) {
     temp <- filtered2() %>%
       filter(metric == "Relative Weight")
     
-    ypos <- min(temp$mean - temp$se,  na.rm = TRUE) - 2
-    
     if(nrow(temp) == 0){
       fig <- ggplot() +
         annotate("text", x = 1, y = 1, size = 8,
@@ -783,13 +781,12 @@ server <- function(input, output) {
         geom_point(aes(y = mean),
                    size = 2.5, 
                    color = "#F8766D") +
-        geom_text(aes(y = ypos,
-                      label = N),
-                  vjust = 0.5) +
         geom_errorbar(aes(ymin = mean - se, ymax = mean + se), 
                       width = 0, 
                       color = "#F8766D") +
-        geom_hline(yintercept = c(50, 100), linetype = "dashed", col = "grey") +
+        geom_hline(yintercept = 100, linetype = "dashed") +
+        scale_x_discrete(drop = FALSE) +
+        ylim(50, 160) +
         labs(y = "Relative weight (<i>W<sub>r</sub></i>)") +
         theme_classic(base_size = 16) +
         xlab("Relative weight by proportional size distribution categories") +
@@ -1045,7 +1042,7 @@ plotRelativeWeightuser <- reactive({
     mutate(data_source = case_when(data_source == 1 ~ "User upload", 
                                    data_source == 2 ~ "Standardized")) %>% 
     filter(metric == "Relative Weight")
-  
+
   stand_only <- temp %>% 
     filter(data_source == "Standardized")
   
@@ -1056,6 +1053,13 @@ plotRelativeWeightuser <- reactive({
                label = "No standardized data \n corresponding to uploaded data") +
       theme_void()
     
+  } else if (max(temp$mean) > 160){
+    
+    fig <- ggplot() +
+      annotate("text", x = 1, y = 1, size = 8,
+               label = "Relative weight exceeds max of 160") +
+      theme_void()
+  
   } else {
     
     fig <- ggplot(temp, aes(x = gcat)) +
@@ -1068,12 +1072,15 @@ plotRelativeWeightuser <- reactive({
                         color = data_source),
                     width = 0, 
                     position = position_dodge(width = 0.05)) +
-      geom_hline(yintercept = c(50, 100), linetype = "dashed", col = "grey") +
+      scale_x_discrete(drop = FALSE) +
+      ylim(50, 160) +
+      geom_hline(yintercept = 100, linetype = "dashed") +
       labs(y = "Relative weight (<i>W<sub>r</sub></i>)") +
       scale_color_discrete("Data source") +
       theme_classic(base_size = 16) +
       xlab("Relative weight by proportional size distribution categories") +
-      theme(legend.position = "bottom", 
+      theme(legend.position = "inside", 
+            legend.position.inside = c(0.85, 0.85), 
             axis.title.y = ggtext::element_markdown()) 
     
   }
