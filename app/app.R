@@ -213,13 +213,13 @@ We used this information to achieve our goals of maximizing use and providing si
                                           selected = "large_standing_waters")
                             ),
                             mainPanel(plotDownloadUI("LF_plot"),
-                                      p("Proportional Size Distribution Length Frequency Graph. Black lines indicate standard error."),
+                                      p("Proportional size distribution length frequency. Black lines indicate standard error."),
                                       hr(),
                                       plotDownloadUI("RW_plot"),
-                                      p("Proportional Size Distribution Relative Weight Graph. Points indicate means and lines indicate standard error."),
+                                      p("Relative weight by proportional size distribution categories. Points indicate means and lines indicate standard error."),
                                       hr(), 
                                       plotDownloadUI("CPUE_plot", height = "200px"), 
-                                      p("Catch Per Unit Effort Graph. The box represents the middle 50% of the data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers. ")
+                                      p("Catch per unit effort. The box represents the middle 50% of the data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers. ")
                             )
                           )
                  ),
@@ -249,13 +249,13 @@ We used this information to achieve our goals of maximizing use and providing si
                                          DTOutput("example")),
                                 tabPanel("Comparisons", 
                                          plotDownloadUI("LF_plot_UU"),
-                                         p("Proportional Size Distribution Length Frequency Graph. Black lines indicate standard error."),
+                                         p("Proportional size distribution length frequency. Black lines indicate standard error."),
                                          hr(),
                                          plotDownloadUI("RW_plot_UU"),
-                                         p("Proportional Size Distribution Relative Weight Graph. Points indicate means and lines indicate standard error."),
+                                         p("Relative weight by proportional size distribution categories. Points indicate means and lines indicate standard error."),
                                          hr(),
                                          plotDownloadUI("CPUE_plot_UU", height = "200px"), 
-                                         p("Catch Per Unit Effort Graph. The box represents the middle 50% of the data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers. "))
+                                         p("Catch per unit effort. The box represents the middle 50% of the data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers. "))
                               )
                             )
                             
@@ -747,7 +747,7 @@ server <- function(input, output) {
         theme_void()
     } else {
       fig <- ggplot(temp, aes(x = gcat, y = mean)) +
-        geom_bar(stat = "identity", fill = "#F8766D") +
+        geom_bar(stat = "identity", fill = "black") +
         geom_errorbar(aes(ymin = mean - se,
                           ymax = mean + se),
                       width = 0) +
@@ -780,16 +780,16 @@ server <- function(input, output) {
       fig <- ggplot(temp, aes(x = gcat)) +
         geom_point(aes(y = mean),
                    size = 2.5, 
-                   color = "#F8766D") +
+                   color = "black") +
         geom_errorbar(aes(ymin = mean - se, ymax = mean + se), 
                       width = 0, 
-                      color = "#F8766D") +
+                      color = "black") +
         geom_hline(yintercept = 100, linetype = "dashed") +
         scale_x_discrete(drop = FALSE) +
         ylim(50, 160) +
         labs(y = "Relative weight (<i>W<sub>r</sub></i>)") +
         theme_classic(base_size = 16) +
-        xlab("Relative weight by proportional size distribution categories") +
+        xlab("Proportional size distribution categories") +
         theme(legend.position = "bottom",
               legend.title = element_blank(), 
               axis.title.y = ggtext::element_markdown())
@@ -822,7 +822,7 @@ server <- function(input, output) {
                          xupper = `75%`,
                          xmax = `95%`),
                      stat = "identity", 
-                     fill = "#F8766D") +
+                     fill = "black") +
         scale_x_continuous("CPUE (fish / hour)") +
         theme_classic(base_size = 16) +
         labs(title = paste0("*N* = ", N)) +
@@ -1011,7 +1011,8 @@ plotLengthFrequencyuser <- reactive({
     
   } else {
     fig <- ggplot(temp, aes(x = gcat, y = mean, fill = data_source)) +
-      geom_bar(stat = "identity", position = position_dodge(preserve = "single"))  +
+      geom_bar(stat = "identity", position = position_dodge(preserve = "single"), 
+               color = "black")  +
       geom_errorbar(aes(ymin = mean - se,
                         ymax = mean + se),
                     position = position_dodge(width = 0.9, preserve = "single"),
@@ -1020,8 +1021,9 @@ plotLengthFrequencyuser <- reactive({
       scale_y_continuous("Frequency (%)",
                          limits = c(0, 100),
                          expand = c(0, 0)) +
-      scale_fill_discrete(name = "Data source", 
-                          labels = c(stand_N_label, user_N_label)) +
+      scale_fill_manual("legend", values = c("black", "grey"), 
+                        name = "Data source", 
+                        labels = c(stand_N_label, user_N_label)) +
       theme_classic(base_size = 16) +
       xlab("Proportional size distribution categories") +
       theme(legend.position = c(0.85, 0.85), 
@@ -1042,7 +1044,7 @@ plotRelativeWeightuser <- reactive({
     mutate(data_source = case_when(data_source == 1 ~ "User upload", 
                                    data_source == 2 ~ "Standardized")) %>% 
     filter(metric == "Relative Weight")
-
+  
   stand_only <- temp %>% 
     filter(data_source == "Standardized")
   
@@ -1059,7 +1061,7 @@ plotRelativeWeightuser <- reactive({
       annotate("text", x = 1, y = 1, size = 8,
                label = "Relative weight exceeds max of 160") +
       theme_void()
-  
+    
   } else {
     
     fig <- ggplot(temp, aes(x = gcat)) +
@@ -1076,9 +1078,9 @@ plotRelativeWeightuser <- reactive({
       ylim(50, 160) +
       geom_hline(yintercept = 100, linetype = "dashed") +
       labs(y = "Relative weight (<i>W<sub>r</sub></i>)") +
-      scale_color_discrete("Data source") +
+      scale_color_manual(name = "Data source", values = c("black", "grey")) +
       theme_classic(base_size = 16) +
-      xlab("Relative weight by proportional size distribution categories") +
+      xlab("Proportional size distribution categories") +
       theme(legend.position = "inside", 
             legend.position.inside = c(0.85, 0.85), 
             axis.title.y = ggtext::element_markdown()) 
@@ -1131,7 +1133,7 @@ plotCPUEuser <- reactive({
                        xmax = `95%`),
                    stat = "identity") +
       scale_x_continuous("CPUE (fish / hour)") +
-      scale_fill_discrete("Data source") +
+      scale_fill_manual(name = "Data source", values = c("black", "grey")) +
       theme_classic(base_size = 16) +
       theme(axis.title.y = element_blank(),
             axis.text.y = element_blank(),
