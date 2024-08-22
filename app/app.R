@@ -17,7 +17,7 @@ plotDownloadUI <- function(id, height = 400) {
     fluidRow(
       column(
         2, offset = 10,
-        downloadButton(ns("download_plot"), "Download")
+        downloadButton(ns("download_plot"), "Download plot")
       )
     ),
     fluidRow(
@@ -240,7 +240,8 @@ We used this information to achieve our goals of maximizing use and providing si
                               uiOutput("dyn_area3"),
                               uiOutput("dyn_spp3"),
                               uiOutput("dyn_method3"),
-                              uiOutput("dyn_watertype3")
+                              uiOutput("dyn_watertype3"),
+                              downloadButton("filterdownloaduu", "Download filtered")
                             ),
                             mainPanel(
                               tabsetPanel(
@@ -682,6 +683,30 @@ server <- function(input, output) {
     
   })
   
+  # For downloading the filtered dataset for tab 3 comparison
+
+  both <- reactive({
+    
+    both_df <- uu_processed() %>% 
+      bind_rows(filtered3(), .id = "id") %>% 
+      rename(data_source = id) %>% 
+      mutate(data_source = case_when(data_source == 1 ~ "User upload", 
+                                     data_source == 2 ~ "Standardized")) %>%
+      arrange(metric) %>%
+      select(metric, data_source, area, common_name, method, waterbody_type, gcat, N, mean, 
+             se, `5%`, `25%`, `50%`, `75%`, `95%`) 
+  })
+  
+  output$filterdownloaduu <- downloadHandler(
+    filename = function() {
+      paste0("AFS-UU-filtered-", Sys.Date(), ".csv")
+    },
+    
+    content = function(file) {
+      write.csv(both(), file)
+    }
+  )
+  
   # Map of ecoregions and sites
   output$plotSites <- renderLeaflet({
     
@@ -1109,11 +1134,6 @@ plotCPUEuser <- reactive({
     filter(data_source == "Standardized") %>% 
     distinct(N) %>% 
     pull(N)
-  
-  # user_N <- temp %>% 
-  #   filter(data_source == "User upload") %>% 
-  #   distinct(N) %>% 
-  #   pull(N)
   
   stand_N_label <- paste0("Standardized data <br> (*N* = ", stand_N, " datasets)")
   
