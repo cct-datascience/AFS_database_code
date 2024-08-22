@@ -1027,7 +1027,8 @@ plotLengthFrequencyuser <- reactive({
       theme_classic(base_size = 16) +
       xlab("Proportional size distribution categories") +
       theme(legend.position = c(0.85, 0.85), 
-            legend.text = ggtext::element_markdown())
+            legend.text = ggtext::element_markdown(), 
+            legend.key.spacing.y = unit(0.25, "cm"))
   }
   
   print(fig)
@@ -1078,7 +1079,8 @@ plotRelativeWeightuser <- reactive({
       ylim(50, 160) +
       geom_hline(yintercept = 100, linetype = "dashed") +
       labs(y = "Relative weight (<i>W<sub>r</sub></i>)") +
-      scale_color_manual(name = "Data source", values = c("black", "grey")) +
+      scale_color_manual(name = "Data source", values = c("black", "grey"), 
+                         labels = c("Standardized data", "Waterbody")) +
       theme_classic(base_size = 16) +
       xlab("Proportional size distribution categories") +
       theme(legend.position = "inside", 
@@ -1108,11 +1110,15 @@ plotCPUEuser <- reactive({
     distinct(N) %>% 
     pull(N)
   
-  user_N <- temp %>% 
-    filter(data_source == "User upload") %>% 
-    distinct(N) %>% 
-    pull(N)
+  # user_N <- temp %>% 
+  #   filter(data_source == "User upload") %>% 
+  #   distinct(N) %>% 
+  #   pull(N)
   
+  stand_N_label <- paste0("Standardized data <br> (*N* = ", stand_N, " datasets)")
+  
+  user_N_label <- paste0("Waterbody")
+
   stand_only <- temp %>% 
     filter(data_source == "Standardized")
   
@@ -1133,12 +1139,13 @@ plotCPUEuser <- reactive({
                        xmax = `95%`),
                    stat = "identity") +
       scale_x_continuous("CPUE (fish / hour)") +
-      scale_fill_manual(name = "Data source", values = c("black", "grey")) +
+      scale_fill_manual(name = "Data source", values = c("black", "grey"), 
+                        labels = c(stand_N_label, user_N_label)) +
       theme_classic(base_size = 16) +
       theme(axis.title.y = element_blank(),
             axis.text.y = element_blank(),
-            axis.ticks.y = element_blank()) +
-      ggtitle(paste0("Standardized N = ", stand_N, "; User N = ", user_N))
+            axis.ticks.y = element_blank(), 
+            legend.text = ggtext::element_markdown())
     
   }
   
