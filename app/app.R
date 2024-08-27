@@ -329,13 +329,49 @@ server <- function(input, output) {
     inFile <- input$upload
     uu <- read_csv(inFile$datapath)
     
+    # Duplicate records for all types
+    if (!is.na(unique(uu$state))) {
+      uu_state <- uu %>% 
+        select(-ecoregion) %>% 
+        mutate(type = "state") %>% 
+        rename(area = state)
+    }
+    
+    if (!is.na(unique(uu$ecoregion))) {
+      uu_ecoregion <- uu %>% 
+        select(-state) %>% 
+        mutate(type = "ecoregion") %>% 
+        rename(area = ecoregion)
+    }
+    
+    uu_all <- uu %>% 
+      select(-ecoregion, -state) %>% 
+      mutate(type = "all", area = "North America")
+    
+    if(exists("uu_state")) uu_all <- bind_rows(uu_all, uu_state)
+    if(exists("uu_ecoregion")) uu_all <- bind_rows(uu_all, uu_ecoregion)
+    
+    if(exists("uu_state")){
+      rm(uu_state)
+    }
+    
+    if(exists("uu_ecoregion")){
+      rm(uu_ecoregion)
+    }
+    
+    print("this is uu_all / uu_raw")
+    print(uu_all)
+    
   })
   
   # Render a UI for selecting area 
   output$dyn_type <- renderUI({
     req(input$upload)
     
-    temp <-  uu_raw() %>% # 
+    print("this is temp input")
+    glimpse(uu_raw())
+    
+    temp <- uu_raw() %>%
       select(type) %>%
       unique() %>%
       mutate(types = case_when(type == "all" ~ "North America",
@@ -343,6 +379,9 @@ server <- function(input, output) {
                                type == "state" ~ "State/Province")) %>%
       arrange(types) %>%
       pull(types)
+    
+    print("this is temp")
+    print(temp)
     
     
     radioGroupButtons(inputId = "typechoice3",
@@ -649,14 +688,36 @@ server <- function(input, output) {
     print("UU original")
     print(uu)
     
+    # Duplicate records for all types
+    if (!is.na(unique(uu$state))) {
+      uu_state <- uu %>% 
+        select(-ecoregion) %>% 
+        mutate(type = "state") %>% 
+        rename(area = state)
+    }
+    
+    if (!is.na(unique(uu$ecoregion))) {
+      uu_ecoregion <- uu %>% 
+        select(-state) %>% 
+        mutate(type = "ecoregion") %>% 
+        rename(area = ecoregion)
+    }
+    
+    uu_all <- uu %>% 
+      select(-ecoregion, -state) %>% 
+      mutate(type = "all", area = "North America")
+    
+    if(exists("uu_state")) uu_all <- bind_rows(uu_all, uu_state)
+    if(exists("uu_ecoregion")) uu_all <- bind_rows(uu_all, uu_ecoregion)
+    
     # Calculate 3 metrics for user data
-    uu_counts <- uu %>% 
+    uu_counts <- uu_all %>% 
       group_by(type, area, common_name, method, waterbody_type) %>%
       summarise(N = n())
     
-    uu_cpue <- calculate_cpue(uu)
-    uu_lf <- calculate_lf(uu)
-    uu_rw <- calculate_rw(uu)
+    uu_cpue <- calculate_cpue(uu_all)
+    uu_lf <- calculate_lf(uu_all)
+    uu_rw <- calculate_rw(uu_all)
     
     uu_process <- bind_rows(uu_cpue, uu_lf, uu_rw) %>% 
       left_join(uu_counts, by = c("type", "area", "common_name", "method", "waterbody_type")) %>% 
@@ -684,7 +745,7 @@ server <- function(input, output) {
   })
   
   # For downloading the filtered dataset for tab 3 comparison
-
+  
   both <- reactive({
     
     both_df <- uu_processed() %>% 
@@ -1138,7 +1199,7 @@ plotCPUEuser <- reactive({
   stand_N_label <- paste0("Standardized data <br> (*N* = ", stand_N, " datasets)")
   
   user_N_label <- paste0("Waterbody")
-
+  
   stand_only <- temp %>% 
     filter(data_source == "Standardized")
   
