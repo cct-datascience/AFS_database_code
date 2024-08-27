@@ -329,13 +329,49 @@ server <- function(input, output) {
     inFile <- input$upload
     uu <- read_csv(inFile$datapath)
     
+    # Duplicate records for all types
+    if (!is.na(unique(uu$state))) {
+      uu_state <- uu %>% 
+        select(-ecoregion) %>% 
+        mutate(type = "state") %>% 
+        rename(area = state)
+    }
+    
+    if (!is.na(unique(uu$ecoregion))) {
+      uu_ecoregion <- uu %>% 
+        select(-state) %>% 
+        mutate(type = "ecoregion") %>% 
+        rename(area = ecoregion)
+    }
+    
+    uu_all <- uu %>% 
+      select(-ecoregion, -state) %>% 
+      mutate(type = "all", area = "North America")
+    
+    if(exists("uu_state")) uu_all <- bind_rows(uu_all, uu_state)
+    if(exists("uu_ecoregion")) uu_all <- bind_rows(uu_all, uu_ecoregion)
+    
+    if(exists("uu_state")){
+      rm(uu_state)
+    }
+    
+    if(exists("uu_ecoregion")){
+      rm(uu_ecoregion)
+    }
+    
+    print("this is uu_all / uu_raw")
+    print(uu_all)
+    
   })
   
   # Render a UI for selecting area 
   output$dyn_type <- renderUI({
     req(input$upload)
     
-    temp <-  uu_raw() %>% # 
+    print("this is temp input")
+    glimpse(uu_raw())
+    
+    temp <- uu_raw() %>%
       select(type) %>%
       unique() %>%
       mutate(types = case_when(type == "all" ~ "North America",
@@ -343,6 +379,9 @@ server <- function(input, output) {
                                type == "state" ~ "State/Province")) %>%
       arrange(types) %>%
       pull(types)
+    
+    print("this is temp")
+    print(temp)
     
     
     radioGroupButtons(inputId = "typechoice3",
@@ -649,14 +688,36 @@ server <- function(input, output) {
     print("UU original")
     print(uu)
     
+    # Duplicate records for all types
+    if (!is.na(unique(uu$state))) {
+      uu_state <- uu %>% 
+        select(-ecoregion) %>% 
+        mutate(type = "state") %>% 
+        rename(area = state)
+    }
+    
+    if (!is.na(unique(uu$ecoregion))) {
+      uu_ecoregion <- uu %>% 
+        select(-state) %>% 
+        mutate(type = "ecoregion") %>% 
+        rename(area = ecoregion)
+    }
+    
+    uu_all <- uu %>% 
+      select(-ecoregion, -state) %>% 
+      mutate(type = "all", area = "North America")
+    
+    if(exists("uu_state")) uu_all <- bind_rows(uu_all, uu_state)
+    if(exists("uu_ecoregion")) uu_all <- bind_rows(uu_all, uu_ecoregion)
+    
     # Calculate 3 metrics for user data
-    uu_counts <- uu %>% 
+    uu_counts <- uu_all %>% 
       group_by(type, area, common_name, method, waterbody_type) %>%
       summarise(N = n())
     
-    uu_cpue <- calculate_cpue(uu)
-    uu_lf <- calculate_lf(uu)
-    uu_rw <- calculate_rw(uu)
+    uu_cpue <- calculate_cpue(uu_all)
+    uu_lf <- calculate_lf(uu_all)
+    uu_rw <- calculate_rw(uu_all)
     
     uu_process <- bind_rows(uu_cpue, uu_lf, uu_rw) %>% 
       left_join(uu_counts, by = c("type", "area", "common_name", "method", "waterbody_type")) %>% 
@@ -684,7 +745,7 @@ server <- function(input, output) {
   })
   
   # For downloading the filtered dataset for tab 3 comparison
-
+  
   both <- reactive({
     
     both_df <- uu_processed() %>% 
@@ -885,9 +946,12 @@ Below are the details of the required columns in the data. The order of the colu
 Required columns in input dataframe: 
 
 - **Location**: 
-  - `type` is *all* or *state*
-  - `area` is *North America* or state name, spelled out and capitalized
-    - `waterbody_name` is the name of the water body
+  - Requires **both** `state` and `ecoregion` columns
+    - One of the two columns can be filled with `NA` values if state or ecoregion is not of interest
+  - `state` is name of state where fish were collected, spelled out and capitalized
+  - `ecoregion` is name of ecoregion where fish were collected, spelled out and capitalized correctly
+    - Ecoregion can be determined from [EPA ecoregions](https://www.epa.gov/eco-research/ecoregions-north-america) level 1
+  - `waterbody_name` is the name of the water body
 - **Date**: 
   - `year` is a four-digit numeric
 - **Measurements**: 
@@ -1006,9 +1070,7 @@ plotLengthFrequencyuser <- reactive({
     rename(data_source = id) %>% 
     mutate(data_source = case_when(data_source == 1 ~ "User upload", 
                                    data_source == 2 ~ "Standardized")) %>% 
-    filter(metric == "Length Frequency") %>% 
-    mutate(mean_label = case_when(data_source == "User upload" ~ as.character(round(mean, 1)), 
-                                  data_source == "Standardized" ~ " "))
+    filter(metric == "Length Frequency")
   print(temp)
   
   stand_N <- temp %>% 
@@ -1042,7 +1104,6 @@ plotLengthFrequencyuser <- reactive({
                         ymax = mean + se),
                     position = position_dodge(width = 0.9, preserve = "single"),
                     width = 0) +
-      geom_text(aes(label = mean_label), vjust = -0.5, hjust = -0.4) +
       scale_y_continuous("Frequency (%)",
                          limits = c(0, 100),
                          expand = c(0, 0)) +
@@ -1138,7 +1199,7 @@ plotCPUEuser <- reactive({
   stand_N_label <- paste0("Standardized data <br> (*N* = ", stand_N, " datasets)")
   
   user_N_label <- paste0("Waterbody")
-
+  
   stand_only <- temp %>% 
     filter(data_source == "Standardized")
   

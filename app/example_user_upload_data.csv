@@ -1,81 +1,81 @@
-type,area,waterbody_name,common_name,method,waterbody_type,year,effort,total_length,weight
-state,Arizona,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,439,1040
-state,Arizona,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,524,1650
-state,Arizona,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,512,1322
-state,Arizona,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,521,1539
-state,Arizona,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,517,1630
-state,Arizona,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,420,1084
-state,Arizona,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,485,1426
-state,Arizona,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,540,1640
-state,Arizona,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,550,1390
-state,Arizona,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,518,1358
-state,Arizona,Alamo Lake,Channel Catfish,boat_electrofishing,large_standing_waters,2020,600,548,2045
-state,Arizona,Alamo Lake,Green Sunfish,boat_electrofishing,large_standing_waters,2020,600,105,28
-state,Arizona,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,600,132,40
-state,Arizona,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,600,90,23
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,302,310
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,314,422
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,360,570
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,242,273
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,281,286
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,318,380
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,330,503
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,451,1035
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,425,1054
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,350,604
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,242,166
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,298,370
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,265,309
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,358,612
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,330,388
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,346,481
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,335,395
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,257,233
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,228,161
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,350,575
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,375,620
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,346,715
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,330,454
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,82,7
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,250,202
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,285,305
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,240,161
-state,Arizona,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,602,420,934
-state,Arizona,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,602,520,1536
-state,Arizona,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,602,540,1750
-state,Arizona,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,602,430,934
-state,Arizona,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,602,380,694
-state,Arizona,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,602,440,817
-state,Arizona,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,602,501,1358
-state,Arizona,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,602,460,1312
-state,Arizona,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,602,368,605
-state,Arizona,Alamo Lake,Channel Catfish,boat_electrofishing,large_standing_waters,2020,602,499,1308
-state,Arizona,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,602,209,164
-state,Arizona,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,602,165,98
-state,Arizona,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,602,180,118
-state,Arizona,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,602,171,98
-state,Arizona,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,602,131,41
-state,Arizona,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,602,115,26
-state,Arizona,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,602,88,12
-state,Arizona,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,602,139,49
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,327,448
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,494,1493
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,435,1197
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,320,405
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,343,547
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,460,1262
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,362,589
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,173,117
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,253,161
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,336,514
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,309,355
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,340,492
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,313,377
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,335,543
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,315,402
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,357,557
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,345,601
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,285,290
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,400,927
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,337,587
-state,Arizona,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,265,212
+state,ecoregion,waterbody_name,common_name,method,waterbody_type,year,effort,total_length,weight
+Arizona,10 North American Deserts,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,439,1040
+Arizona,10 North American Deserts,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,524,1650
+Arizona,10 North American Deserts,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,512,1322
+Arizona,10 North American Deserts,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,521,1539
+Arizona,10 North American Deserts,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,517,1630
+Arizona,10 North American Deserts,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,420,1084
+Arizona,10 North American Deserts,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,485,1426
+Arizona,10 North American Deserts,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,540,1640
+Arizona,10 North American Deserts,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,550,1390
+Arizona,10 North American Deserts,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,600,518,1358
+Arizona,10 North American Deserts,Alamo Lake,Channel Catfish,boat_electrofishing,large_standing_waters,2020,600,548,2045
+Arizona,10 North American Deserts,Alamo Lake,Green Sunfish,boat_electrofishing,large_standing_waters,2020,600,105,28
+Arizona,10 North American Deserts,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,600,132,40
+Arizona,10 North American Deserts,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,600,90,23
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,302,310
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,314,422
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,360,570
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,242,273
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,281,286
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,318,380
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,330,503
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,451,1035
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,425,1054
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,350,604
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,242,166
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,298,370
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,265,309
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,358,612
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,330,388
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,346,481
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,335,395
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,257,233
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,228,161
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,350,575
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,375,620
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,346,715
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,330,454
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,82,7
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,250,202
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,285,305
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,600,240,161
+Arizona,10 North American Deserts,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,602,420,934
+Arizona,10 North American Deserts,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,602,520,1536
+Arizona,10 North American Deserts,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,602,540,1750
+Arizona,10 North American Deserts,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,602,430,934
+Arizona,10 North American Deserts,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,602,380,694
+Arizona,10 North American Deserts,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,602,440,817
+Arizona,10 North American Deserts,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,602,501,1358
+Arizona,10 North American Deserts,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,602,460,1312
+Arizona,10 North American Deserts,Alamo Lake,Common Carp,boat_electrofishing,large_standing_waters,2020,602,368,605
+Arizona,10 North American Deserts,Alamo Lake,Channel Catfish,boat_electrofishing,large_standing_waters,2020,602,499,1308
+Arizona,10 North American Deserts,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,602,209,164
+Arizona,10 North American Deserts,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,602,165,98
+Arizona,10 North American Deserts,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,602,180,118
+Arizona,10 North American Deserts,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,602,171,98
+Arizona,10 North American Deserts,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,602,131,41
+Arizona,10 North American Deserts,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,602,115,26
+Arizona,10 North American Deserts,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,602,88,12
+Arizona,10 North American Deserts,Alamo Lake,Bluegill,boat_electrofishing,large_standing_waters,2020,602,139,49
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,327,448
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,494,1493
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,435,1197
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,320,405
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,343,547
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,460,1262
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,362,589
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,173,117
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,253,161
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,336,514
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,309,355
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,340,492
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,313,377
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,335,543
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,315,402
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,357,557
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,345,601
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,285,290
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,400,927
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,337,587
+Arizona,10 North American Deserts,Alamo Lake,Largemouth Bass,boat_electrofishing,large_standing_waters,2020,602,265,212
