@@ -946,9 +946,12 @@ Below are the details of the required columns in the data. The order of the colu
 Required columns in input dataframe: 
 
 - **Location**: 
-  - `type` is *all* or *state*
-  - `area` is *North America* or state name, spelled out and capitalized
-    - `waterbody_name` is the name of the water body
+  - Requires **both** `state` and `ecoregion` columns
+    - One of the two columns can be filled with `NA` values if state or ecoregion is not of interest
+  - `state` is name of state where fish were collected, spelled out and capitalized
+  - `ecoregion` is name of ecoregion where fish were collected, spelled out and capitalized correctly
+    - Ecoregion can be determined from [EPA ecoregions](https://www.epa.gov/eco-research/ecoregions-north-america) level 1
+  - `waterbody_name` is the name of the water body
 - **Date**: 
   - `year` is a four-digit numeric
 - **Measurements**: 
