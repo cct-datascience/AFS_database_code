@@ -865,7 +865,7 @@ server <- function(input, output) {
     } else {
       fig <- ggplot(temp, aes(x = gcat)) +
         geom_point(aes(y = mean),
-                   size = 2.5, 
+                   size = 4, 
                    color = "black") +
         geom_errorbar(aes(ymin = mean - se, ymax = mean + se), 
                       width = 0, 
@@ -908,14 +908,14 @@ server <- function(input, output) {
                          xupper = `75%`,
                          xmax = `95%`),
                      stat = "identity", 
-                     fill = "black") +
+                     fill = "white") +
         scale_x_continuous("CPUE (fish / hour)") +
         theme_classic(base_size = 16) +
         labs(title = paste0("*N* = ", N)) +
         theme(axis.title.y = element_blank(),
               axis.text.y = element_blank(),
               axis.ticks.y = element_blank(), 
-              plot.title = ggtext::element_markdown())
+              plot.title = ggtext::element_markdown(hjust = 1, face = "bold"))
     }
     
     print(fig)
@@ -1107,7 +1107,7 @@ plotLengthFrequencyuser <- reactive({
       scale_y_continuous("Frequency (%)",
                          limits = c(0, 100),
                          expand = c(0, 0)) +
-      scale_fill_manual("legend", values = c("black", "grey"), 
+      scale_fill_manual("legend", values = c("black", "grey60"), 
                         name = "Data source", 
                         labels = c(stand_N_label, user_N_label)) +
       theme_classic(base_size = 16) +
@@ -1154,7 +1154,7 @@ plotRelativeWeightuser <- reactive({
     fig <- ggplot(temp, aes(x = gcat)) +
       geom_point(aes(y = mean,
                      color = data_source),
-                 size = 2.5, 
+                 size = 4, 
                  position = position_dodge(width = 0.05)) +
       geom_errorbar(aes(ymin = mean - se, 
                         ymax = mean + se, 
@@ -1165,7 +1165,7 @@ plotRelativeWeightuser <- reactive({
       ylim(50, 160) +
       geom_hline(yintercept = 100, linetype = "dashed") +
       labs(y = "Relative weight (<i>W<sub>r</sub></i>)") +
-      scale_color_manual(name = "Data source", values = c("black", "grey"), 
+      scale_color_manual(name = "Data source", values = c("black", "grey60"), 
                          labels = c("Standardized data", "Waterbody")) +
       theme_classic(base_size = 16) +
       xlab("Proportional size distribution categories") +
@@ -1203,6 +1203,13 @@ plotCPUEuser <- reactive({
   stand_only <- temp %>% 
     filter(data_source == "Standardized")
   
+  value_uu_cpue <- temp %>% 
+    filter(data_source == "User upload") %>% 
+    select(mean) %>% 
+    pull()
+  
+  value_uu_cpue_df <- data.frame(xintercept = value_uu_cpue)
+  
   if(nrow(stand_only) == 0){
     
     fig <- ggplot() +
@@ -1213,19 +1220,23 @@ plotCPUEuser <- reactive({
   } else {
     
     fig <- ggplot(temp, aes(y = area, fill = data_source)) +
-      geom_boxplot(aes(xmin = `5%`,
+      geom_boxplot(data = filter(temp, data_source == "Standardized"), 
+                   aes(xmin = `5%`,
                        xlower = `25%`,
                        xmiddle = `50%`,
                        xupper = `75%`,
                        xmax = `95%`),
                    stat = "identity") +
+      geom_vline(data = value_uu_cpue_df, aes(xintercept = xintercept, linetype = "Waterbody"), color = "grey40") +
       scale_x_continuous("CPUE (fish / hour)") +
-      scale_fill_manual(name = "Data source", values = c("black", "grey"), 
+      scale_fill_manual(name = "Data source", values = c("white", "grey60"), 
                         labels = c(stand_N_label, user_N_label)) +
+      scale_linetype_manual("", values = c("Waterbody" = 2)) +
       theme_classic(base_size = 16) +
       theme(axis.title.y = element_blank(),
             axis.text.y = element_blank(),
             axis.ticks.y = element_blank(), 
+            #legend.title = element_blank(), 
             legend.text = ggtext::element_markdown())
     
   }
