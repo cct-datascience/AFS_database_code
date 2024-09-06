@@ -174,6 +174,13 @@ We used this information to achieve our goals of maximizing use and providing si
                             mainPanel(
                               tabsetPanel(
                                 tabPanel("Map", 
+                                         br(), 
+                                         h6("Points show approximate locations of data, and colored areas indicate", 
+                                            strong("EPA Ecoregions Level I"), 
+                                            ". Display name of ecoregion at a location by clicking on map. See more details on the ", 
+                                            a("EPA website", href="https://www.epa.gov/eco-research/ecoregions-north-america", .noWS = "outside"), 
+                                            "."), 
+                                         br(), 
                                          leafletOutput("plotSites",
                                                        width = 700,
                                                        height = 500),
@@ -241,7 +248,7 @@ We used this information to achieve our goals of maximizing use and providing si
                               uiOutput("dyn_spp3"),
                               uiOutput("dyn_method3"),
                               uiOutput("dyn_watertype3"),
-                              downloadButton("filterdownloaduu", "Download filtered")
+                              downloadButton("filterdownloaduu", "Download plot data")
                             ),
                             mainPanel(
                               tabsetPanel(
@@ -950,8 +957,44 @@ Required columns in input dataframe:
     - One of the two columns can be filled with `NA` values if state or ecoregion is not of interest
   - `state` is name of state where fish were collected, spelled out and capitalized
   - `ecoregion` is name of ecoregion where fish were collected, spelled out and capitalized correctly
-    - Ecoregion can be determined from [EPA ecoregions](https://www.epa.gov/eco-research/ecoregions-north-america) level 1
+    - Ecoregion can be determined from [EPA ecoregions](https://www.epa.gov/eco-research/ecoregions-north-america) level 1. Correctly formatted ecoregion names are listed below. 
   - `waterbody_name` is the name of the water body
+
+<style>
+.basic-styling td,
+.basic-styling th {
+  border: 1px solid #999;
+  padding: 0.5rem;
+}
+</style>
+
+<div class='ox-hugo-table basic-styling'>
+<div></div>
+<div class='table-caption'>
+  <span class='table-number'></span>
+</div>
+
+| **Ecoregions**                    |
+|-----------------------------------|
+| 0 Water                           |
+| 1 Arctic Cordillera               |
+| 2 Tundra                          |
+| 3 Taiga                           |
+| 4 Hudson Plain                    |
+| 5 Northern Forests                |
+| 6 Northwestern Forested Mountains |
+| 7 Marine West Coast Forest        |
+| 8 Eastern Temperate Forests       |
+| 9 Great Plains                    |
+| 10 North American Deserts         |
+| 11 Mediterranean California       |
+| 12 Southern Semiarid Highlands    |
+| 13 Temperate Sierras              |
+| 14 Tropical Dry Forests           |
+| 15 Tropical Wet Forests           |
+
+<br>
+
 - **Date**: 
   - `year` is a four-digit numeric
 - **Measurements**: 
