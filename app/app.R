@@ -337,14 +337,12 @@ server <- function(input, output) {
     uu <- read_csv(inFile$datapath)
     
     # Duplicate records for all types
-    if (!is.na(unique(uu$state))) {
       uu_state <- uu %>% 
-        select(-ecoregion) %>% 
+        select(-one_of("ecoregion")) %>% 
         mutate(type = "state") %>% 
         rename(area = state)
-    }
     
-    if (!is.na(unique(uu$ecoregion))) {
+    if ("ecoregion" %in% names(uu)) {
       uu_ecoregion <- uu %>% 
         select(-state) %>% 
         mutate(type = "ecoregion") %>% 
@@ -352,10 +350,11 @@ server <- function(input, output) {
     }
     
     uu_all <- uu %>% 
-      select(-ecoregion, -state) %>% 
+      select(-state) %>% 
+      select(-one_of("ecoregion")) %>% 
       mutate(type = "all", area = "North America")
     
-    if(exists("uu_state")) uu_all <- bind_rows(uu_all, uu_state)
+    uu_all <- bind_rows(uu_all, uu_state)
     if(exists("uu_ecoregion")) uu_all <- bind_rows(uu_all, uu_ecoregion)
     
     if(exists("uu_state")){
@@ -365,8 +364,7 @@ server <- function(input, output) {
     if(exists("uu_ecoregion")){
       rm(uu_ecoregion)
     }
-    
-    print("this is uu_all / uu_raw")
+
     print(uu_all)
     
   })
@@ -374,9 +372,6 @@ server <- function(input, output) {
   # Render a UI for selecting area 
   output$dyn_type <- renderUI({
     req(input$upload)
-    
-    print("this is temp input")
-    glimpse(uu_raw())
     
     temp <- uu_raw() %>%
       select(type) %>%
@@ -386,11 +381,7 @@ server <- function(input, output) {
                                type == "state" ~ "State/Province")) %>%
       arrange(types) %>%
       pull(types)
-    
-    print("this is temp")
-    print(temp)
-    
-    
+
     radioGroupButtons(inputId = "typechoice3",
                       label = "Show data by:",
                       choices = temp,
@@ -696,25 +687,24 @@ server <- function(input, output) {
     print(uu)
     
     # Duplicate records for all types
-    if (!is.na(unique(uu$state))) {
       uu_state <- uu %>% 
-        select(-ecoregion) %>% 
+        select(-one_of("ecoregion")) %>% 
         mutate(type = "state") %>% 
         rename(area = state)
-    }
     
-    if (!is.na(unique(uu$ecoregion))) {
+    if ("ecoregion" %in% names(uu)) {
       uu_ecoregion <- uu %>% 
         select(-state) %>% 
         mutate(type = "ecoregion") %>% 
         rename(area = ecoregion)
     }
-    
+
     uu_all <- uu %>% 
-      select(-ecoregion, -state) %>% 
+      select(-state) %>% 
+      select(-one_of("ecoregion")) %>% 
       mutate(type = "all", area = "North America")
     
-    if(exists("uu_state")) uu_all <- bind_rows(uu_all, uu_state)
+    uu_all <- bind_rows(uu_all, uu_state)
     if(exists("uu_ecoregion")) uu_all <- bind_rows(uu_all, uu_ecoregion)
     
     # Calculate 3 metrics for user data
@@ -953,10 +943,11 @@ Below are the details of the required columns in the data. The order of the colu
 Required columns in input dataframe: 
 
 - **Location**: 
-  - Requires **both** `state` and `ecoregion` columns
-    - One of the two columns can be filled with `NA` values if state or ecoregion is not of interest
-  - `state` is name of state where fish were collected, spelled out and capitalized
-  - `ecoregion` is name of ecoregion where fish were collected, spelled out and capitalized correctly
+  - **Requires** `state` column
+    - `state` is name of state where fish were collected, spelled out and capitalized
+    - Every row should be the same state (as it's for the same water body)
+  - An `ecoregion` column can optionally be included, to compare your data to standardized data in that ecoregion
+    - `ecoregion` is name of ecoregion where fish were collected, spelled out and capitalized correctly
     - Ecoregion can be determined from [EPA ecoregions](https://www.epa.gov/eco-research/ecoregions-north-america) level 1. Correctly formatted ecoregion names are listed below. 
   - `waterbody_name` is the name of the water body
 
