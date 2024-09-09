@@ -338,6 +338,13 @@ server <- function(input, output) {
     inFile <- input$upload
     uu <- read_csv(inFile$datapath)
     
+    validate(
+      need(c("state", "waterbody_name", "common_name", "method", "year") %in% colnames(uu), 
+           "Uploaded dataset is missing one of these columns: state, waterbody_name, common_name, method, year"), 
+      need(n_distinct(uu$state) == 1, "State column should contain only one state"), 
+      need(n_distinct(uu$waterbody_name) == 1, "Waterbody column should contain only one name")
+    )
+    
     # Duplicate records for all types
       uu_state <- uu %>% 
         select(-one_of("ecoregion")) %>% 
