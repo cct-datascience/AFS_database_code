@@ -129,6 +129,8 @@ We used this information to achieve our goals of maximizing use and providing si
                                " through the project's ", 
                                a("GitHub repository", href="https://github.com/cct-datascience/AFS_database_code", .noWS = "outside"), 
                                ", which is also where the code is located."), 
+                            h4("Developed in collaboration with the University of Arizona ",
+                               a("CCT Data Science", href="https://datascience.cct.arizona.edu/"), "team."),
                             h4 ("Sponsored by:"), 
                             imageOutput("logo")
                           )
