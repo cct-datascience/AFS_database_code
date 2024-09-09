@@ -99,7 +99,7 @@ ui <- navbarPage("AFS Standard Sampling App",
                             h2("About Standard Sampling", align = "center"),
                             h4("Standardization of sampling methods allows fisheries professionals to compare data across large spatial and temporal scales, encourages data sharing and improves communication. 
 In light of these benefits, the American Fisheries Society published the first edition of Standard Methods for Sampling North American Freshwater Fishes in 2009. 
-A new edition of these methods will be published Winter 2023-2024. 
+A new edition of these methods was published September 2024.  
 The goals of this project were to:"),
                             br(),
                             h4("(1) recommend standardized freshwater fish sampling methods for North America, and"),
@@ -112,8 +112,15 @@ We used this information to achieve our goals of maximizing use and providing si
                             br(),
                             h4("We hope that these methods can be adopted by others, particularly those in data-poor regions, to maximize the ability to compare data. "),
                             h2("Details About App Usage", align = "center"), 
-                            h4("Here, you can compare your data from an individual water body, collected using a standard AFS method to averages across the range of the species, ecoregion, and statewide.  This tool will help you assess if fish you have collected are high, average or low for the metric in question."),
-                            h4("We collected thousands of data sets on fishes from across Canada, the United States, and some from Mexico to build comparison summaries. A ", strong("data set (", .noWS = "after"), em("N"), strong(")", .noWS = "before"), " is defined as data collected with AFS standard gears and methods during routine monitoring programs of an entire fish community or entire populations of specific fish ", strong("in a single waterbody conducted once during a year"), ". For example, data collected from Bass Lake (a small standing water body) sampled by boat electrofishing for Largemouth Bass in 2014 would represent 1 data set. In some cases, data sets included multi-day surveys of the same waterbody (e.g., large reservoirs) where the effort was summed across all sampling days. This excludes surveys targeting specific size groups or those with other biases (e.g., egg counts, juveniles fish surveys)."), 
+                            h4("Here, you can compare your data from an individual water body,", strong("collected using a standard AFS method"), "to averages across the range of the species, ecoregion, and statewide. This tool will help you assess if fish you have collected are high, average or low for the metric in question."),
+                            h4("We collected thousands of data sets on fishes from across Canada, the United States, and some from Mexico to build comparison summaries. A ", strong("data set (", .noWS = "after"), em("N"), strong(")", .noWS = "before"), " is defined as data collected with AFS standard gears and methods during routine monitoring programs of an entire fish community or a population of specific fish ", strong("in a single waterbody conducted once during a year"), ". For example, data collected from Bass Lake (a small standing water body) sampled by boat electrofishing for Largemouth Bass in 2014 would represent 1 data set. In some cases, data sets included multi-day surveys of the same waterbody (e.g., large reservoirs) where the effort was summed across all sampling days. This excludes surveys targeting specific size groups or those with other biases (e.g., egg counts, juveniles fish surveys)."), 
+                            h4("You will see the following tabs in the bar at the top of the page: "), 
+                            br(), 
+                            h4("- ", strong("About", .noWS = "outside"), ": gives an overview about the standard sampling webtool"), 
+                            h4("- ", strong("Explore", .noWS = "outside"), ": displays desired subsets of the standard data in a map and a table"), 
+                            h4("- ", strong("View", .noWS = "outside"), ": displays desired subsets of the standard data in graphical form"), 
+                            h4("- ", strong("Compare Your Data", .noWS = "outside"), ": allows you to compare your data from a waterbody to standard data in rangewide, ecoregion, or state summaries"), 
+                            br(), 
                             h4("Most of the app components can be translated into another language by going to ", 
                                a("Google Translate", href="https://translate.google.com/?sl=auto&tl=en&op=websites", .noWS = "outside"), 
                                " and entering the URL for the app, then selecting the desired language. Maps and plot can only currently be generated using the original version of the app. "), 
@@ -186,7 +193,7 @@ We used this information to achieve our goals of maximizing use and providing si
                                                        height = 500),
                                          textOutput("report_absent1"),
                                          textOutput("report_absent2")), 
-                                tabPanel("Preview", 
+                                tabPanel("Table", 
                                          DTOutput("filtertable"))
                               )
                             )
@@ -935,7 +942,7 @@ server <- function(input, output) {
 
 You can upload your own data to compare to the standardized data. This needs to be provided as a csv file that will have length and/or weight measurements with one row per observation (a single fish or multiple fish summed). This app will calculate the three metrics of interest for each unique combination of area, species, collection method, type of water body, and year. The three metrics are: 
 
-1. [Catch per unit effort](https://en.wikipedia.org/wiki/Catch_per_unit_effort) (CPUE)
+1. Catch per unit effort (CPUE)
 2. Length frequency
 3. Relative weight
 
@@ -951,11 +958,11 @@ Required columns in input dataframe:
 
 - **Location**: 
   - **Requires** `state` column
-    - `state` is name of state where fish were collected, spelled out and capitalized
+    - `state` is name of state where fish were collected, spelled out with first letter capitalized
     - Every row should be the same state (as it's for the same water body)
   - An `ecoregion` column can optionally be included, to compare your data to standardized data in that ecoregion
     - `ecoregion` is name of ecoregion where fish were collected, spelled out and capitalized correctly
-    - Ecoregion can be determined from [EPA ecoregions](https://www.epa.gov/eco-research/ecoregions-north-america) level 1. Correctly formatted ecoregion names are listed below. 
+    - You can also find your ecoregion by clicking on your location the map on the Explore tab. Ecoregions can also be determined from [EPA ecoregions](https://www.epa.gov/eco-research/ecoregions-north-america) level 1.  Correctly formatted ecoregion names are listed below. 
   - `waterbody_name` is the name of the water body
 
 <style>
@@ -1001,7 +1008,7 @@ Required columns in input dataframe:
   - `effort` is specified in **Collection method**
 - **Collection method**: see the table below for details
   - `method` must exactly match one of the options in 'Method name'
-  - `effort` will contain a numeric value that corresponds to the associated 'Effort type' and 'Unit'; this should be should be the sum of each transect effort by year
+  - `effort` is the **total** effort of the survey, e.g., 4,556 seconds for electrofishing, 36 net nights for gill net surveys, etc. 
   - The 'gill_net_spring' method is for gill netting done between January and June (months 1 - 6), and 'gill_net_fall' is for between July and December (months 7 - 12)
 
 <center>
@@ -1101,7 +1108,7 @@ output$instructions <- renderUI({
 
 output$example <- renderDT(datatable(ex, options = list(lengthChange = FALSE, 
                                                         pageLength = 25)) %>%
-                             formatRound(c(8:10), 0) %>%
+                             formatRound(c(8:10), 0, mark ="") %>%
                              formatString(7))
 
 plotLengthFrequencyuser <- reactive({
