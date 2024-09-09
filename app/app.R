@@ -37,7 +37,7 @@ plotDownload <- function(input, output, session, plotFun) {
       "plot.png"
     },
     content = function(file) {
-      ggsave(file, plotFun(), width = 6, height = 4)
+      ggsave(file, plotFun(), width = 9, height = 6)
     }
   )
 }
