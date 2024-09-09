@@ -379,7 +379,7 @@ server <- function(input, output) {
       mutate(types = case_when(type == "all" ~ "North America",
                                type == "ecoregion" ~ "Ecoregion",
                                type == "state" ~ "State/Province")) %>%
-      arrange(types) %>%
+      slice(match(c("North America", "Ecoregion", "State/Province"), types)) %>% 
       pull(types)
 
     radioGroupButtons(inputId = "typechoice3",
