@@ -343,27 +343,33 @@ server <- function(input, output) {
     inFile <- input$upload
     uu <- read_csv(inFile$datapath)
     
-    validate(
-      need(c("state", "waterbody_name", "common_name", "method", "year") %in% colnames(uu), 
-           "Uploaded dataset is missing one of these columns: state, waterbody_name, common_name, method, year"), 
-      need(n_distinct(uu$state) == 1, "State column should contain only one state"), 
-      need(n_distinct(uu$waterbody_name) == 1, "Waterbody column should contain only one name")
-    )
+    # Return informative messages if uu data format is incorrect
+    # validate(
+    #   need("state" %in% colnames(uu), "Uploaded dataset is missing state column")  
+    #   need(all(c("state", "waterbody_name", "common_name", "method", "year") %in% colnames(uu)),
+    #        "Uploaded dataset is missing one of these columns: state, waterbody_name, common_name, method, year")
+    #   need(n_distinct(uu$state) == 1, "State column should contain only one state"),
+    #   need(n_distinct(uu$waterbody_name) == 1, "Waterbody column should contain only one name")
+    # )
+    
+  })
+  
+  uu_clean <- reactive({
     
     # Duplicate records for all types
-      uu_state <- uu %>% 
+      uu_state <- uu_raw() %>% 
         select(-one_of("ecoregion")) %>% 
         mutate(type = "state") %>% 
         rename(area = state)
     
-    if ("ecoregion" %in% names(uu)) {
-      uu_ecoregion <- uu %>% 
+    if ("ecoregion" %in% names(uu_raw())) {
+      uu_ecoregion <- uu_raw() %>% 
         select(-state) %>% 
         mutate(type = "ecoregion") %>% 
         rename(area = ecoregion)
     }
     
-    uu_all <- uu %>% 
+    uu_all <- uu_raw() %>% 
       select(-state) %>% 
       select(-one_of("ecoregion")) %>% 
       mutate(type = "all", area = "North America")
@@ -387,7 +393,7 @@ server <- function(input, output) {
   output$dyn_type <- renderUI({
     req(input$upload)
     
-    temp <- uu_raw() %>%
+    temp <- uu_clean() %>%
       select(type) %>%
       unique() %>%
       mutate(types = case_when(type == "all" ~ "North America",
@@ -410,13 +416,13 @@ server <- function(input, output) {
     if(input$typechoice3 == "North America") {
       temp <- "North America"
     } else if(input$typechoice3 == "Ecoregion") {
-      temp <- uu_raw() %>%
+      temp <- uu_clean() %>%
         filter(type == "ecoregion") %>%
         select(area) %>%
         unique() %>%
         pull()
     } else if(input$typechoice3 == "State/Province") {
-      temp <- uu_raw() %>%
+      temp <- uu_clean() %>%
         filter(type == "state") %>%
         select(area) %>%
         unique() %>%
@@ -434,7 +440,7 @@ server <- function(input, output) {
     req(input$upload)
     req(input$areachoice3)
     
-    temp <- uu_raw() %>%
+    temp <- uu_clean() %>%
       filter(area == input$areachoice3) %>%
       select(common_name) %>%
       unique() %>%
@@ -452,7 +458,7 @@ server <- function(input, output) {
     req(input$areachoice3)
     req(input$sppchoice3)
     
-    temp <- uu_raw() %>%
+    temp <- uu_clean() %>%
       filter(area == input$areachoice3,
              common_name == input$sppchoice3) %>%
       select(method) %>%
@@ -472,7 +478,7 @@ server <- function(input, output) {
     req(input$sppchoice3)
     req(input$methodchoice3)
     
-    temp <- uu_raw() %>%
+    temp <- uu_clean() %>%
       filter(area == input$areachoice3,
              common_name == input$sppchoice3,
              method == input$methodchoice3) %>%
