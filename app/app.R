@@ -1075,25 +1075,25 @@ Required columns in input dataframe:
   <span class='table-number'></span>
 </div>
 
-| **Species**            | **Species**                 | **Species**                 | **Species**                 |
-|------------------------|-----------------------------|-----------------------------|-----------------------------|
-| Arctic Grayling        | Channel Catfish             | Pallid Sturgeon             | Spotted Bass                |
-| Bighead Carp           | Chinook Salmon (landlocked) | Palmetto Bass               | Spotted Gar                 |
-| Bigmouth Buffalo       | Common Carp                 | Palmetto Bass (original)    | Striped Bass (landlocked)   |
-| Black Bullhead         | Cutthroat Trout             | Pumpkinseed                 | Striped Bass (hybrid)       |
-| Black Carp             | Flathead Catfish            | Rainbow Trout               | Striped Bass X White Bass   |
-| Black Crappie          | Freshwater Drum             | Redear Sunfish              | Suwannee Bass               |
-| Blue Catfish           | Gizzard Shad                | River Carpsucker            | Utah Chub                   |
-| Bluegill               | Golden Trout                | Rock Bass                   | Walleye                     |
-| Brook Trout (lentic)   | Grass Carp                  | Ruffe                       | Warmouth                    |
-| Brook Trout (lotic)    | Green Sunfish               | Sauger                      | White Bass                  |
-| Brook Trout            | Kokanee                     | Saugeye                     | White Catfish               |
-| Brown Bullhead         | Lake Trout                  | Shoal Bass                  | White Crappie               |
-| Brown Trout (lentic)   | Largemouth Bass             | Shorthead Redhorse          | White Perch                 |
-| Brown Trout (lotic)    | Longnose Gar                | Silver Carp                 | White Sucker                |
-| Bull Trout             | Muskellunge                 | Smallmouth Bass             | Yellow Perch                |
-| Burbot                 | Northern Pike               | Smallmouth Buffalo          | Yellow Bass                 |
-| Chain Pickerel         | Paddlefish                  | Splake                      | Yellow Bullhead             |
+| **Species**        | **Species**      | **Species**               |
+|--------------------|------------------|---------------------------|
+| Arctic Grayling    | Gizzard Shad     | Shorthead Redhorse        |
+| Bigmouth Buffalo   | Grass Carp       | Silver Carp               |
+| Black Bullhead     | Green Sunfish    | Smallmouth Bass           |
+| Black Crappie      | Lake Trout       | Spotted Bass              |
+| Blue Catfish       | Largemouth Bass  | Spotted Gar               |
+| Bluegill           | Longnose Gar     | Striped Bass (landlocked) |
+| Brook Trout        | Muskellunge      | Utah Chub                 |
+| Brown Bullhead     | Northern Pike    | Walleye                   |
+| Brown Trout        | Paddlefish       | Warmouth                  |
+| Bull Trout         | Palmetto Bass    | White Bass                |
+| Burbot             | Pumpkinseed      | White Crappie             |
+| Chain Pickerel     | Rainbow Trout    | White Perch               |
+| Channel Catfish    | Redear Sunfish   | White Sucker              |
+| Common Carp        | River Carpsucker | Yellow Bass               |
+| Cutthroat Trout    | Rock Bass        | Yellow Bullhead           |
+| Flathead Catfish   | Sauger           | Yellow Perch              |
+| Freshwater Drum    | Saugeye          |                           |
 
 </div>
 
