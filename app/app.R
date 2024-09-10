@@ -87,7 +87,8 @@ ex <- read_csv("example_user_upload_data.csv")
 `%nin%` <- negate(`%in%`)
 
 #Shiny App
-ui <- navbarPage("AFS Standard Sampling App",
+ui <- navbarPage(
+                 title = "AFS Standard Sampling App", tags$a(style='background-color:white;position:fixed;right:10px;top:15px;',tags$img(src='AFS_logo.png'), href = "https://fisheries.org/"), 
                  theme = bslib::bs_theme(bootswatch = "sandstone"),
                  tabPanel("About",
                           wellPanel(
@@ -276,7 +277,7 @@ We used this information to achieve our goals of maximizing use and providing si
                             
                           ), 
                           
-                 ) 
+                 )
                  
 )
 
@@ -344,32 +345,31 @@ server <- function(input, output) {
     uu <- read_csv(inFile$datapath)
     
     # Return informative messages if uu data format is incorrect
-    # validate(
-    #   need("state" %in% colnames(uu), "Uploaded dataset is missing state column")  
-    #   need(all(c("state", "waterbody_name", "common_name", "method", "year") %in% colnames(uu)),
-    #        "Uploaded dataset is missing one of these columns: state, waterbody_name, common_name, method, year")
-    #   need(n_distinct(uu$state) == 1, "State column should contain only one state"),
-    #   need(n_distinct(uu$waterbody_name) == 1, "Waterbody column should contain only one name")
-    # )
-    
-  })
-  
-  uu_clean <- reactive({
+    validate(
+      need("state" %in% colnames(uu), "Uploaded dataset is missing state column"),
+      need("waterbody_name" %in% colnames(uu), "Uploaded dataset is missing waterbody_name column"),
+      need("common_name" %in% colnames(uu), "Uploaded dataset is missing common_name column"),
+      need("method" %in% colnames(uu), "Uploaded dataset is missing method column"),
+      need("year" %in% colnames(uu), "Uploaded dataset is missing year column"),
+      need(n_distinct(uu$state) == 1, "State column should contain only one state"),
+      need(n_distinct(uu$waterbody_name) == 1, "Waterbody column should contain only one name"), 
+      #need(uu$common_name %in% FSA::PSDlit$species, "Species name must match one in the provided list in instructions tab")
+    )
     
     # Duplicate records for all types
-      uu_state <- uu_raw() %>% 
+      uu_state <- uu %>% 
         select(-one_of("ecoregion")) %>% 
         mutate(type = "state") %>% 
         rename(area = state)
     
-    if ("ecoregion" %in% names(uu_raw())) {
-      uu_ecoregion <- uu_raw() %>% 
+    if ("ecoregion" %in% names(uu)) {
+      uu_ecoregion <- uu %>% 
         select(-state) %>% 
         mutate(type = "ecoregion") %>% 
         rename(area = ecoregion)
     }
     
-    uu_all <- uu_raw() %>% 
+    uu_all <- uu %>% 
       select(-state) %>% 
       select(-one_of("ecoregion")) %>% 
       mutate(type = "all", area = "North America")
@@ -393,7 +393,7 @@ server <- function(input, output) {
   output$dyn_type <- renderUI({
     req(input$upload)
     
-    temp <- uu_clean() %>%
+    temp <- uu_raw() %>%
       select(type) %>%
       unique() %>%
       mutate(types = case_when(type == "all" ~ "North America",
@@ -416,13 +416,13 @@ server <- function(input, output) {
     if(input$typechoice3 == "North America") {
       temp <- "North America"
     } else if(input$typechoice3 == "Ecoregion") {
-      temp <- uu_clean() %>%
+      temp <- uu_raw() %>%
         filter(type == "ecoregion") %>%
         select(area) %>%
         unique() %>%
         pull()
     } else if(input$typechoice3 == "State/Province") {
-      temp <- uu_clean() %>%
+      temp <- uu_raw() %>%
         filter(type == "state") %>%
         select(area) %>%
         unique() %>%
@@ -440,7 +440,7 @@ server <- function(input, output) {
     req(input$upload)
     req(input$areachoice3)
     
-    temp <- uu_clean() %>%
+    temp <- uu_raw() %>%
       filter(area == input$areachoice3) %>%
       select(common_name) %>%
       unique() %>%
@@ -458,7 +458,7 @@ server <- function(input, output) {
     req(input$areachoice3)
     req(input$sppchoice3)
     
-    temp <- uu_clean() %>%
+    temp <- uu_raw() %>%
       filter(area == input$areachoice3,
              common_name == input$sppchoice3) %>%
       select(method) %>%
@@ -478,7 +478,7 @@ server <- function(input, output) {
     req(input$sppchoice3)
     req(input$methodchoice3)
     
-    temp <- uu_clean() %>%
+    temp <- uu_raw() %>%
       filter(area == input$areachoice3,
              common_name == input$sppchoice3,
              method == input$methodchoice3) %>%
