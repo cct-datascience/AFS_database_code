@@ -1,9 +1,7 @@
-non_net_methods <- c("boat_electrofishing", 
-                     "raft_electrofishing", "small_mesh_trawl", "large_mesh_trawl")
-net_methods <- c("gill_net_spring", "stream_seine", "hoop_net", 
-                 "small_catfish_hoopnet", "drifting_trammel_net",
-                 "large_catfish_hoopnet", "seine", "bag_seine")
-bp_methods <- c("backpack_electrofishing", "tow_barge_electrofishing")
+time_methods <- c("boat_electrofishing", "raft_electrofishing")
+number_methods <- c("gill_net_fall", "gill_net_spring", "drifting_trammel_net", 
+                    "large_catfish_hoopnet", "bag_seine", "stream_seine", 
+                    "backpack_electrofishing", "tow_barge_electrofishing")
 
 calculate_cpue <- function(df){
   stopifnot(c("type", "area", "common_name", "method", "waterbody_type", 
@@ -12,9 +10,8 @@ calculate_cpue <- function(df){
     group_by(type, area, waterbody_name, year, method, waterbody_type, common_name) %>% 
     summarize(n_fish = n(), 
               effort_sampleID = mean(effort)) %>% 
-    mutate(effort = case_when(method %in% non_net_methods ~ effort_sampleID / 3600, 
-                              method %in% net_methods ~ effort_sampleID, 
-                              method %in% bp_methods ~ effort_sampleID)) %>% 
+    mutate(effort = case_when(method %in% time_methods ~ effort_sampleID / 3600, 
+                              method %in% number_methods ~ effort_sampleID)) %>% 
     mutate(cpue = n_fish / effort) %>% # n is number of fish
     group_by(type, area, common_name, method, waterbody_type) %>%
     summarize_at(vars(cpue), list(mean = mean, se = se,

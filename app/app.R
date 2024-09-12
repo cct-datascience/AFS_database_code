@@ -128,10 +128,11 @@ We used this information to achieve our goals of maximizing use and providing si
                             br(), 
                             h4(strong("If you would like the text of the app bigger, you can increase the font size by hitting the control and plus (+) keys on Windows, or command and plus (+) keys on Macs.")), 
                             br(), 
-                            h2("How to Provide Feedback", align = "center"), 
+                            h2("Moving Forward", align = "center"), 
                             h4("These data sets were collected and compiled by ", 
                                a("Scott Bonar's lab", href="https://azcfwru.wixsite.com/azcfwru", .noWS = "outside"), 
-                               ". Only summaries can be shared. Individual data sets cannot be shared with others because of legal restrictions on their use. All feedback on this app is greatly appreciated, and can be provided by sending an email to ", 
+                               ". Only summaries can be shared. Individual data sets cannot be shared with others because of legal restrictions on their use. As funding permits, additional data will be added to this app, including for more collection methods."), 
+                            h4("All feedback on this app is greatly appreciated, and can be provided by sending an email to ", 
                                a("Dr. Bonar", href="mailto:SBonar@ag.arizona.edu", .noWS = "outside"), 
                                " or by submitting an ", 
                                a("issue", href="https://github.com/cct-datascience/AFS_database_code/issues", .noWS = "outside"), 
@@ -1017,8 +1018,10 @@ Required columns in input dataframe:
   - `effort` is specified in **Collection method**
 - **Collection method**: see the table below for details
   - `method` must exactly match one of the options in 'Method name'
-  - `effort` is the **total** effort of the survey, e.g., 4,556 seconds for electrofishing, 36 net nights for gill net surveys, etc. 
+  - `effort` is the **total** effort of the survey, report number of effort units
+      - Examples of effort: 4,556 seconds for electrofishing, 36 net nights for gill net surveys, 5 100-m drifts for drifting trammel net
   - The 'gill_net_spring' method is for gill netting done between January and June (months 1 - 6), and 'gill_net_fall' is for between July and December (months 7 - 12)
+  - Data for additional collection methods will be added in the future
 
 <center>
 
@@ -1036,21 +1039,18 @@ Required columns in input dataframe:
   <span class='table-number'></span>
 </div>
 
-| **Method**          | **Effort** | **Unit** |
-|--------------------------|-----------------|----------|
-| boat_electrofishing      | Time            | seconds  |
-| raft_electrofishing      | Time            | seconds  |
-| large_mesh_trawl                    | Time            | seconds  |
-| gill_net_fall            | Net nights  | number   |
-| gill_net_spring         | Net nights  | number   |
-| hoop_net                 | Net sets (e.g., net nights)  | number   |
-| small_catfish_hoopnet    | Net sets (e.g., net nights)  | number   |
-| large_catfish_hoopnet    | Net sets (e.g., net nights)  | number   |
-| seine                    | Net sets (e.g., net nights)  | number   |
-| bag_seine                | Net sets (e.g., net nights)  | number   |
-| stream_seine             | Net sets (e.g., net nights)  | number   |
-| backpack_electrofishing  | Area            | 100 m<sup>2</sup>       |
-| tow_barge_electrofishing | Area            | 100 m<sup>2</sup>       |
+| **Method**          | **Effort Units** |
+|--------------------------|-----------------|
+| boat_electrofishing      | Seconds         |
+| raft_electrofishing      | Seconds         |
+| gill_net_fall            | Net nights      |
+| gill_net_spring          | Net nights      |
+| drifting_trammel_net     | 100-m drift     |
+| large_catfish_hoopnet    | 24 hour set     |
+| bag_seine                | 0.25 arc (small_standing_waters); 0.5 arc (rivers) |
+| stream_seine             | 10-15 m haul    |
+| backpack_electrofishing  | 100 m<sup>2</sup>            |
+| tow_barge_electrofishing | 100 m<sup>2</sup>            |
 
 </div>
 
