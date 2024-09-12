@@ -298,10 +298,10 @@ server <- function(input, output) {
   
   output$logo <- renderImage({
     list(
-      src = file.path("www/AFS_sponsor_3.png"), 
+      src = file.path("www/Standardsamplingsponsors.png"), 
       contentType = "image/png", 
-      height = 250, 
-      width = 150
+      height = 151, 
+      width = 741
     )
   }, deleteFile = FALSE)
   
