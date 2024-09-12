@@ -53,7 +53,8 @@ metrics <- read_csv('standardized_fish_data.csv') %>%
                           gcat == "Trophy" ~ "T") %>%
            factor(levels = c("S-Q", "Q-P", "P-M", "M-T", "T"))) %>% 
   mutate(method = str_replace_all(method, " ", "_"), 
-         waterbody_type = str_replace_all(waterbody_type, " ", "_"))
+         waterbody_type = str_replace_all(waterbody_type, " ", "_"), 
+         metric = str_replace_all(metric, "CPUE distance", "CPUE"))
 # Develop vectors of unique entries
 uni.type <- c("North America", "Ecoregion", "State/Province")
 uni.area <- sort(unique(metrics$area))
@@ -234,7 +235,7 @@ We used this information to achieve our goals of maximizing use and providing si
                                       p("Relative weight by proportional size distribution categories. Points indicate means and lines indicate standard error."),
                                       hr(), 
                                       plotDownloadUI("CPUE_plot", height = "200px"), 
-                                      p("Catch per unit effort. The box represents the middle 50% of the data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers. ")
+                                      p("Catch per unit effort. The box represents the middle 50% of the standard data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers.")
                             )
                           )
                  ),
@@ -271,7 +272,7 @@ We used this information to achieve our goals of maximizing use and providing si
                                          p("Relative weight by proportional size distribution categories. Points indicate means and lines indicate standard error."),
                                          hr(),
                                          plotDownloadUI("CPUE_plot_UU", height = "200px"), 
-                                         p("Catch per unit effort. The box represents the middle 50% of the data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers. "))
+                                         p("Catch per unit effort. The box represents the middle 50% of the standard data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers. The dashed line represents CPUE for the waterbody. "))
                               )
                             )
                             
@@ -926,7 +927,7 @@ server <- function(input, output) {
                          xmax = `95%`),
                      stat = "identity", 
                      fill = "white") +
-        scale_x_continuous("CPUE (fish / hour)") +
+        scale_x_continuous("CPUE") +
         theme_classic(base_size = 16) +
         labs(title = paste0("*N* = ", N)) +
         theme(axis.title.y = element_blank(),
@@ -1037,18 +1038,17 @@ Required columns in input dataframe:
 |--------------------------|-----------------|----------|
 | boat_electrofishing      | Time            | seconds  |
 | raft_electrofishing      | Time            | seconds  |
-| trawl                    | Time            | seconds  |
-| gill_net_fall            | Number of nets  | number   |
-| gill_net_spring         | Number of nets  | number   |
-| hoop_net                 | Number of nets  | number   |
-| small_catfish_hoopnet    | Number of nets  | number   |
-| large_catfish_hoopnet    | Number of nets  | number   |
-| seine                    | Number of nets  | number   |
-| bag_seine                | Number of nets  | number   |
-| stream_seine             | Number of nets  | number   |
-| backpack_electrofishing  | Area            | m<sup>2</sup>       |
-| snorkel                  | Area            | m<sup>2</sup>       |
-| tow_barge_electrofishing | Area            | m<sup>2</sup>       |
+| large_mesh_trawl                    | Time            | seconds  |
+| gill_net_fall            | Net nights  | number   |
+| gill_net_spring         | Net nights  | number   |
+| hoop_net                 | Net sets (e.g., net nights)  | number   |
+| small_catfish_hoopnet    | Net sets (e.g., net nights)  | number   |
+| large_catfish_hoopnet    | Net sets (e.g., net nights)  | number   |
+| seine                    | Net sets (e.g., net nights)  | number   |
+| bag_seine                | Net sets (e.g., net nights)  | number   |
+| stream_seine             | Net sets (e.g., net nights)  | number   |
+| backpack_electrofishing  | Area            | 100 m<sup>2</sup>       |
+| tow_barge_electrofishing | Area            | 100 m<sup>2</sup>       |
 
 </div>
 
@@ -1057,7 +1057,7 @@ Required columns in input dataframe:
 - **Type of water body**:
   - `waterbody_type` must exactly match one of the following: *large_standing_waters*, *small_standing_waters*, *two_story_standing_waters*, *wadeable_streams*, *rivers*
 - **Species**:
-  - `common_name` must exactly match one of following species, as from [`FSA::PSDlit`](https://fishr-core-team.github.io/FSA/):
+  - `common_name` must **exactly match** one of following species, as from [`FSA::PSDlit`](https://fishr-core-team.github.io/FSA/):
 
 <center>
 
@@ -1281,8 +1281,8 @@ plotCPUEuser <- reactive({
                        xupper = `75%`,
                        xmax = `95%`),
                    stat = "identity") +
-      geom_vline(data = value_uu_cpue_df, aes(xintercept = xintercept, linetype = "Waterbody"), color = "grey40") +
-      scale_x_continuous("CPUE (fish / hour)") +
+      geom_vline(data = value_uu_cpue_df, aes(xintercept = xintercept, linetype = "Waterbody"), color = "grey40", size = 1.5) +
+      scale_x_continuous("CPUE") +
       scale_fill_manual(name = "Data source", values = c("white", "grey60"), 
                         labels = c(stand_N_label, user_N_label)) +
       scale_linetype_manual("", values = c("Waterbody" = 2)) +
