@@ -88,8 +88,7 @@ ex <- read_csv("example_user_upload_data.csv")
 `%nin%` <- negate(`%in%`)
 
 #Shiny App
-ui <- navbarPage(
-                 title = "AFS Standard Sampling App", tags$a(style='background-color:white;position:fixed;right:10px;top:15px;',tags$img(src='AFS_logo.png'), href = "https://fisheries.org/"), 
+ui <- navbarPage(title = "AFS Standard Sampling App", tags$a(style='background-color:white;position:absolute;right:10px;top:15px;',tags$img(src='AFS_logo.png'), href = "https://fisheries.org/"), 
                  theme = bslib::bs_theme(bootswatch = "sandstone"),
                  tabPanel("About",
                           wellPanel(
@@ -126,6 +125,8 @@ We used this information to achieve our goals of maximizing use and providing si
                             h4("Most of the app components can be translated into another language by going to ", 
                                a("Google Translate", href="https://translate.google.com/?sl=auto&tl=en&op=websites", .noWS = "outside"), 
                                " and entering the URL for the app, then selecting the desired language. Maps and plot can only currently be generated using the original version of the app. "), 
+                            h4("If you would like the text of the app bigger, you can increase the font size by hitting the control and plus (+) keys on Windows, or command and plus (+) keys on Macs."), 
+                            br(), 
                             h2("How to Provide Feedback", align = "center"), 
                             h4("These data sets were collected and compiled by ", 
                                a("Scott Bonar's lab", href="https://azcfwru.wixsite.com/azcfwru", .noWS = "outside"), 
