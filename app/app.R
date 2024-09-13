@@ -270,6 +270,9 @@ We used this information to achieve our goals of maximizing use and providing si
                                          uiOutput("instructions"), 
                                          DTOutput("example")),
                                 tabPanel("Comparisons", 
+                                         br(), 
+                                         h6("If no plots are displayed, upload a dataset to generate comparison plots."), 
+                                         br(), 
                                          plotDownloadUI("LF_plot_UU"),
                                          p("Proportional size distribution length frequency. Black lines indicate standard error."),
                                          hr(),
@@ -350,6 +353,12 @@ server <- function(input, output) {
     inFile <- input$upload
     uu <- read_csv(inFile$datapath)
     
+    invalid_species_names <- uu %>% select(common_name) %>% filter(common_name %nin% unique(metrics$common_name)) %>% pull()
+    
+    if(any(is.na(uu))){
+      validate("Uploaded dataset must have no empty rows")
+    }
+    
     # Return informative messages if uu data format is incorrect
     validate(
       need("state" %in% colnames(uu), "Uploaded dataset is missing state column"),
@@ -359,7 +368,7 @@ server <- function(input, output) {
       need("year" %in% colnames(uu), "Uploaded dataset is missing year column"),
       need(n_distinct(uu$state) == 1, "State column should contain only one state"),
       need(n_distinct(uu$waterbody_name) == 1, "Waterbody column should contain only one name"), 
-      #need(uu$common_name %in% FSA::PSDlit$species, "Species name must match one in the provided list in instructions tab")
+      need(length(invalid_species_names) == 0, paste0("Species name must match one in the provided list in instructions tab. These names are not valid: ", invalid_species_names))
     )
     
     # Duplicate records for all types
