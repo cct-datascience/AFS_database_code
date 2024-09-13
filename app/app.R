@@ -54,7 +54,9 @@ metrics <- read_csv('standardized_fish_data.csv') %>%
            factor(levels = c("S-Q", "Q-P", "P-M", "M-T", "T"))) %>% 
   mutate(method = str_replace_all(method, " ", "_"), 
          waterbody_type = str_replace_all(waterbody_type, " ", "_"), 
-         metric = str_replace_all(metric, "CPUE distance", "CPUE"))
+         metric = str_replace_all(metric, "CPUE distance", "CPUE")) %>% 
+  filter(method %in% c("boat_electrofishing", "raft_electrofishing", "gill_net_fall", "gill_net_spring", "drifting_trammel_net", "large_catfish_hoopnet", "bag_seine", "stream_seine", "backpack_electrofishing", "tow_barge_electrofishing"))
+
 # Develop vectors of unique entries
 uni.type <- c("North America", "Ecoregion", "State/Province")
 uni.area <- sort(unique(metrics$area))
@@ -238,7 +240,7 @@ We used this information to achieve our goals of maximizing use and providing si
                                       p("Relative weight by proportional size distribution categories. Points indicate means and lines indicate standard error."),
                                       hr(), 
                                       plotDownloadUI("CPUE_plot", height = "200px"), 
-                                      p("Catch per unit effort. The box represents the middle 50% of the standard data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers.")
+                                      p("Catch per unit effort. The box represents the middle 50% of the standard data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers. CPUE units depend on collection method: boat and raft electrofishing are fish per hour, gill net is fish per net nights, drifting trammel net is fish per 100-m drift, large catfish hoopnet is fish per 24 hour set, bag seine is fish per 0.25 arc (small standing waters) or 0.5 arc (rivers), stream seine is fish per 10-15m haul, and backpack and tow barge electrofishing are fish per 100m².")
                             )
                           )
                  ),
@@ -268,6 +270,9 @@ We used this information to achieve our goals of maximizing use and providing si
                                          uiOutput("instructions"), 
                                          DTOutput("example")),
                                 tabPanel("Comparisons", 
+                                         br(), 
+                                         h6("If no plots are displayed, upload a dataset to generate comparison plots."), 
+                                         br(), 
                                          plotDownloadUI("LF_plot_UU"),
                                          p("Proportional size distribution length frequency. Black lines indicate standard error."),
                                          hr(),
@@ -275,7 +280,7 @@ We used this information to achieve our goals of maximizing use and providing si
                                          p("Relative weight by proportional size distribution categories. Points indicate means and lines indicate standard error."),
                                          hr(),
                                          plotDownloadUI("CPUE_plot_UU", height = "200px"), 
-                                         p("Catch per unit effort. The box represents the middle 50% of the standard data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers. The dashed line represents CPUE for the waterbody. "))
+                                         p("Catch per unit effort. The box represents the middle 50% of the standard data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers. The dashed line represents CPUE for the waterbody. CPUE units depend on collection method: boat and raft electrofishing are fish per hour, gill net is fish per net nights, drifting trammel net is fish per 100-m drift, large catfish hoopnet is fish per 24 hour set, bag seine is fish per 0.25 arc (small standing waters) or 0.5 arc (rivers), stream seine is fish per 10-15m haul, and backpack and tow barge electrofishing are fish per 100m²."))
                               )
                             )
                             
@@ -348,6 +353,12 @@ server <- function(input, output) {
     inFile <- input$upload
     uu <- read_csv(inFile$datapath)
     
+    invalid_species_names <- uu %>% select(common_name) %>% filter(common_name %nin% unique(metrics$common_name)) %>% pull()
+    
+    if(any(is.na(uu))){
+      validate("Uploaded dataset must have no empty rows")
+    }
+    
     # Return informative messages if uu data format is incorrect
     validate(
       need("state" %in% colnames(uu), "Uploaded dataset is missing state column"),
@@ -357,14 +368,14 @@ server <- function(input, output) {
       need("year" %in% colnames(uu), "Uploaded dataset is missing year column"),
       need(n_distinct(uu$state) == 1, "State column should contain only one state"),
       need(n_distinct(uu$waterbody_name) == 1, "Waterbody column should contain only one name"), 
-      #need(uu$common_name %in% FSA::PSDlit$species, "Species name must match one in the provided list in instructions tab")
+      need(length(invalid_species_names) == 0, paste0("Species name must match one in the provided list in instructions tab. These names are not valid: ", invalid_species_names))
     )
     
     # Duplicate records for all types
-      uu_state <- uu %>% 
-        select(-one_of("ecoregion")) %>% 
-        mutate(type = "state") %>% 
-        rename(area = state)
+    uu_state <- uu %>% 
+      select(-one_of("ecoregion")) %>% 
+      mutate(type = "state") %>% 
+      rename(area = state)
     
     if ("ecoregion" %in% names(uu)) {
       uu_ecoregion <- uu %>% 
@@ -388,7 +399,7 @@ server <- function(input, output) {
     if(exists("uu_ecoregion")){
       rm(uu_ecoregion)
     }
-
+    
     print(uu_all)
     
   })
@@ -405,7 +416,7 @@ server <- function(input, output) {
                                type == "state" ~ "State/Province")) %>%
       slice(match(c("North America", "Ecoregion", "State/Province"), types)) %>% 
       pull(types)
-
+    
     radioGroupButtons(inputId = "typechoice3",
                       label = "Show data by:",
                       choices = temp,
@@ -711,10 +722,10 @@ server <- function(input, output) {
     print(uu)
     
     # Duplicate records for all types
-      uu_state <- uu %>% 
-        select(-one_of("ecoregion")) %>% 
-        mutate(type = "state") %>% 
-        rename(area = state)
+    uu_state <- uu %>% 
+      select(-one_of("ecoregion")) %>% 
+      mutate(type = "state") %>% 
+      rename(area = state)
     
     if ("ecoregion" %in% names(uu)) {
       uu_ecoregion <- uu %>% 
@@ -722,7 +733,7 @@ server <- function(input, output) {
         mutate(type = "ecoregion") %>% 
         rename(area = ecoregion)
     }
-
+    
     uu_all <- uu %>% 
       select(-state) %>% 
       select(-one_of("ecoregion")) %>% 
