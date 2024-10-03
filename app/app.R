@@ -10,52 +10,11 @@ library(knitr)
 library(ggtext)
 # library(periscope)
 
-# Module code
-plotDownloadUI <- function(id, height = 400) {
-  ns <- NS(id)
-  tagList(
-    fluidRow(
-      column(
-        2, offset = 10,
-        downloadButton(ns("download_plot"), "Download plot")
-      )
-    ),
-    fluidRow(
-      plotOutput(ns('plot'), height = height)
-    )
-    
-  )
-}
-
-plotDownload <- function(input, output, session, plotFun) {
-  output$plot <- renderPlot({
-    plotFun()
-  })
-  
-  output$download_plot <- downloadHandler(
-    filename = function() {
-      "plot.png"
-    },
-    content = function(file) {
-      ggsave(file, plotFun(), width = 9, height = 6)
-    }
-  )
-}
-
 # Read in summary fish metrics
-metrics <- read_csv('standardized_fish_data.csv') %>%
-  relocate(area) %>%
-  relocate(N, .after = last_col()) %>%
-  mutate(gcat = case_when(gcat == "Stock-Quality" ~ "S-Q",
-                          gcat == "Quality-Preferred" ~ "Q-P",
-                          gcat == "Preferred-Memorable" ~ "P-M",
-                          gcat == "Memorable-Trophy" ~ "M-T",
-                          gcat == "Trophy" ~ "T") %>%
-           factor(levels = c("S-Q", "Q-P", "P-M", "M-T", "T"))) %>% 
-  mutate(method = str_replace_all(method, " ", "_"), 
-         waterbody_type = str_replace_all(waterbody_type, " ", "_"), 
-         metric = str_replace_all(metric, "CPUE distance", "CPUE")) %>% 
-  filter(method %in% c("boat_electrofishing", "raft_electrofishing", "gill_net_fall", "gill_net_spring", "drifting_trammel_net", "large_catfish_hoopnet", "bag_seine", "stream_seine", "backpack_electrofishing", "tow_barge_electrofishing"))
+metrics <- read_wrangle_metrics()
+
+# Read in ecoregions shapefiles
+ecoregions_trans <- read_transform_ecoregions()
 
 # Develop vectors of unique entries
 uni.type <- c("North America", "Ecoregion", "State/Province")
@@ -65,14 +24,6 @@ uni.method <- sort(unique(metrics$method))
 uni.watertype <- sort(unique(metrics$waterbody_type))
 uni.metric <- c("Length Frequency", "Relative Weight", "CPUE") 
 
-# Read in ecoregions shapefiles
-ecoregions <- read_sf("ecoregions1/NA_CEC_Eco_Level1.shp")
-ecoregions_crs <- "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs"
-ecoregions_trans <- ecoregions %>% 
-  rmapshaper::ms_simplify() %>% 
-  st_set_crs(ecoregions_crs) %>%
-  st_transform("+proj=longlat +datum=WGS84")
-
 # Read in lat/longs
 # Lat/longs are the locations of sampling sites for datasets included in the summary metrics.
 # They are used for the plot on the "Explore" page of the app and otherwise do not affect functionality.
@@ -80,25 +31,26 @@ ecoregions_trans <- ecoregions %>%
 # To get the app to run, read in the `toy_locs.csv` file to populate this data object with fake data.
 
 # # Read in lat/longs
-locs <- read_csv("sites.csv") %>%
+locs <- 
+  # read_csv("sites.csv") %>%
+  read_csv("toy_locs.csv") %>% 
   select(-date) # not parseable as is
 
 # Read in example user upload data
 ex <- read_csv("example_user_upload_data.csv")
-
-# Create a "not in" function
-`%nin%` <- negate(`%in%`)
 
 #Shiny App
 ui <- navbarPage(title = "AFS Standard Sampling App", tags$a(style='background-color:white;position:absolute;right:10px;top:15px;',tags$img(src='AFS_logo.png'), href = "https://fisheries.org/"), 
                  theme = bslib::bs_theme(bootswatch = "sandstone"),
                  tabPanel("About",
                           wellPanel(
-                            tags$head(tags$style(
-                              type="text/css",
-                              "#pics img {display: block; margin-left: auto; margin-right: auto; max-height: 90%; height: 90%; max-width: 100%, width: auto}"
-                            )),
-                            imageOutput("pics"),
+                            tags$img(
+                              src = file.path("fish_circles2.png"), 
+                              contentType = "image/png", 
+                              height = 365, 
+                              width = 819,
+                              style = "display: block; margin-left: auto; margin-right: auto; max-height: 90%; height: 90%; max-width: 100%, width: auto"
+                            ),
                             h2("About Standard Sampling", align = "center"),
                             h4("Standardization of sampling methods allows fisheries professionals to compare data across large spatial and temporal scales, encourages data sharing and improves communication. 
 In light of these benefits, the American Fisheries Society published the first edition of Standard Methods for Sampling North American Freshwater Fishes in 2009. 
@@ -144,7 +96,12 @@ We used this information to achieve our goals of maximizing use and providing si
                             h4("Developed in collaboration with the University of Arizona ",
                                a("CCT Data Science", href="https://datascience.cct.arizona.edu/"), "team."),
                             h4 ("Sponsored by:"), 
-                            imageOutput("logo")
+                            tags$img(
+                              src = file.path("Standardsamplingsponsors.png"), 
+                              contentType = "image/png", 
+                              height = 151, 
+                              width = 741
+                            )
                           )
                  ),
                  
@@ -267,7 +224,7 @@ We used this information to achieve our goals of maximizing use and providing si
                             mainPanel(
                               tabsetPanel(
                                 tabPanel("Instructions", 
-                                         uiOutput("instructions"), 
+                                         includeMarkdown("instructions.md"),
                                          DTOutput("example")),
                                 tabPanel("Comparisons", 
                                          br(), 
@@ -294,25 +251,6 @@ We used this information to achieve our goals of maximizing use and providing si
 
 
 server <- function(input, output) {
-  
-  output$pics <- renderImage({
-    list(
-      src = file.path("www/fish_circles2.png"), 
-      contentType = "image/png", 
-      height = 365, 
-      width = 819
-    )
-  }, deleteFile = FALSE)
-  
-  output$logo <- renderImage({
-    list(
-      src = file.path("www/Standardsamplingsponsors.png"), 
-      contentType = "image/png", 
-      height = 151, 
-      width = 741
-    )
-  }, deleteFile = FALSE)
-  
   # Render a UI for selecting area depending on North America, Ecoregions, or State/Province
   output$dyn_area <- renderUI({
     if(input$typechoice == "North America") {
@@ -353,7 +291,10 @@ server <- function(input, output) {
     inFile <- input$upload
     uu <- read_csv(inFile$datapath)
     
-    invalid_species_names <- uu %>% select(common_name) %>% filter(common_name %nin% unique(metrics$common_name)) %>% pull()
+    invalid_species_names <- uu %>%
+      select(common_name) %>% 
+      filter(common_name %nin% unique(metrics$common_name)) %>% 
+      pull()
     
     if(any(is.na(uu))){
       validate("Uploaded dataset must have no empty rows")
@@ -957,174 +898,6 @@ server <- function(input, output) {
   
   callModule(plotDownload, "CPUE_plot", plotCPUE)
   
-  mtext <- "
-<br>
-  
-<center><b>How to Format Input Data</b></center>
-
-You can upload your own data to compare to the standardized data. This needs to be provided as a csv file that will have length and/or weight measurements with one row per observation (a single fish or multiple fish summed). This app will calculate the three metrics of interest for each unique combination of area, species, collection method, type of water body, and year. The three metrics are: 
-
-1. Catch per unit effort (CPUE)
-2. Length frequency
-3. Relative weight
-
-<center><b>Column Details</b></center>
-
-Below are the details of the required columns in the data. The order of the columns does not matter <b>BUT</b> the column names are <b>case sensitive and must be lower case</b>. Additionally, only upload data from <b>one</b> waterbody sampling effort at a time (under the column `waterbody_name`). There is an example dataset at the bottom of the page with simulated data that may be a helpful guide.
-
-1. CPUE requires `effort` column
-2. Length frequency requires `total_length` column 
-3. Relative weight requires `weight` and `total_length` columns
-
-Required columns in input dataframe: 
-
-- **Location**: 
-  - **Requires** `state` column
-    - `state` is name of state where fish were collected, spelled out with first letter capitalized
-    - Every row should be the same state (as it's for the same water body)
-  - An `ecoregion` column can optionally be included, to compare your data to standardized data in that ecoregion
-    - `ecoregion` is name of ecoregion where fish were collected, spelled out and capitalized correctly
-    - You can also find your ecoregion by clicking on your location the map on the Explore tab. Ecoregions can also be determined from [EPA ecoregions](https://www.epa.gov/eco-research/ecoregions-north-america) level 1.  Correctly formatted ecoregion names are listed below. 
-  - `waterbody_name` is the name of the water body
-
-<style>
-.basic-styling td,
-.basic-styling th {
-  border: 1px solid #999;
-  padding: 0.5rem;
-}
-</style>
-
-<div class='ox-hugo-table basic-styling'>
-<div></div>
-<div class='table-caption'>
-  <span class='table-number'></span>
-</div>
-
-| **Ecoregions**                    |
-|-----------------------------------|
-| 0 Water                           |
-| 1 Arctic Cordillera               |
-| 2 Tundra                          |
-| 3 Taiga                           |
-| 4 Hudson Plain                    |
-| 5 Northern Forests                |
-| 6 Northwestern Forested Mountains |
-| 7 Marine West Coast Forest        |
-| 8 Eastern Temperate Forests       |
-| 9 Great Plains                    |
-| 10 North American Deserts         |
-| 11 Mediterranean California       |
-| 12 Southern Semiarid Highlands    |
-| 13 Temperate Sierras              |
-| 14 Tropical Dry Forests           |
-| 15 Tropical Wet Forests           |
-
-<br>
-
-- **Date**: 
-  - `year` is a four-digit numeric
-- **Measurements**: 
-  - `total_length` is fish record length (mm)
-  - `weight` is fish record weight (g)
-  - `effort` is specified in **Collection method**
-- **Collection method**: see the table below for details
-  - `method` must exactly match one of the options in 'Method name'
-  - `effort` is the **total** effort of the survey, report number of effort units
-      - Examples of effort: 4,556 seconds for electrofishing, 36 net nights for gill net surveys, 5 100-m drifts for drifting trammel net
-  - The 'gill_net_spring' method is for gill netting done between January and June (months 1 - 6), and 'gill_net_fall' is for between July and December (months 7 - 12)
-  - Data for additional collection methods will be added in the future
-
-<center>
-
-<style>
-.basic-styling td,
-.basic-styling th {
-  border: 1px solid #999;
-  padding: 0.5rem;
-}
-</style>
-
-<div class='ox-hugo-table basic-styling'>
-<div></div>
-<div class='table-caption'>
-  <span class='table-number'></span>
-</div>
-
-| **Method**          | **Effort Units** |
-|--------------------------|-----------------|
-| boat_electrofishing      | Seconds         |
-| raft_electrofishing      | Seconds         |
-| gill_net_fall            | Net nights      |
-| gill_net_spring          | Net nights      |
-| drifting_trammel_net     | 100-m drift     |
-| large_catfish_hoopnet    | 24 hour set     |
-| bag_seine                | 0.25 arc (small_standing_waters); 0.5 arc (rivers) |
-| stream_seine             | 10-15 m haul    |
-| backpack_electrofishing  | 100 m<sup>2</sup>            |
-| tow_barge_electrofishing | 100 m<sup>2</sup>            |
-
-</div>
-
-</center>
-
-- **Type of water body**:
-  - `waterbody_type` must exactly match one of the following: *large_standing_waters*, *small_standing_waters*, *two_story_standing_waters*, *wadeable_streams*, *rivers*
-- **Species**:
-  - `common_name` must **exactly match** one of following species, as from [`FSA::PSDlit`](https://fishr-core-team.github.io/FSA/):
-
-<center>
-
-<style>
-.basic-styling td,
-.basic-styling th {
-  border: 1px solid #999;
-  padding: 0.5rem;
-}
-</style>
-
-<div class='ox-hugo-table basic-styling'>
-<div></div>
-<div class='table-caption'>
-  <span class='table-number'></span>
-</div>
-
-| **Species**        | **Species**      | **Species**               |
-|--------------------|------------------|---------------------------|
-| Arctic Grayling    | Gizzard Shad     | Shorthead Redhorse        |
-| Bigmouth Buffalo   | Grass Carp       | Silver Carp               |
-| Black Bullhead     | Green Sunfish    | Smallmouth Bass           |
-| Black Crappie      | Lake Trout       | Spotted Bass              |
-| Blue Catfish       | Largemouth Bass  | Spotted Gar               |
-| Bluegill           | Longnose Gar     | Striped Bass (landlocked) |
-| Brook Trout        | Muskellunge      | Utah Chub                 |
-| Brown Bullhead     | Northern Pike    | Walleye                   |
-| Brown Trout        | Paddlefish       | Warmouth                  |
-| Bull Trout         | Palmetto Bass    | White Bass                |
-| Burbot             | Pumpkinseed      | White Crappie             |
-| Chain Pickerel     | Rainbow Trout    | White Perch               |
-| Channel Catfish    | Redear Sunfish   | White Sucker              |
-| Common Carp        | River Carpsucker | Yellow Bass               |
-| Cutthroat Trout    | Rock Bass        | Yellow Bullhead           |
-| Flathead Catfish   | Sauger           | Yellow Perch              |
-| Freshwater Drum    | Saugeye          |                           |
-
-</div>
-
-</center>  
-
-<br>
-
-<center><b>Example Dataset</b></center>
-
-<br>  
-"
-
-output$instructions <- renderUI({
-  tf <- tempfile()
-  knit(text = mtext, output = tf)
-  HTML(markdown::markdownToHTML(file = tf))
-})
 
 output$example <- renderDT(datatable(ex, options = list(lengthChange = FALSE, 
                                                         pageLength = 25)) %>%
