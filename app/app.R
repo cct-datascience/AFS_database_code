@@ -32,8 +32,8 @@ uni.metric <- c("Length Frequency", "Relative Weight", "CPUE")
 
 # # Read in lat/longs
 locs <- 
-  # read_csv("sites.csv") %>%
-  read_csv("toy_locs.csv") %>% 
+  read_csv("sites.csv") %>%
+  # read_csv("toy_locs.csv") %>% 
   select(-date) # not parseable as is
 
 # Read in example user upload data
