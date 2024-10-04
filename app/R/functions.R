@@ -62,3 +62,33 @@ calculate_rw <- function(df){
     filter(!is.na(gcat))
   return(rw)
 }
+
+read_wrangle_metrics <- function(path = 'standardized_fish_data.csv') {
+  read_csv(path) %>%
+    relocate(area) %>%
+    relocate(N, .after = last_col()) %>%
+    mutate(gcat = case_when(gcat == "Stock-Quality" ~ "S-Q",
+                            gcat == "Quality-Preferred" ~ "Q-P",
+                            gcat == "Preferred-Memorable" ~ "P-M",
+                            gcat == "Memorable-Trophy" ~ "M-T",
+                            gcat == "Trophy" ~ "T") %>%
+             factor(levels = c("S-Q", "Q-P", "P-M", "M-T", "T"))) %>% 
+    mutate(method = str_replace_all(method, " ", "_"), 
+           waterbody_type = str_replace_all(waterbody_type, " ", "_"), 
+           metric = str_replace_all(metric, "CPUE distance", "CPUE")) %>% 
+    filter(method %in% c("boat_electrofishing", "raft_electrofishing", "gill_net_fall", "gill_net_spring", "drifting_trammel_net", "large_catfish_hoopnet", "bag_seine", "stream_seine", "backpack_electrofishing", "tow_barge_electrofishing"))
+}
+
+
+read_transform_ecoregions <- function(path = "ecoregions1/NA_CEC_Eco_Level1.shp") {
+  ecoregions <- read_sf(path)
+  ecoregions_crs <- "+proj=laea +lat_0=45 +lon_0=-100 +x_0=0 +y_0=0 +a=6370997 +b=6370997 +units=m +no_defs"
+  ecoregions_trans <- ecoregions %>% 
+    rmapshaper::ms_simplify() %>% 
+    st_set_crs(ecoregions_crs) %>%
+    st_transform("+proj=longlat +datum=WGS84")
+  ecoregions_trans
+}
+
+# Create a "not in" function
+`%nin%` <- purrr::negate(`%in%`)
