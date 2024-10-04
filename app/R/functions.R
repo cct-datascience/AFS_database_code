@@ -91,4 +91,4 @@ read_transform_ecoregions <- function(path = "ecoregions1/NA_CEC_Eco_Level1.shp"
 }
 
 # Create a "not in" function
-`%nin%` <- negate(`%in%`)
+`%nin%` <- purrr::negate(`%in%`)
