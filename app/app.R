@@ -80,7 +80,9 @@ ecoregions_trans <- ecoregions %>%
 # To get the app to run, read in the `toy_locs.csv` file to populate this data object with fake data.
 
 # # Read in lat/longs
-locs <- read_csv("sites.csv") %>%
+locs <- 
+  read_csv("sites.csv") %>%
+  # read_csv("toy_locs.csv") %>%
   select(-date) # not parseable as is
 
 # Read in example user upload data
@@ -90,7 +92,7 @@ ex <- read_csv("example_user_upload_data.csv")
 `%nin%` <- negate(`%in%`)
 
 #Shiny App
-ui <- navbarPage(title = "AFS Standard Sampling App", tags$a(style='background-color:white;position:absolute;right:10px;top:15px;',tags$img(src='AFS_logo.png'), href = "https://fisheries.org/"), 
+ui <- navbarPage(title = "AFS Standard Sampling App", 
                  theme = bslib::bs_theme(bootswatch = "sandstone"),
                  tabPanel("About",
                           wellPanel(
@@ -286,7 +288,12 @@ We used this information to achieve our goals of maximizing use and providing si
                             
                           ), 
                           
-                 )
+                 ),
+                 bslib::nav_item(tags$a(
+                   tags$img(src='AFS_logo.png', style="background-color:white;"),
+                   href = "https://fisheries.org/",
+                   style='position:absolute;right:10px;bottom:5px;'
+                 ))
                  
 )
 
