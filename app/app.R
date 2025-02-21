@@ -81,7 +81,22 @@ ecoregions_trans <- ecoregions %>%
 
 # # Read in lat/longs
 locs <- read_csv("sites.csv") %>%
-  select(-date) # not parseable as is
+  select(-date) %>% # not parseable as is
+  mutate(ecoregion = case_when(ecoregion == "13" ~ "13 Temperate Sierras", 
+                               ecoregion == "10" ~ "10 North American Deserts",
+                               ecoregion == "12" ~ "12 Southern Semi-Arid Highlands",
+                               ecoregion == "15" ~ "15 Tropical Wet Forests Northern Forests",
+                               ecoregion == "4" ~ "4 Hudson Plain",
+                               ecoregion == "5" ~ "5 Northern Forests",
+                               ecoregion == "6" ~ "6 Northwestern Forested Mountains",
+                               ecoregion == "7" ~ "7 Marine West Coast Forest",
+                               ecoregion == "8" ~ "8 Eastern Temperate Forests",
+                               ecoregion == "9" ~ "9 Great Plains", 
+                               ecoregion == "0" ~ "0 Water",
+                               ecoregion == "3" ~ "3 Taiga",
+                               ecoregion == "14" ~ "14 Tropical Dry Forests",
+                               ecoregion == "11" ~ "11 Mediterranean California"))
+
 
 # Read in example user upload data
 ex <- read_csv("example_user_upload_data.csv")
@@ -318,7 +333,7 @@ server <- function(input, output) {
     if(input$typechoice == "North America") {
       temp <- "North America"
     } else if(input$typechoice == "Ecoregion") {
-      temp <- uni.area[1:12]
+      temp <- uni.area[1:12] #TODO: fix this so it's only ecoregions and doesn't include states
     } else if(input$typechoice == "State/Province") {
       temp2 <-  uni.area[uni.area %nin% 'North America']
       temp <- temp2[-1:-12]
@@ -602,7 +617,7 @@ server <- function(input, output) {
       
     }
   })
-  
+
   # Create excluded dataframe for combinations with only one site and one year
   exclude <- reactive({
     if(input$typechoice == "North America") {
@@ -807,7 +822,6 @@ server <- function(input, output) {
     plot_data <- locate() %>%
       anti_join(exclude())
     
-    # print(plot_data)
     factpal <- colorFactor(rainbow(length(unique(ecoregions_trans$NA_L1CODE))), 
                            ecoregions_trans$NA_L1CODE)
     
