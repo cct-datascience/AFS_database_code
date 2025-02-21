@@ -333,10 +333,10 @@ server <- function(input, output) {
     if(input$typechoice == "North America") {
       temp <- "North America"
     } else if(input$typechoice == "Ecoregion") {
-      temp <- uni.area[1:12] #TODO: fix this so it's only ecoregions and doesn't include states
+      temp <- uni.area[1:10] #TODO: fix this so it's only ecoregions and doesn't include states
     } else if(input$typechoice == "State/Province") {
       temp2 <-  uni.area[uni.area %nin% 'North America']
-      temp <- temp2[-1:-12]
+      temp <- temp2[-1:-10]
     }
     
     selectInput(inputId = "areachoice",
@@ -351,10 +351,10 @@ server <- function(input, output) {
     if(input$typechoice2 == "North America") {
       temp <- "North America"
     } else if(input$typechoice2 == "Ecoregion") {
-      temp <- uni.area[1:12]
+      temp <- uni.area[1:10]
     } else if(input$typechoice2 == "State/Province") {
       temp2 <-  uni.area[uni.area %nin% 'North America']
-      temp <- temp2[-1:-12]
+      temp <- temp2[-1:-10]
     }
     
     selectInput(inputId = "areachoice2",
