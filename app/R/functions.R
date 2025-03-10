@@ -8,6 +8,8 @@ calculate_cpue <- function(df){
               "year", "effort") %in% colnames(df)) #todo check these
   cpue <- df %>% 
     group_by(type, area, waterbody_name, year, method, waterbody_type, common_name) %>% 
+    mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental")) %>% 
+    filter(gcat != "substock") %>%
     summarize(n_fish = n(), 
               effort_sampleID = mean(effort)) %>% 
     mutate(effort = case_when(method %in% time_methods ~ effort_sampleID / 3600, 
@@ -48,6 +50,7 @@ calculate_rw <- function(df){
   rw <- df %>% 
     mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental"), 
            relweight = FSA::wrAdd(wt = weight, len = total_length, spec = common_name)) %>% 
+    #TODO: add warning here
     filter(!is.na(relweight)) %>%
     group_by(type, area, common_name, method, waterbody_type, gcat) %>% 
     summarize_at(vars(relweight), list(mean = mean, se = FSA::se, 
