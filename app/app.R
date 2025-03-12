@@ -973,7 +973,9 @@ server <- function(input, output) {
   
   mtext <- "
 <br>
-  
+
+<i>Before formatting your input data, ensure that there is corresponding data in the standardized dataset for your species, method, and waterbody type of interest by going to the View tab and selecting your values</i>
+
 <center><b>How to Format Input Data</b></center>
 
 You can upload your own data to compare to the standardized data. This needs to be provided as a csv file that will have length and/or weight measurements with one row per observation (a single fish or multiple fish summed). This app will calculate the three metrics of interest for each unique combination of area, species, collection method, type of water body, and year. The three metrics are: 
