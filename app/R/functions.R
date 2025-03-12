@@ -49,17 +49,17 @@ calculate_rw <- function(df){
               "total_length", "weight") %in% colnames(df))
   rw <- df %>% 
     mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental"), 
-           relweight = FSA::wrAdd(wt = weight, len = total_length, spec = common_name)) %>% 
-    #TODO: add warning here
-    filter(!is.na(relweight)) %>%
+           relweight = FSA::wrAdd(wt = weight, len = total_length, spec = common_name), 
+           relweight = as.numeric(relweight)) %>% 
     group_by(type, area, common_name, method, waterbody_type, gcat) %>% 
     summarize_at(vars(relweight), list(mean = mean, se = FSA::se, 
-                                       `5%` = ~quantile(x = ., probs = 0.05),
-                                       `25%` = ~quantile(x = ., probs = 0.25),
-                                       `50%` = ~quantile(x = ., probs = 0.50),
-                                       `75%` = ~quantile(x = ., probs = 0.75),
-                                       `95%` = ~quantile(x = ., probs = 0.95)), na.rm = TRUE) %>% 
-    mutate(metric = "Relative Weight", 
+                                       `5%` = ~quantile(x = ., probs = 0.05, na.rm = TRUE),
+                                       `25%` = ~quantile(x = ., probs = 0.25, na.rm = TRUE),
+                                       `50%` = ~quantile(x = ., probs = 0.50, na.rm = TRUE),
+                                       `75%` = ~quantile(x = ., probs = 0.75, na.rm = TRUE),
+                                       `95%` = ~quantile(x = ., probs = 0.95, na.rm = TRUE)), na.rm = TRUE) %>% 
+    mutate(mean = ifelse(is.nan(mean), NA, mean), 
+           metric = "Relative Weight", 
            gcat = factor(gcat, levels = c("stock", "quality", "preferred",
                                           "memorable", "trophy"))) %>%
     filter(!is.na(gcat))

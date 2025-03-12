@@ -542,7 +542,7 @@ server <- function(input, output) {
   })
   
   # For downloading the entire dataset for tab 1 explore
-  all <- reactive({
+  full_df <- reactive({
     
     all_df <-  metrics %>%
       arrange(common_name) %>%
@@ -556,7 +556,7 @@ server <- function(input, output) {
     },
     
     content = function(file) {
-      write.csv(all(), file)
+      write.csv(full_df(), file)
     }
   )
   
@@ -761,7 +761,7 @@ server <- function(input, output) {
     # Calculate 3 metrics for user data
     uu_counts <- uu_all %>% 
       group_by(type, area, common_name, method, waterbody_type) %>%
-      summarise(N = n())
+      summarize(N = n())
     
     uu_cpue <- calculate_cpue(uu_all)
     uu_lf <- calculate_lf(uu_all)
@@ -1217,7 +1217,17 @@ plotRelativeWeightuser <- reactive({
   stand_only <- temp %>% 
     filter(data_source == "Standardized")
   
-  if(nrow(stand_only) == 0){
+  user_only <- temp %>% 
+    filter(data_source == "User upload")
+  
+  if (all(is.na(user_only$mean))){
+
+    fig <- ggplot() +
+      annotate("text", x = 1, y = 1, size = 8,
+               label = "No relative weights for uploaded data \n because species does not have standard \n weight equation, there is not standard \n weight equation for the 75th percentile, \n or the individual is shorter or longer \n than usable lengths for standard weight \n equation") +
+      theme_void()
+
+  } else if (nrow(stand_only) == 0){
     
     fig <- ggplot() +
       annotate("text", x = 1, y = 1, size = 8,
@@ -1225,12 +1235,12 @@ plotRelativeWeightuser <- reactive({
       theme_void()
     
   } else if (max(temp$mean) > 160){
-    
+
     fig <- ggplot() +
       annotate("text", x = 1, y = 1, size = 8,
                label = "Relative weight exceeds max of 160") +
       theme_void()
-    
+
   } else {
     
     fig <- ggplot(temp, aes(x = gcat)) +
