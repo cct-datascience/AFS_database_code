@@ -180,7 +180,7 @@ We used this information to achieve our goals of maximizing use and providing si
                                           label = "Select species:",
                                           choices = c("All", uni.spp),
                                           multiple = TRUE,
-                                          selected = 'Bluegill'),
+                                          selected = 'Common Carp'),
                               selectInput(inputId = "methodchoice",
                                           label = "Select method(s):",
                                           choices = c("All", uni.method),
@@ -238,7 +238,7 @@ We used this information to achieve our goals of maximizing use and providing si
                               selectInput(inputId = "sppchoice2",
                                           label = "Select species:",
                                           choices = uni.spp,
-                                          selected ='Bluegill'),
+                                          selected ='Common Carp'),
                               selectInput(inputId = "methodchoice2",
                                           label = "Select method:",
                                           choices = uni.method,
@@ -901,7 +901,7 @@ server <- function(input, output) {
         theme_void()
     } else {
       fig <- ggplot(temp, aes(x = gcat, y = mean)) +
-        geom_bar(stat = "identity", fill = "black") +
+        geom_bar(stat = "identity", fill = "white", color = "black") +
         geom_errorbar(aes(ymin = mean - se,
                           ymax = mean + se),
                       width = 0) +
@@ -1212,7 +1212,7 @@ plotLengthFrequencyuser <- reactive({
       scale_y_continuous("Frequency (%)",
                          limits = c(0, 100),
                          expand = c(0, 0)) +
-      scale_fill_manual("legend", values = c("black", "grey60"), 
+      scale_fill_manual("legend", values = c("white", "grey60"), 
                         name = "Data source", 
                         labels = c(stand_N_label, user_N_label)) +
       theme_classic(base_size = 20) +
