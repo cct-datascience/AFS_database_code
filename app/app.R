@@ -267,7 +267,12 @@ We used this information to achieve our goals of maximizing use and providing si
                             sidebarPanel(
                               "Welcome to the American Fisheries Society Standard Sampling Database App!",
                               br(),
+                              br(), 
+                              "Download a template for your data here: ", 
+                              br(), 
+                              downloadButton("download", "download"), 
                               br(),
+                              br(), 
                               "Upload your fish data for comparison here: ", 
                               fileInput("upload", NULL,
                                         buttonLabel =  "upload",
@@ -368,6 +373,16 @@ server <- function(input, output) {
                 choices = temp,
                 selected = temp[1])
   })
+  
+  # Provide downloadable template for user upload data
+  output$download <- downloadHandler(
+    filename = function() {
+      "data_template.csv"
+    },
+    content = function(file) {
+      file.copy("user_upload_data_template.csv", file)
+    }
+  )
   
   # Read in raw user upload data to be used in reactive UI's
   uu_raw <- reactive({
@@ -984,7 +999,7 @@ server <- function(input, output) {
 
 <center><b>How to Format Input Data</b></center>
 
-You can upload your own data to compare to the standardized data. This needs to be provided as a csv file that will have length and/or weight measurements with one row per observation (a single fish or multiple fish summed). This app will calculate the three metrics of interest for each unique combination of area, species, collection method, type of water body, and year. The three metrics are: 
+You can upload your own data to compare to the standardized data. This needs to be provided as a csv file that will have length and/or weight measurements with one row per observation (a single fish or multiple fish summed). You can download a template file with the correct column names with the DOWNLOAD button at the left. This app will calculate the three metrics of interest for each unique combination of area, species, collection method, type of water body, and year. The three metrics are: 
 
 1. Catch per unit effort (CPUE)
 2. Length frequency
