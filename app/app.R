@@ -249,13 +249,16 @@ We used this information to achieve our goals of maximizing use and providing si
                                           selected = "large_standing_waters")
                             ),
                             mainPanel(plotDownloadUI("LF_plot"),
-                                      p("Proportional size distribution length frequency. Black lines indicate standard error."),
+                                      br(), 
+                                      p("Proportional size distribution length frequency. Black lines indicate standard error.", style = "font-size:25px;"),
                                       hr(),
                                       plotDownloadUI("RW_plot"),
-                                      p("Relative weight by proportional size distribution categories. Points indicate means and lines indicate standard error."),
+                                      br(), 
+                                      p("Relative weight by proportional size distribution categories. Points indicate means and lines indicate standard error.", style = "font-size:25px;"),
                                       hr(), 
                                       plotDownloadUI("CPUE_plot", height = "200px"), 
-                                      p("Catch per unit effort. The box represents the middle 50% of the standard data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers. CPUE units depend on collection method: boat and raft electrofishing are fish per hour, gill net is fish per net nights, drifting trammel net is fish per 100-m drift, large catfish hoopnet is fish per 24 hour set, bag seine is fish per 0.25 arc (small standing waters) or 0.5 arc (rivers), stream seine is fish per 10-15m haul, and backpack and tow barge electrofishing are fish per 100m².")
+                                      br(), 
+                                      p("Catch per unit effort. The box represents the middle 50% of the standard data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers. CPUE units depend on collection method: boat and raft electrofishing are fish per hour, gill net is fish per net nights, drifting trammel net is fish per 100-m drift, large catfish hoopnet is fish per 24 hour set, bag seine is fish per 0.25 arc (small standing waters) or 0.5 arc (rivers), stream seine is fish per 10-15m haul, and backpack and tow barge electrofishing are fish per 100m².", style = "font-size:25px;")
                             )
                           )
                  ),
@@ -289,13 +292,16 @@ We used this information to achieve our goals of maximizing use and providing si
                                          h6("If no plots are displayed, upload a dataset to generate comparison plots."), 
                                          br(), 
                                          plotDownloadUI("LF_plot_UU"),
-                                         p("Proportional size distribution length frequency. Black lines indicate standard error."),
+                                         br(), 
+                                         p("Proportional size distribution length frequency. Black lines indicate standard error.", style = "font-size:25px;"),
                                          hr(),
                                          plotDownloadUI("RW_plot_UU"),
-                                         p("Relative weight by proportional size distribution categories. Points indicate means and lines indicate standard error."),
+                                         br(), 
+                                         p("Relative weight by proportional size distribution categories. Points indicate means and lines indicate standard error.", style = "font-size:25px;"),
                                          hr(),
                                          plotDownloadUI("CPUE_plot_UU", height = "200px"), 
-                                         p("Catch per unit effort. The box represents the middle 50% of the standard data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers. The dashed line represents CPUE for the waterbody. CPUE units depend on collection method: boat and raft electrofishing are fish per hour, gill net is fish per net nights, drifting trammel net is fish per 100-m drift, large catfish hoopnet is fish per 24 hour set, bag seine is fish per 0.25 arc (small standing waters) or 0.5 arc (rivers), stream seine is fish per 10-15m haul, and backpack and tow barge electrofishing are fish per 100m²."))
+                                         br(), 
+                                         p("Catch per unit effort. The box represents the middle 50% of the standard data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers. The dashed line represents CPUE for the waterbody. CPUE units depend on collection method: boat and raft electrofishing are fish per hour, gill net is fish per net nights, drifting trammel net is fish per 100-m drift, large catfish hoopnet is fish per 24 hour set, bag seine is fish per 0.25 arc (small standing waters) or 0.5 arc (rivers), stream seine is fish per 10-15m haul, and backpack and tow barge electrofishing are fish per 100m².", style = "font-size:25px;"))
                               )
                             )
                             
@@ -887,7 +893,7 @@ server <- function(input, output) {
         scale_y_continuous("Frequency (%)",
                            limits = c(0, 100),
                            expand = c(0, 0)) +
-        theme_classic(base_size = 16) +
+        theme_classic(base_size = 20) +
         xlab("Proportional size distribution categories") +
         theme(legend.position = "none") +
         geom_richtext(x = 5, y = 90, label = paste0("<i>N</i> = ", N), size = 7, fill = NA, label.color = NA)
@@ -921,7 +927,7 @@ server <- function(input, output) {
         scale_x_discrete(drop = FALSE) +
         ylim(50, 160) +
         labs(y = "Relative weight (<i>W<sub>r</sub></i>)") +
-        theme_classic(base_size = 16) +
+        theme_classic(base_size = 20) +
         xlab("Proportional size distribution categories") +
         theme(legend.position = "bottom",
               legend.title = element_blank(), 
@@ -957,7 +963,7 @@ server <- function(input, output) {
                      stat = "identity", 
                      fill = "white") +
         scale_x_continuous("CPUE") +
-        theme_classic(base_size = 16) +
+        theme_classic(base_size = 20) +
         labs(title = paste0("*N* = ", N)) +
         theme(axis.title.y = element_blank(),
               axis.text.y = element_blank(),
@@ -1194,7 +1200,7 @@ plotLengthFrequencyuser <- reactive({
       scale_fill_manual("legend", values = c("black", "grey60"), 
                         name = "Data source", 
                         labels = c(stand_N_label, user_N_label)) +
-      theme_classic(base_size = 16) +
+      theme_classic(base_size = 20) +
       xlab("Proportional size distribution categories") +
       theme(legend.position = c(0.85, 0.85), 
             legend.text = ggtext::element_markdown(), 
@@ -1261,7 +1267,7 @@ plotRelativeWeightuser <- reactive({
       labs(y = "Relative weight (<i>W<sub>r</sub></i>)") +
       scale_color_manual(name = "Data source", values = c("black", "grey60"), 
                          labels = c("Standardized data", "Waterbody")) +
-      theme_classic(base_size = 16) +
+      theme_classic(base_size = 20) +
       xlab("Proportional size distribution categories") +
       theme(legend.position = "inside", 
             legend.position.inside = c(0.85, 0.85), 
@@ -1326,7 +1332,7 @@ plotCPUEuser <- reactive({
       scale_fill_manual(name = "Data source", values = c("white", "grey60"), 
                         labels = c(stand_N_label, user_N_label)) +
       scale_linetype_manual("", values = c("Waterbody" = 2)) +
-      theme_classic(base_size = 16) +
+      theme_classic(base_size = 20) +
       theme(axis.title.y = element_blank(),
             axis.text.y = element_blank(),
             axis.ticks.y = element_blank(), 
