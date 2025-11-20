@@ -391,21 +391,22 @@ server <- function(input, output) {
     
     invalid_species_names <- uu %>% select(common_name) %>% filter(common_name %nin% unique(metrics$common_name)) %>% pull()
     
-    if(any(is.na(uu))){
-      validate("Uploaded dataset must have no empty rows")
-    }
-    
-    # Return informative messages if uu data format is incorrect
-    validate(
-      need("state" %in% colnames(uu), "Uploaded dataset is missing state column"),
-      need("waterbody_name" %in% colnames(uu), "Uploaded dataset is missing waterbody_name column"),
-      need("common_name" %in% colnames(uu), "Uploaded dataset is missing common_name column"),
-      need("method" %in% colnames(uu), "Uploaded dataset is missing method column"),
-      need("year" %in% colnames(uu), "Uploaded dataset is missing year column"),
-      need(n_distinct(uu$state) == 1, "State column should contain only one state"),
-      need(n_distinct(uu$waterbody_name) == 1, "Waterbody column should contain only one name"), 
-      need(length(invalid_species_names) == 0, paste0("Species name must match one in the provided list in instructions tab. These names are not valid: ", invalid_species_names))
-    )
+    #todo: redo validation
+    # if(any(is.na(uu))){
+    #   validate("Uploaded dataset must have no empty rows")
+    # }
+    # 
+    # # Return informative messages if uu data format is incorrect
+    # validate(
+    #   need("state" %in% colnames(uu), "Uploaded dataset is missing state column"),
+    #   need("waterbody_name" %in% colnames(uu), "Uploaded dataset is missing waterbody_name column"),
+    #   need("common_name" %in% colnames(uu), "Uploaded dataset is missing common_name column"),
+    #   need("method" %in% colnames(uu), "Uploaded dataset is missing method column"),
+    #   need("year" %in% colnames(uu), "Uploaded dataset is missing year column"),
+    #   need(n_distinct(uu$state) == 1, "State column should contain only one state"),
+    #   need(n_distinct(uu$waterbody_name) == 1, "Waterbody column should contain only one name"), 
+    #   need(length(invalid_species_names) == 0, paste0("Species name must match one in the provided list in instructions tab. These names are not valid: ", invalid_species_names))
+    # )
     
     # Duplicate records for all types
     uu_state <- uu %>% 
@@ -745,7 +746,7 @@ server <- function(input, output) {
              se, `5%`, `25%`, `50%`, `75%`, `95%`)
     
   })
-  
+
   uu_processed <- reactive({
     # Suppresses error messages for plots until inputs are chosen
     req(input$areachoice3)
@@ -783,7 +784,7 @@ server <- function(input, output) {
     uu_counts <- uu_all %>% 
       group_by(type, area, common_name, method, waterbody_type) %>%
       summarize(N = n())
-    
+    #browser()
     uu_cpue <- calculate_cpue(uu_all)
     uu_lf <- calculate_lf(uu_all)
     uu_rw <- calculate_rw(uu_all)
@@ -1063,8 +1064,8 @@ Required columns in input dataframe:
   - `year` is a four-digit numeric
 - **Measurements**: 
   - `total_length` is fish record length (mm)
-  - `weight` is fish record weight (g)
-  - `effort` is specified in **Collection method**
+  - `weight` is fish record weight (g). A column named `weight` is required, but the data is is *optional* and the rest of the column can be left blank
+  - `effort` is specified in **Collection method**. A column named `weight` is required, but the data is is *optional* and the rest of the column can be left blank
 - **Collection method**: see the table below for details
   - `method` must exactly match one of the options in 'Method name'
   - `effort` is the **total** effort of the survey, report number of effort units
@@ -1243,7 +1244,14 @@ plotRelativeWeightuser <- reactive({
   user_only <- temp %>% 
     filter(data_source == "User upload")
   
-  if (all(is.na(user_only$mean))){
+  if (nrow(user_only) == 0){
+    
+    fig <- ggplot() +
+      annotate("text", x = 1, y = 1, size = 8,
+               label = "The uploaded data included no weights. \n Please include weights to generate this plot") +
+      theme_void()
+    
+  } else if (all(is.na(user_only$mean))){
 
     fig <- ggplot() +
       annotate("text", x = 1, y = 1, size = 8,
@@ -1318,6 +1326,9 @@ plotCPUEuser <- reactive({
   stand_only <- temp %>% 
     filter(data_source == "Standardized")
   
+  user_only <- temp %>% 
+    filter(data_source == "User upload")
+  
   value_uu_cpue <- temp %>% 
     filter(data_source == "User upload") %>% 
     select(mean) %>% 
@@ -1325,7 +1336,14 @@ plotCPUEuser <- reactive({
   
   value_uu_cpue_df <- data.frame(xintercept = value_uu_cpue)
   
-  if(nrow(stand_only) == 0){
+  if (nrow(user_only) == 0){
+    
+    fig <- ggplot() +
+      annotate("text", x = 1, y = 1, size = 8,
+               label = "The uploaded data included no efforts. \n Please include efforts to generate this plot") +
+      theme_void()
+    
+  } else if(nrow(stand_only) == 0){
     
     fig <- ggplot() +
       annotate("text", x = 1, y = 1, size = 8,

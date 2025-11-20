@@ -4,26 +4,43 @@ number_methods <- c("gill_net_fall", "gill_net_spring", "drifting_trammel_net",
                     "backpack_electrofishing", "tow_barge_electrofishing")
 
 calculate_cpue <- function(df){
-  stopifnot(c("type", "area", "common_name", "method", "waterbody_type", 
-              "year", "effort") %in% colnames(df)) #todo check these
-  cpue <- df %>% 
-    group_by(type, area, waterbody_name, year, method, waterbody_type, common_name) %>% 
-    mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental")) %>% 
-    filter(gcat != "substock") %>%
-    summarize(n_fish = n(), 
-              effort_sampleID = mean(effort)) %>% 
-    mutate(effort = case_when(method %in% time_methods ~ effort_sampleID / 3600, 
-                              method %in% number_methods ~ effort_sampleID)) %>% 
-    mutate(cpue = n_fish / effort) %>% # n is number of fish
-    group_by(type, area, common_name, method, waterbody_type) %>%
-    summarize_at(vars(cpue), list(mean = mean, se = se,
-                                  `5%` = ~quantile(x = ., probs = 0.05),
-                                  `25%` = ~quantile(x = ., probs = 0.25),
-                                  `50%` = ~quantile(x = ., probs = 0.50),
-                                  `75%` = ~quantile(x = ., probs = 0.75),
-                                  `95%` = ~quantile(x = ., probs = 0.95)),
-                 na.rm = TRUE) %>%
-    mutate(metric = "CPUE")
+  if(all(is.na(df$effort))){
+    cpue <- tibble(type = character(), 
+                     area = character(), 
+                     common_name = character(), 
+                     method = character(), 
+                     waterbody_type = character(), 
+                     mean = double(), 
+                     se = double(), 
+                     `5%` = double(), 
+                     `25%` = double(),             
+                     `50%` = double(),            
+                     `75%` = double(), 
+                     `95%` = double(), 
+                     metric = character())
+  } else {
+    stopifnot(c("type", "area", "common_name", "method", "waterbody_type", 
+                "year", "effort") %in% colnames(df)) #todo check these
+    cpue <- df %>% 
+      group_by(type, area, waterbody_name, year, method, waterbody_type, common_name) %>% 
+      mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental")) %>% 
+      filter(gcat != "substock") %>%
+      summarize(n_fish = n(), 
+                effort_sampleID = mean(effort)) %>% 
+      mutate(effort = case_when(method %in% time_methods ~ effort_sampleID / 3600, 
+                                method %in% number_methods ~ effort_sampleID)) %>% 
+      mutate(cpue = n_fish / effort) %>% # n is number of fish
+      group_by(type, area, common_name, method, waterbody_type) %>%
+      summarize_at(vars(cpue), list(mean = mean, se = se,
+                                    `5%` = ~quantile(x = ., probs = 0.05),
+                                    `25%` = ~quantile(x = ., probs = 0.25),
+                                    `50%` = ~quantile(x = ., probs = 0.50),
+                                    `75%` = ~quantile(x = ., probs = 0.75),
+                                    `95%` = ~quantile(x = ., probs = 0.95)),
+                   na.rm = TRUE) %>%
+      mutate(metric = "CPUE") %>% 
+      ungroup()
+  }
   return(cpue)
 }
 
@@ -40,28 +57,48 @@ calculate_lf <- function(df){
     mutate(metric = "Length Frequency", 
            gcat = factor(gcat, levels = c("stock", "quality", "preferred",
                                           "memorable", "trophy"))) %>%
-    filter(!is.na(gcat))
+    filter(!is.na(gcat)) %>% 
+    ungroup()
   return(lf)
 }
 
 calculate_rw <- function(df){
-  stopifnot(c("type", "area", "common_name", "method", "waterbody_type", "year", 
-              "total_length", "weight") %in% colnames(df))
-  rw <- df %>% 
-    mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental"), 
-           relweight = FSA::wrAdd(wt = weight, len = total_length, spec = common_name), 
-           relweight = as.numeric(relweight)) %>% 
-    group_by(type, area, common_name, method, waterbody_type, gcat) %>% 
-    summarize_at(vars(relweight), list(mean = mean, se = FSA::se, 
-                                       `5%` = ~quantile(x = ., probs = 0.05, na.rm = TRUE),
-                                       `25%` = ~quantile(x = ., probs = 0.25, na.rm = TRUE),
-                                       `50%` = ~quantile(x = ., probs = 0.50, na.rm = TRUE),
-                                       `75%` = ~quantile(x = ., probs = 0.75, na.rm = TRUE),
-                                       `95%` = ~quantile(x = ., probs = 0.95, na.rm = TRUE)), na.rm = TRUE) %>% 
-    mutate(mean = ifelse(is.nan(mean), NA, mean), 
-           metric = "Relative Weight", 
-           gcat = factor(gcat, levels = c("stock", "quality", "preferred",
-                                          "memorable", "trophy"))) %>%
-    filter(!is.na(gcat))
+  if(all(is.na(df$weight))){
+    rw <- tibble(type = character(), 
+                          area = character(), 
+                          common_name = character(), 
+                          method = character(), 
+                          waterbody_type = character(), 
+                          gcat = factor(), 
+                          mean = double(), 
+                          se = double(), 
+                          `5%` = double(), 
+                          `25%` = double(),             
+                          `50%` = double(),            
+                          `75%` = double(), 
+                          `95%` = double(), 
+                          metric = character())
+  } else {
+    stopifnot(c("type", "area", "common_name", "method", "waterbody_type", "year", 
+                "total_length", "weight") %in% colnames(df))
+    rw <- df %>% 
+      mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental"), 
+             relweight = FSA::wrAdd(wt = weight, len = total_length, spec = common_name), 
+             relweight = as.numeric(relweight)) %>% 
+      group_by(type, area, common_name, method, waterbody_type, gcat) %>% 
+      summarize_at(vars(relweight), list(mean = mean, se = FSA::se, 
+                                         `5%` = ~quantile(x = ., probs = 0.05, na.rm = TRUE),
+                                         `25%` = ~quantile(x = ., probs = 0.25, na.rm = TRUE),
+                                         `50%` = ~quantile(x = ., probs = 0.50, na.rm = TRUE),
+                                         `75%` = ~quantile(x = ., probs = 0.75, na.rm = TRUE),
+                                         `95%` = ~quantile(x = ., probs = 0.95, na.rm = TRUE)), na.rm = TRUE) %>% 
+      mutate(mean = ifelse(is.nan(mean), NA, mean), 
+             metric = "Relative Weight", 
+             gcat = factor(gcat, levels = c("stock", "quality", "preferred",
+                                            "memorable", "trophy"))) %>%
+      filter(!is.na(gcat)) %>% 
+      ungroup()
+  }
+  
   return(rw)
 }
