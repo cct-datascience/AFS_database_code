@@ -298,7 +298,7 @@ We used this information to achieve our goals of maximizing use and providing si
                                          br(), 
                                          plotDownloadUI("LF_plot_UU"),
                                          br(), 
-                                         p("Proportional size distribution length frequency. Black lines indicate standard error.", style = "font-size:25px;"),
+                                         p("Proportional size distribution length frequency. Black lines at middle top of standardized data bars indicate standard error.", style = "font-size:25px;"),
                                          hr(),
                                          plotDownloadUI("RW_plot_UU"),
                                          br(), 
@@ -1063,9 +1063,9 @@ Required columns in input dataframe:
 - **Date**: 
   - `year` is a four-digit numeric
 - **Measurements**: 
-  - `total_length` is fish record length (mm)
+  - `total_length` is fish total length (TL) in mm
   - `weight` is fish record weight (g). A column named `weight` is required, but the data is is *optional* and the rest of the column can be left blank
-  - `effort` is specified in **Collection method**. A column named `weight` is required, but the data is is *optional* and the rest of the column can be left blank
+  - `effort` is specified in **Collection method**. A column named `effort` is required, but the data is is *optional* and the rest of the column can be left blank
 - **Collection method**: see the table below for details
   - `method` must exactly match one of the options in 'Method name'
   - `effort` is the **total** effort of the survey, report number of effort units
