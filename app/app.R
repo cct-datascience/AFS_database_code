@@ -95,8 +95,12 @@ locs <- read_csv("sites.csv") %>%
                                ecoregion == "0" ~ "0 Water",
                                ecoregion == "3" ~ "3 Taiga",
                                ecoregion == "14" ~ "14 Tropical Dry Forests",
-                               ecoregion == "11" ~ "11 Mediterranean California"))
-
+                               ecoregion == "11" ~ "11 Mediterranean California"), 
+         common_name = case_when(common_name == "Brook Trout (lotic)" ~ "Brook Trout", 
+                                 common_name == "Brook Trout (lentic)" ~ "Brook Trout", 
+                                 common_name == "Brown Trout (lotic)" ~ "Brown Trout", 
+                                 common_name == "Brown Trout (lentic)" ~ "Brown Trout", 
+                                 TRUE ~ common_name))
 
 # Read in example user upload data
 ex <- read_csv("example_user_upload_data.csv")
@@ -547,7 +551,6 @@ server <- function(input, output) {
   
   # make filtered, a reactive data object for tab 1 explore, multiple combos okay
   filtered <- reactive({
-    
     f_df <-  metrics %>%
       filter(metric %in% input$metricchoice,
              area %in% input$areachoice,
@@ -784,7 +787,7 @@ server <- function(input, output) {
     uu_counts <- uu_all %>% 
       group_by(type, area, common_name, method, waterbody_type) %>%
       summarize(N = n())
-    #browser()
+
     uu_cpue <- calculate_cpue(uu_all)
     uu_lf <- calculate_lf(uu_all)
     uu_rw <- calculate_rw(uu_all)
@@ -840,7 +843,6 @@ server <- function(input, output) {
   
   # Map of ecoregions and sites
   output$plotSites <- renderLeaflet({
-    
     # Remove 'exclude()' from plot_data if only 1 site or 1 year is represented
     plot_data <- locate() %>%
       anti_join(exclude())
