@@ -1,13 +1,22 @@
 library(tidyverse)
-library(dplyr)
 library(plyr)
+library(dplyr)
 library(purrr)
 library(FSA)
 library(magrittr)
 library(data.table)
 
-setwd
-data <- read.csv("name")
+
+#write.csv(data, "Kristina_example_data.csv", row.names = FALSE)
+
+#data <- read.csv("AFS_fishdata_FINAL_112121.csv")
+#data <- read.csv("Kristina_example_data.csv")
+
+# re-run 3/26/24 
+data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_outlier_data_cleaned_052824.csv")
+
+
+#data <- mutate(data,gcat=psdAdd(total_length_mm,common_name))
 
 data$weight_g <- as.numeric(as.character(data$weight_g))
 data$total_length_mm <- as.numeric(as.character(data$total_length_mm))
@@ -19,7 +28,7 @@ data$count <- as.numeric(as.character(data$count))
 #summarizing by percentile 
 p <- c(0.05, 0.25, 0.50, 0.75, 0.95)
 p_names <- map_chr(p, ~paste0(.x*100,"%"))
-p_funs <- map(p, ~partial(quantile, probs = .x, na.rm.= TRUE))%>%
+p_funs <- purrr::map(p, ~partial(quantile, probs = .x, na.rm.= TRUE))%>%
   set_names(nm = p_names)
 p_funs
 options(scipen=10)
@@ -53,7 +62,14 @@ for(s in unique(data_trial.df$state)){
         
         #Relative Weight
           weight <- mutate(species.i.method.j.type.w.id.u, Wr=wrAdd(weight_g, total_length_mm, common_name))
-          weight.means <- weight %>%
+          # Rename your mutated data frame so as to make it clear that it contains potential outliers
+          
+          weight_all <- mutate(species.i.method.j.type.w.id.u, Wr=wrAdd(weight_g, total_length_mm, common_name))
+          
+          weight_all$Wr[weight_all$Wr<30 | weight_all$Wr>230] <- NA
+          
+          #can I exclude individual relative weight outliers 
+          weight.means <- weight_all %>%
             group_by(gcat)%>%
             summarize_at(vars(Wr),funs( mean), na.rm=TRUE)
           
@@ -103,6 +119,8 @@ for(s in unique(data_trial.df$state)){
   state.s.results <- rbind.fill(Wr)
   state.s.results$state <- s
   state.results[[s]] <- state.s.results
-  
+  print(s)
 } ##s
 state.weight.results <- rbindlist(state.results)
+
+write.csv(state.weight.results, "AFS_state_weight_092524.csv")

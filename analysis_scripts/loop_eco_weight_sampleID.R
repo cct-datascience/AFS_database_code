@@ -6,8 +6,14 @@ library(FSA)
 library(magrittr)
 library(data.table)
 
-setwd
-data <- read.csv("name")
+data <- read.csv("AFS_fishdata_FINAL_112121.csv")
+data <- read.csv("AZ_test.csv")
+data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_states/AFS_fishdata_FINAL_012423.csv")
+
+# re-run 3/26/24 
+# re-run 3/26/24 
+data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_data_weight_outlier_032424.csv")
+
 
 data$weight_g <- as.numeric(as.character(data$weight_g))
 data$total_length_mm <- as.numeric(as.character(data$total_length_mm))
@@ -55,7 +61,14 @@ for(s in unique(data_trial.df$ecoregion)){
       
       #Relative Weight
         weight <- mutate(species.i.method.j.type.w.id.u, Wr=wrAdd(weight_g, total_length_mm, common_name))
-        weight.means <- weight %>%
+        # Rename your mutated data frame so as to make it clear that it contains potential outliers
+        
+        weight_all <- mutate(species.i.method.j.type.w.id.u, Wr=wrAdd(weight_g, total_length_mm, common_name))
+        
+        weight_all$Wr[weight_all$Wr<30 | weight_all$Wr>230] <- NA
+        
+        #can I exclude individual relative weight outliers 
+        weight.means <- weight_all %>%
           group_by(gcat)%>%
           summarize_at(vars(Wr),funs( mean), na.rm=TRUE)
         

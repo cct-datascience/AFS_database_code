@@ -6,8 +6,18 @@ library(FSA)
 library(magrittr)
 library(data.table)
 
-setwd
-data <- read.csv("name")
+data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_outlier_data_cleaned_052824.csv")
+
+# rerun 01132026
+#cleaning data AFS_outlier_data_cleaned_052824.csv by excluding Ontario data and changing Nevada to boat_electrofishing
+data <- data %>%
+  filter(state != "Ontario") %>%
+  mutate(method = if_else(state == "Nevada", 
+                          "boat_electrofishing", 
+                          method))
+data <- write.csv(data, "C:/Users/etracy1/Desktop/final_AFS_2026/AFS_final_01132026.csv", row.names = FALSE)
+data <- read.csv("C:/Users/etracy1/Desktop/final_AFS_2026/AFS_final_01132026.csv")
+
 
 data$weight_g <- as.numeric(as.character(data$weight_g))
 data$total_length_mm <- as.numeric(as.character(data$total_length_mm))
@@ -31,6 +41,8 @@ data_trial.df <- data_trial.df[!is.na(data_trial.df$waterbody_type),]
 data_trial.df <- data_trial.df[!is.na(data_trial.df$ecoregion),]
 data_trial.df <- data_trial.df[(data_trial.df$ecoregion != "NULL"),]
 data_trial.df <- data_trial.df[(data_trial.df$ecoregion != 0),]
+
+#Length: brook trout (lentil/lotic), brown trout lentic/lotic, cutthroat trout, rainbow trout
 
 eco.results.PSD <- list()
 
@@ -110,5 +122,5 @@ for(s in unique(data_trial.df$ecoregion)){
 
 } ##  s
 eco.length.results <- rbindlist(eco.results.PSD)
-Final.eco <- rbind.fill(eco.length.results, eco.weight.results, eco.CPUE.results)
-write.csv(Final.eco, "Final_results_eco_update.csv")
+#Final.eco <- rbind.fill(eco.length.results, eco.weight.results, eco.CPUE.results)
+write.csv(eco.length.results, "C:/Users/etracy1/Desktop/final_AFS_2026/eco_length_results_01132026.csv", row.names = FALSE)

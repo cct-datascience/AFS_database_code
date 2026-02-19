@@ -6,8 +6,12 @@ library(FSA)
 library(magrittr)
 library(data.table)
 
-setwd
-data <- read.csv("name")
+#re-run 01132026
+data <- read.csv("C:/Users/etracy1/Desktop/final_AFS_2026/AFS_final_01132026.csv")
+
+#re-run rainbow trout 060324
+#data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/Rainbow_trout_raw.csv")
+
 
 data$weight_g <- as.numeric(as.character(data$weight_g))
 data$total_length_mm <- as.numeric(as.character(data$total_length_mm))
@@ -52,6 +56,7 @@ for(i in unique(data_trial.df$common_name)){
         psd <-as.data.frame(psd)
         psd$gcat <- as.character(psd$gcat)
         
+        #This adds a row with a 0 for each category that doesnt have a result
         if("stock" %notin% psd$gcat){psd[nrow(psd)+1,] <- data.frame(common_name=i, gcat="stock",Freq=0)} 
         if("quality" %notin% psd$gcat){psd[nrow(psd)+1,] <- data.frame(common_name=i, gcat="quality",Freq=0)}
         if("preferred" %notin% psd$gcat){psd[nrow(psd)+1,] <- data.frame(common_name=i, gcat="preferred",Freq=0)}
@@ -70,6 +75,7 @@ for(i in unique(data_trial.df$common_name)){
       colnames(species.method.type.id.results.final)[2] <- "mean"
       species.method.type.id.results.final$metric <- "Length Frequency"
       
+      #I think a lot of this is making sure N is total unique Sample IDs so all N should be the same for each category
       stock.count <- length(unique(species.method.type.id.results.df$watername_method_yearID[species.method.type.id.results.df$gcat=="stock"]))
       quality.count <- length(unique(species.method.type.id.results.df$watername_method_yearID[species.method.type.id.results.df$gcat=="quality"]))
       preferred.count <- length(unique(species.method.type.id.results.df$watername_method_yearID[species.method.type.id.results.df$gcat=="preferred"]))
@@ -78,10 +84,13 @@ for(i in unique(data_trial.df$common_name)){
       
       all.count <- c(stock.count, quality.count, preferred.count, memorable.count, trophy.count) ## Make vector of each gcat count 
       
+      #this makes it so its always in this order
       gcat.order <- c("stock", "quality", "preferred", "memorable", "trophy")
       species.method.type.id.results.final <- species.method.type.id.results.final[match(gcat.order, species.method.type.id.results.final$gcat),] 
       
       species.method.type.id.results.final$n <- all.count ## add in count to full df
+      ### QUESTION: What should be the count by category - 
+      # if we want to change this we would use the same format as relative weight and not add 0s 
       
       results.species.method.type[[w]] <-  species.method.type.id.results.final
       
@@ -95,16 +104,14 @@ for(i in unique(data_trial.df$common_name)){
   
 } # i
 NorthAmerica.results.length <- rbindlist(stock.results.PSD, idcol="common_name", fill=TRUE)
-BrownTrout.NA.length <- NorthAmerica.results.length
 
-NA.final <- rbind.fill(NorthAmerica.results.length, NorthAmerica.results.weight, NorthAmerica.results.CPUE)
+write.csv(NorthAmerica.results.length, "C:/Users/etracy1/Desktop/final_AFS_2026/northamerica_length_results_01132026.csv", row.names = FALSE)
 
-write.csv(NA.final, "Final_results_NA_update.csv", row.names = FALSE)
-Final.NA <- NA.final
 
-NA_results <- read.csv("Final_results_NA_update.csv")
-Eco_results <- read.csv("Final_results_eco_update.csv")
-State_results <- read.csv("Final_results_state_update.csv")
-Full <- rbind.fill(NA_results, Eco_results, State_results)
+#write.csv(lengthall, "C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/length_test.csv", row.names = FALSE)
 
-write.csv(Full, "Full_results_update.csv")
+#all_rainbowtrout <- rbind.fill(NorthAmerica.results.length, eco.length.results, state.length.results)
+
+#write.csv(NorthAmerica.results.length, "C:/Users/etracy1/Desktop/Backup/length_test.csv", row.names = FALSE)
+
+

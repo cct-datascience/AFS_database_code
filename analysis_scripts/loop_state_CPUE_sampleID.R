@@ -1,20 +1,38 @@
 library(tidyverse)
-library(dplyr)
 library(plyr)
+library(dplyr)
 library(purrr)
 library(FSA)
 library(magrittr)
 library(data.table)
 
-setwd
-data <- read.csv("name")
+#re-ran 09/25/24
+data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_outlier_data_cleaned_052824.csv")
+
+
+# 3/17/24 re run for with new effort data
+#data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFSdata_cleaning_and_analysis/AFS_fishdata_FINAL_112122.csv")
+#data1 <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFSdata_cleaning_and_analysis/AFS_fishdata_FINAL_110721.csv")
+#data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_states/AFS_fishdata_FINAL_012423.csv")
+
+# re-run 3/24/24 
+data <- data_method
+
+# I just did a find replace of total_m2 with total_m2_sum 
 
 data$weight_g <- as.numeric(as.character(data$weight_g))
 data$total_length_mm <- as.numeric(as.character(data$total_length_mm))
 data$effort <- as.numeric(as.character(data$effort))
-data$total_m2 <- as.numeric(as.character(data$total_m2))
+#data$total_m2 <- as.numeric(as.character(data$total_m2)
+data$total_m2_sum <- as.numeric(as.character(data$total_m2_sum))
 data$count <- as.numeric(as.character(data$count))
 `%notin%` <- Negate(`%in%`)
+
+#test
+#data <- add_count(data, common_name, method, waterbody_type, watername_method_yearID)
+#colnames(data)[19] <- "count"
+#data <- data[-23]
+#data <- data %>% mutate(gcat=psdAdd(total_length_mm,common_name, what="incremental"))
 
 #summarizing by percentile 
 p <- c(0.05, 0.25, 0.50, 0.75, 0.95)
@@ -27,6 +45,22 @@ options(scipen=10)
 # code for CPUE
 data_trial.df <- data.frame(data)
 data_trial.df <- data_trial.df[!is.na(data_trial.df$waterbody_type),]
+data_trial.df <- data_trial.df[(data_trial.df$state != "NULL"),]
+#I need to remove the Sonora data because its going to remove all 4 data points and error
+#data_trial.df1 <- data_trial.df[data_trial.df$state!="Sonora",]
+data_trial.df <- data_trial.df[data_trial.df$state!="Iowa",]
+data_trial.df <- data_trial.df[data_trial.df$state!="British Columbia",]
+data_trial.df <- data_trial.df[data_trial.df$state!="Nova Scotia",]
+data_trial.df <- data_trial.df[data_trial.df$state!="Wyoming",]
+data_trial.df <- data_trial.df[data_trial.df$state!="California",]
+#data_trial.df1 <- data_trial.df1[data_trial.df1$state!="Georgia",]
+#data_trial.df1 <- data_trial.df1[data_trial.df1$state!="North Dakota",]
+#data_trial.df1 <- data_trial.df1[data_trial.df1$state!="South Dakota",]
+#data_trial.df1 <- data_trial.df1[data_trial.df1$state!="Colorado",]
+#data_trial.df1 <- data_trial.df1[data_trial.df1$state!="Ontario",]
+
+#Sackatchewan has effort_day but NA in the effort column, why?
+
 state.results <- list()
 
 for(s in unique(data_trial.df$state)){
@@ -48,11 +82,13 @@ for(s in unique(data_trial.df$state)){
       for(w in unique(species.i.method.j$waterbody_type)){
         species.i.method.j.type.w <- species.i.method.j[species.i.method.j$waterbody_type==w,]
         
+        
+        #potentially need to clean up this code
         #CPUE for fish/hour
         if("boat_electrofishing" %in% species.i.method.j.type.w$method 
-           | "tow_barge_electrofishing" %in% species.i.method.j.type.w$method
            | "raft_electrofishing" %in% species.i.method.j.type.w$method
-           | "trawl" %in% species.i.method.j.type.w$method){
+           | "small_mesh_trawl" %in% species.i.method.j.type.w$method
+           | "large_mesh_trawl" %in% species.i.method.j.type.w$method){
           electro_data <- species.i.method.j.type.w
           electro_data$effort <- electro_data$effort/3600
           electro_data$CPUE <- electro_data$count/electro_data$effort
@@ -62,6 +98,7 @@ for(s in unique(data_trial.df$state)){
             summarize_at(vars(CPUE),funs(mean,se), na.rm=TRUE)
           colnames(electro.CPUE)[5] <- "Mean_by_ID"
           
+          electro.CPUE <- electro.CPUE[!is.na(electro.CPUE$Mean_by_ID),]
           CPUE_electro_ID <- electro.CPUE%>%
             dplyr::mutate(count=n()) %>%
             group_by(common_name,method,waterbody_type, count)%>%
@@ -77,6 +114,7 @@ for(s in unique(data_trial.df$state)){
            | "small_catfish_hoopnet" %in% species.i.method.j.type.w$method  
            | "large_catfish_hoopnet" %in% species.i.method.j.type.w$method
            | "seine" %in% species.i.method.j.type.w$method 
+           | "drifting_trammel_net" %in% species.i.method.j.type.w$method
            | "bag_seine" %in% species.i.method.j.type.w$method
            | "stream_seine" %in% species.i.method.j.type.w$method) {
           gill_data <- species.i.method.j.type.w
@@ -89,6 +127,7 @@ for(s in unique(data_trial.df$state)){
             summarize_at(vars(CPUE),funs(mean,se), na.rm=TRUE)
           colnames(gill_data_CPUE)[5] <- "Mean_by_ID"
           
+          gill_data_CPUE <- gill_data_CPUE[!is.na(gill_data_CPUE$Mean_by_ID),]
           CPUE_gill_ID <- gill_data_CPUE%>%
             dplyr::mutate(count=n()) %>%
             group_by(common_name,method,waterbody_type, count)%>%
@@ -99,14 +138,17 @@ for(s in unique(data_trial.df$state)){
         
         #CPUE fish/100m2 and fish/hour pass 1 only
         if("backpack_electrofishing" %in% species.i.method.j.type.w$method
-           | "snorkel" %in% species.i.method.j.type.w$method) {
+           | "snorkel" %in% species.i.method.j.type.w$method
+           | "tow_barge_electrofishing" %in% species.i.method.j.type.w$method) {
           backpack_data <- species.i.method.j.type.w
-          #backpack_data <- backpack_data %>%
-           # filter(!pass %in% c("2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26" ))
-          backpack_data$total_m2 <- as.numeric(as.character(backpack_data$total_m2))
+          backpack_data$total_m2_sum <- as.numeric(as.character(backpack_data$total_m2_sum))
           backpack_data$count <- as.numeric(backpack_data$count)
-          backpack_data$CPUE_distance <- backpack_data$count/backpack_data$total_m2
           
+          #number of fish *100/ divided by total disance sampled m2 to convert to fish/100m2
+          backpack_data$CPUE_distance <- ((backpack_data$count*100)/backpack_data$total_m2_sum)
+          
+          #effort converted to hours
+          #in some cases both distance and time were reported and will be both be averaged separately
           backpack_data$effort <- backpack_data$effort/3600
           backpack_data$CPUE <- backpack_data$count/backpack_data$effort
           
@@ -115,6 +157,7 @@ for(s in unique(data_trial.df$state)){
             summarize_at(vars(CPUE_distance),funs(mean,se), na.rm=TRUE)
           colnames(backpack_CPUE_distance)[5] <- "Mean_by_ID"
           
+          backpack_CPUE_distance <- backpack_CPUE_distance[!is.na(backpack_CPUE_distance$Mean_by_ID),]
           CPUE_backpack_ID <- backpack_CPUE_distance%>%
             dplyr::mutate(count=n()) %>%
             group_by(common_name,method,waterbody_type,count)%>%
@@ -129,6 +172,7 @@ for(s in unique(data_trial.df$state)){
             summarize_at(vars(CPUE),funs(mean,se), na.rm=TRUE)
           colnames(backpack_CPUE_time)[5] <- "Mean_by_ID"
           
+          backpack_CPUE_time <- backpack_CPUE_time[!is.na(backpack_CPUE_time$Mean_by_ID),]
           CPUE_time_backpack_ID <- backpack_CPUE_time%>%
             dplyr::mutate(count=n()) %>%
             group_by(common_name,method,waterbody_type,count)%>%
@@ -159,3 +203,7 @@ for(s in unique(data_trial.df$state)){
 
 } ## s    
 state.CPUE.results <- rbindlist(state.results)
+
+write.csv(state.CPUE.results, "AFS_state_cpue_092524.csv")
+
+

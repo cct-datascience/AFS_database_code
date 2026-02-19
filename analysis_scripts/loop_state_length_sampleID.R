@@ -6,8 +6,11 @@ library(FSA)
 library(magrittr)
 library(data.table)
 
-setwd
-data <- read.csv("name")
+data <- read.csv("AFS_fishdata_FINAL_112121.csv")
+data <- read.csv("AZ_test.csv")
+
+# rerun 032524
+data <- data_length
 
 data$weight_g <- as.numeric(as.character(data$weight_g))
 data$total_length_mm <- as.numeric(as.character(data$total_length_mm))
@@ -107,4 +110,6 @@ for(s in unique(data_trial.df$state)){
 state.length.results <- rbindlist(state.results.PSD)
 
 Final.state <- rbind.fill(state.length.results, state.weight.results, state.CPUE.results)
-write.csv(Final.state, "Final_results_state_update.csv")
+
+write.csv(Final.state, "C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_state_averages_092524.csv", row.names = FALSE)
+
