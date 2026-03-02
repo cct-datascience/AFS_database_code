@@ -1,16 +1,18 @@
-library(tidyverse)
+# library(tidyverse)
 library(dplyr)
 library(plyr)
 library(purrr)
 library(FSA)
-library(magrittr)
+# library(magrittr)
 library(data.table)
 
-data <- read.csv("AFS_fishdata_FINAL_112121.csv")
-data <- read.csv("AZ_test.csv")
+# data <- read.csv("AFS_fishdata_FINAL_112121.csv")
+# data <- read.csv("AZ_test.csv")
+# 
+# # rerun 032524
+# data <- data_length
+data <- read.csv("analysis_scripts/input_data/AFS_final_01132026.csv")
 
-# rerun 032524
-data <- data_length
 
 data$weight_g <- as.numeric(as.character(data$weight_g))
 data$total_length_mm <- as.numeric(as.character(data$total_length_mm))
@@ -33,8 +35,20 @@ data_trial.df <- data_trial.df[!is.na(data_trial.df$total_length_mm),]
 data_trial.df <- data_trial.df[!is.na(data_trial.df$waterbody_type),]
 state.results.PSD <- list()
 
+# for loop testing purposes (todo: delete when no longer needed)
+data_trial.df <- data_trial.df %>% 
+  filter(state == "Wyoming")
+# better example will have multiple gcat categories
+# s <- unique(data_trial.df$state)[1]
+# i <- unique(state.s$common_name)[27]
+# j <- unique(species.i$method)[3]
+# w <- unique(species.i.method.j$waterbody_type)[1]
+# u <- unique(species.i.method.j.type.w$watername_method_yearID)[3]
+
+# todo: replace loop w/ groupby? 
 for(s in unique(data_trial.df$state)){
   state.s <- data_trial.df[data_trial.df$state==s,]
+  #todo: move this outside of loop with rest of removing NA
   state.s <- state.s[!is.na(state.s$common_name),]
   stock.results.PSD <- list()
   
@@ -59,20 +73,28 @@ for(s in unique(data_trial.df$state)){
         psd <-as.data.frame(psd)
         psd$gcat <- as.character(psd$gcat)
         
-        if("stock" %notin% psd$gcat){psd[nrow(psd)+1,] <- data.frame(common_name=i, gcat="stock",Freq=0)} 
-        if("quality" %notin% psd$gcat){psd[nrow(psd)+1,] <- data.frame(common_name=i, gcat="quality",Freq=0)}
-        if("preferred" %notin% psd$gcat){psd[nrow(psd)+1,] <- data.frame(common_name=i, gcat="preferred",Freq=0)}
-        if("memorable" %notin% psd$gcat){psd[nrow(psd)+1,] <- data.frame(common_name=i, gcat="memorable",Freq=0)}
-        if("trophy" %notin% psd$gcat){psd[nrow(psd)+1,] <- data.frame(common_name=i, gcat="trophy",Freq=0)}
+        # adding a row to psd df with frequency of 0 for every category that isn't there already
+        if("stock" %notin% psd$gcat){
+          psd[nrow(psd)+1,] <- data.frame(common_name=i, gcat="stock",Freq=0)} 
+        if("quality" %notin% psd$gcat){
+          psd[nrow(psd)+1,] <- data.frame(common_name=i, gcat="quality",Freq=0)}
+        if("preferred" %notin% psd$gcat){
+          psd[nrow(psd)+1,] <- data.frame(common_name=i, gcat="preferred",Freq=0)}
+        if("memorable" %notin% psd$gcat){
+          psd[nrow(psd)+1,] <- data.frame(common_name=i, gcat="memorable",Freq=0)}
+        if("trophy" %notin% psd$gcat){
+          psd[nrow(psd)+1,] <- data.frame(common_name=i, gcat="trophy",Freq=0)}
         
         species.method.type.id.results[[u]] <- psd
        
         } ## u
-        species.method.type.id.results.df <- rbindlist(species.method.type.id.results, idcol = "watername_method_yearID",  fill=TRUE)
-        
+        species.method.type.id.results.df <- rbindlist(species.method.type.id.results, 
+                                                       idcol = "watername_method_yearID",  
+                                                       fill=TRUE)
+        # is species.method.type.id.results.df supposed to be species.i.method.j.type.w.id.u?
         species.method.type.id.results.final <- species.method.type.id.results.df%>%
           group_by(gcat) %>%
-          summarize_at(vars(Freq),funs(mean, se), na.rm=TRUE)
+          summarize_at(vars(Freq), list(mean = mean, se = se), na.rm=TRUE)
         
         colnames(species.method.type.id.results.final)[2] <- "mean"
         species.method.type.id.results.final$metric <- "Length Frequency"
@@ -109,7 +131,47 @@ for(s in unique(data_trial.df$state)){
 } ## s
 state.length.results <- rbindlist(state.results.PSD)
 
-Final.state <- rbind.fill(state.length.results, state.weight.results, state.CPUE.results)
+# latter two come from other two state scripts
+#Final.state <- rbind.fill(state.length.results, state.weight.results, state.CPUE.results)
 
-write.csv(Final.state, "C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_state_averages_092524.csv", row.names = FALSE)
+#write.csv(Final.state, "C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_state_averages_092524.csv", row.names = FALSE)
+
+# Assess differences with current summarized data
+old_summary_df <- read.csv("app/standardized_fish_data.csv")
+
+old_summary_single_state <- old_summary_df %>% 
+  filter(area == "Wyoming", 
+         metric == "Length Frequency")
+
+data_dates <- data %>% 
+  select(common_name, method, waterbody_type, gcat, state, year) %>% 
+  distinct()
+
+new_summary_df <- state.length.results %>% 
+  # todo: put this back in once confirmed
+  #filter(method %notin% c("fyke_net", "gill_net_fall", "gill_net_spring")) %>% 
+  #left_join(data_dates) %>% 
+  mutate(mean = round(mean, 1), 
+         se = round(se, 1), 
+         method = stringr::str_replace_all(method, "_", " "), 
+         waterbody_type = stringr::str_replace_all(waterbody_type, "_", " "), 
+         common_name = case_when(common_name == "Brown Trout (lotic)" ~ "Brown Trout",
+                                 common_name == "Brook Trout (lotic)" ~ "Brook Trout",
+                                 TRUE ~ common_name), 
+         gcat = case_when(gcat == "stock" ~ "Stock-Quality", 
+                          gcat == "quality" ~ "Quality-Preferred", 
+                          gcat == "preferred" ~ "Preferred-Memorable", 
+                          gcat == "memorable" ~ "Memorable-Trophy", 
+                          gcat == "trophy" ~ "Trophy", 
+                          TRUE ~ "ERROR"))
+unique(new_summary_df$gcat)
+
+comp_summary <- full_join(old_summary_single_state, new_summary_df, 
+                          by = c("common_name", "method", "waterbody_type", "gcat", "mean", "se", "metric"), 
+                          keep = TRUE) #%>% 
+  #filter(!is.na(common_name.y))
+
+
+
+
 

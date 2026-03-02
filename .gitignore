@@ -9,6 +9,7 @@
 # Data files
 app/ecoregions1*
 app/sites.csv
+analysis_scripts/input_data/*
 
 # Will delete later
 test_app/

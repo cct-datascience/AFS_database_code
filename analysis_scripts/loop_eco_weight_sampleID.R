@@ -6,13 +6,14 @@ library(FSA)
 library(magrittr)
 library(data.table)
 
-data <- read.csv("AFS_fishdata_FINAL_112121.csv")
-data <- read.csv("AZ_test.csv")
-data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_states/AFS_fishdata_FINAL_012423.csv")
-
-# re-run 3/26/24 
-# re-run 3/26/24 
-data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_data_weight_outlier_032424.csv")
+# data <- read.csv("AFS_fishdata_FINAL_112121.csv")
+# data <- read.csv("AZ_test.csv")
+# data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_states/AFS_fishdata_FINAL_012423.csv")
+# 
+# # re-run 3/26/24 
+# # re-run 3/26/24 
+# data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_data_weight_outlier_032424.csv")
+data <- read.csv("analysis_scripts/input_data/AFS_final_01132026.csv")
 
 
 data$weight_g <- as.numeric(as.character(data$weight_g))
@@ -37,26 +38,37 @@ data_trial.df <- data_trial.df[!is.na(data_trial.df$waterbody_type),]
 data_trial.df <- data_trial.df[!is.na(data_trial.df$ecoregion),]
 data_trial.df <- data_trial.df[data_trial.df$ecoregion!=0,]
 
+# for loop testing purposes (todo: delete when no longer needed)
+data_trial.df <- data_trial.df %>% 
+  filter(ecoregion == 7, 
+         common_name != "Cutthroat Trout", 
+         common_name != "Rainbow Trout")
+
 eco.results <- list()
 
 for(s in unique(data_trial.df$ecoregion)){
+  #s <- 7
   state.s <- data_trial.df[data_trial.df$ecoregion==s,]
   state.s <- state.s[!is.na(state.s$common_name),]
   stock.results.wr <- list()
 
  for(i in unique(state.s$common_name)){
+   #i <- "Black Crappie"
     species.i <- state.s[state.s$common_name==i,]
     results.species.method.wr <- list()
   
    for(j in unique(species.i$method)){
+     #j <- "boat_electrofishing"
     species.i.method.j <- species.i[species.i$method==j,]
     results.species.method.type <- list()
      
     for(w in unique(species.i.method.j$waterbody_type)){
+      #w <- "small_standing_waters"
       species.i.method.j.type.w <- species.i.method.j[species.i.method.j$waterbody_type==w,]
       results.species.method.type.id <- list()
       
       for(u in unique(species.i.method.j.type.w$watername_method_yearID)){
+        #u <- unique(species.i.method.j.type.w$watername_method_yearID)[2]
         species.i.method.j.type.w.id.u <- species.i.method.j.type.w[species.i.method.j.type.w$watername_method_yearID==u,]
       
       #Relative Weight
@@ -70,7 +82,7 @@ for(s in unique(data_trial.df$ecoregion)){
         #can I exclude individual relative weight outliers 
         weight.means <- weight_all %>%
           group_by(gcat)%>%
-          summarize_at(vars(Wr),funs( mean), na.rm=TRUE)
+          summarize_at(vars(Wr), list(Wr = mean), na.rm=TRUE)
         
         weight.means$watername_method_yearID <- u
         results.species.method.type.id[[u]] <- weight.means
@@ -122,3 +134,30 @@ eco.results[[s]] <- eco.s.results
 
 } ##s
 eco.weight.results <- rbindlist(eco.results)
+
+# Assess differences with current summarized data
+old_summary_df <- read.csv("app/standardized_fish_data.csv")
+
+old_summary_single_eco <- old_summary_df %>% 
+  filter(area == "7 Marine West Coast Forest", 
+         metric == "Relative Weight")
+
+new_summary_df <- eco.weight.results %>% 
+  mutate(mean = round(mean, 1), 
+         se = round(se, 1), 
+         method = stringr::str_replace_all(method, "_", " "), 
+         waterbody_type = stringr::str_replace_all(waterbody_type, "_", " "), 
+         common_name = case_when(common_name == "Brown Trout (lotic)" ~ "Brown Trout",
+                                 common_name == "Brook Trout (lotic)" ~ "Brook Trout",
+                                 TRUE ~ common_name), 
+         gcat = case_when(gcat == "stock" ~ "Stock-Quality", 
+                          gcat == "quality" ~ "Quality-Preferred", 
+                          gcat == "preferred" ~ "Preferred-Memorable", 
+                          gcat == "memorable" ~ "Memorable-Trophy", 
+                          gcat == "trophy" ~ "Trophy", 
+                          TRUE ~ "ERROR"))
+unique(new_summary_df$gcat)
+
+comp_summary <- full_join(old_summary_single_eco, new_summary_df, 
+                          by = c("common_name", "method", "waterbody_type", "gcat", "mean", "se", "metric"), 
+                          keep = TRUE) #%>% 
