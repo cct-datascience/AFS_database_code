@@ -1,18 +1,10 @@
-# library(tidyverse)
 library(dplyr)
 library(plyr)
 library(purrr)
 library(FSA)
-# library(magrittr)
 library(data.table)
 
-# data <- read.csv("AFS_fishdata_FINAL_112121.csv")
-# data <- read.csv("AZ_test.csv")
-# 
-# # rerun 032524
-# data <- data_length
 data <- read.csv("analysis_scripts/input_data/AFS_final_01132026.csv")
-
 
 data$weight_g <- as.numeric(as.character(data$weight_g))
 data$total_length_mm <- as.numeric(as.character(data$total_length_mm))
@@ -36,8 +28,8 @@ data_trial.df <- data_trial.df[!is.na(data_trial.df$waterbody_type),]
 state.results.PSD <- list()
 
 # for loop testing purposes (todo: delete when no longer needed)
-data_trial.df <- data_trial.df %>% 
-  filter(state == "Wyoming")
+# data_trial.df <- data_trial.df %>% 
+#   filter(state %in% c("Illinois", "West Virginia", "Minnesota", "Idaho"))
 # better example will have multiple gcat categories
 # s <- unique(data_trial.df$state)[1]
 # i <- unique(state.s$common_name)[27]
@@ -140,38 +132,57 @@ state.length.results <- rbindlist(state.results.PSD)
 old_summary_df <- read.csv("app/standardized_fish_data.csv")
 
 old_summary_single_state <- old_summary_df %>% 
-  filter(area == "Wyoming", 
+  filter(area %notin% c("Ontario", "North America", "10 North American Deserts", "12 Southern Semi-Arid Highlands", "13 Temperate Sierras", "15 Tropical Wet Forests Northern Forests", "4 Hudson Plain", "5 Northern Forests", "6 Northwestern Forested Mountains", "7 Marine West Coast Forest", "8 Eastern Temperate Forests", "9 Great Plains"),  
          metric == "Length Frequency")
 
-data_dates <- data %>% 
-  select(common_name, method, waterbody_type, gcat, state, year) %>% 
-  distinct()
-
 new_summary_df <- state.length.results %>% 
-  # todo: put this back in once confirmed
-  #filter(method %notin% c("fyke_net", "gill_net_fall", "gill_net_spring")) %>% 
-  #left_join(data_dates) %>% 
   mutate(mean = round(mean, 1), 
          se = round(se, 1), 
          method = stringr::str_replace_all(method, "_", " "), 
          waterbody_type = stringr::str_replace_all(waterbody_type, "_", " "), 
          common_name = case_when(common_name == "Brown Trout (lotic)" ~ "Brown Trout",
                                  common_name == "Brook Trout (lotic)" ~ "Brook Trout",
+                                 common_name == "Brown Trout (lentic)" ~ "Brown Trout",
+                                 common_name == "Brook Trout (lentic)" ~ "Brook Trout",
                                  TRUE ~ common_name), 
          gcat = case_when(gcat == "stock" ~ "Stock-Quality", 
                           gcat == "quality" ~ "Quality-Preferred", 
                           gcat == "preferred" ~ "Preferred-Memorable", 
                           gcat == "memorable" ~ "Memorable-Trophy", 
                           gcat == "trophy" ~ "Trophy", 
-                          TRUE ~ "ERROR"))
+                          TRUE ~ "ERROR")) %>% 
+  filter(n > 4)
 unique(new_summary_df$gcat)
 
 comp_summary <- full_join(old_summary_single_state, new_summary_df, 
-                          by = c("common_name", "method", "waterbody_type", "gcat", "mean", "se", "metric"), 
-                          keep = TRUE) #%>% 
-  #filter(!is.na(common_name.y))
+                          by = c("area" = "state", "common_name", "method", "waterbody_type", "gcat", "mean", "se", "metric"), 
+                          keep = TRUE) 
 
+old_only <- comp_summary %>% 
+  filter(is.na(common_name.y)) %>% 
+  select(contains(".x"), N, area) %>% 
+  rename_with(~ gsub(".x", "", .x))
+new_only <- comp_summary %>% 
+  filter(is.na(common_name.x)) %>% 
+  select(contains(".y"), n, state) %>% 
+  rename_with(~ gsub(".y", "", .x))
 
+length(which(is.na(comp_summary$common_name.x)))
+length(which(is.na(comp_summary$common_name.y)))
 
+no_match_comp <- full_join(old_only, new_only, 
+                           by = c("N" = "n", 
+                                  "area" = "state", 
+                                  "waterbody_type" = "waterbo_pe", 
+                                  "common_name", 
+                                  #"method", 
+                                  "gcat"), 
+                           keep = TRUE) %>% 
+  filter(is.na(common_name.x) | is.na(common_name.y))
+
+# these below have no match
+# first is old summary data with no match; second is new summary data with no match
+length(which(!is.na(no_match_comp$common_name.x)))
+length(which(!is.na(no_match_comp$common_name.y)))
 
 
