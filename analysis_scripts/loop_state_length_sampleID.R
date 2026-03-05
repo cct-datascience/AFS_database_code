@@ -13,14 +13,6 @@ data$total_m2 <- as.numeric(as.character(data$total_m2))
 data$count <- as.numeric(as.character(data$count))
 `%notin%` <- Negate(`%in%`)
 
-#summarizing by percentile 
-p <- c(0.05, 0.25, 0.50, 0.75, 0.95)
-p_names <- map_chr(p, ~paste0(.x*100,"%"))
-p_funs <- map(p, ~partial(quantile, probs = .x, na.rm.= TRUE))%>%
-  set_names(nm = p_names)
-p_funs
-options(scipen=10)
-
 # code for length-frequency, relative weight and CPUE (boat electrofishing) in loop
 data_trial.df <- data.frame(data)
 data_trial.df <- data_trial.df[!is.na(data_trial.df$total_length_mm),]
@@ -131,7 +123,7 @@ state.length.results <- rbindlist(state.results.PSD)
 # Assess differences with current summarized data
 old_summary_df <- read.csv("app/standardized_fish_data.csv")
 
-old_summary_single_state <- old_summary_df %>% 
+old_summary_state <- old_summary_df %>% 
   filter(area %notin% c("Ontario", "North America", "10 North American Deserts", "12 Southern Semi-Arid Highlands", "13 Temperate Sierras", "15 Tropical Wet Forests Northern Forests", "4 Hudson Plain", "5 Northern Forests", "6 Northwestern Forested Mountains", "7 Marine West Coast Forest", "8 Eastern Temperate Forests", "9 Great Plains"),  
          metric == "Length Frequency")
 
@@ -154,26 +146,26 @@ new_summary_df <- state.length.results %>%
   filter(n > 4)
 unique(new_summary_df$gcat)
 
-comp_summary <- full_join(old_summary_single_state, new_summary_df, 
+comp_summary <- full_join(old_summary_state, new_summary_df, 
                           by = c("area" = "state", "common_name", "method", "waterbody_type", "gcat", "mean", "se", "metric"), 
                           keep = TRUE) 
-
-old_only <- comp_summary %>% 
-  filter(is.na(common_name.y)) %>% 
-  select(contains(".x"), N, area) %>% 
-  rename_with(~ gsub(".x", "", .x))
-new_only <- comp_summary %>% 
-  filter(is.na(common_name.x)) %>% 
-  select(contains(".y"), n, state) %>% 
-  rename_with(~ gsub(".y", "", .x))
 
 length(which(is.na(comp_summary$common_name.x)))
 length(which(is.na(comp_summary$common_name.y)))
 
+old_only <- comp_summary %>% 
+  filter(is.na(common_name.y)) %>% 
+  select(contains(".x"), N, area) %>% 
+  rename_with(~ gsub(".x$", "", .x))
+new_only <- comp_summary %>% 
+  filter(is.na(common_name.x)) %>% 
+  select(contains(".y"), n, state) %>% 
+  rename_with(~ gsub(".y$", "", .x))
+
 no_match_comp <- full_join(old_only, new_only, 
                            by = c("N" = "n", 
                                   "area" = "state", 
-                                  "waterbody_type" = "waterbo_pe", 
+                                  "waterbody_type",  
                                   "common_name", 
                                   #"method", 
                                   "gcat"), 
@@ -184,5 +176,17 @@ no_match_comp <- full_join(old_only, new_only,
 # first is old summary data with no match; second is new summary data with no match
 length(which(!is.na(no_match_comp$common_name.x)))
 length(which(!is.na(no_match_comp$common_name.y)))
+
+old_only_final <- no_match_comp %>% 
+  filter(is.na(common_name.y)) %>% 
+  select(contains(".x"), N, area) %>% 
+  rename_with(~ gsub(".x$", "", .x))
+new_only_final <- no_match_comp %>% 
+  filter(is.na(common_name.x)) %>% 
+  select(contains(".y"), n, state) %>% 
+  rename_with(~ gsub(".y$", "", .x))
+
+readr::write_csv(old_only_final, "analysis_scripts/no_match/state_length_previous.csv")
+readr::write_csv(new_only_final, "analysis_scripts/no_match/state_length_current.csv")
 
 

@@ -1,17 +1,10 @@
-library(tidyverse)
 library(dplyr)
 library(plyr)
 library(purrr)
 library(FSA)
-library(magrittr)
 library(data.table)
 
-#re-run 01132026
-data <- read.csv("C:/Users/etracy1/Desktop/final_AFS_2026/AFS_final_01132026.csv")
-
-#re-run rainbow trout 060324
-#data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/Rainbow_trout_raw.csv")
-
+data <- read.csv("analysis_scripts/input_data/AFS_final_01132026.csv")
 
 data$weight_g <- as.numeric(as.character(data$weight_g))
 data$total_length_mm <- as.numeric(as.character(data$total_length_mm))
@@ -19,14 +12,6 @@ data$effort <- as.numeric(as.character(data$effort))
 data$total_m2 <- as.numeric(as.character(data$total_m2))
 data$count <- as.numeric(as.character(data$count))
 `%notin%` <- Negate(`%in%`)
-
-#summarizing by percentile 
-p <- c(0.05, 0.25, 0.50, 0.75, 0.95)
-p_names <- map_chr(p, ~paste0(.x*100,"%"))
-p_funs <- map(p, ~partial(quantile, probs = .x, na.rm.= TRUE))%>%
-  set_names(nm = p_names)
-p_funs
-options(scipen=10)
 
 # code for length-frequency, relative weight and CPUE (boat electrofishing) in loop
 data_trial.df <- data.frame(data)
@@ -70,7 +55,7 @@ for(i in unique(data_trial.df$common_name)){
       
       species.method.type.id.results.final <- species.method.type.id.results.df%>%
         group_by(gcat) %>%
-        summarize_at(vars(Freq),funs(mean, se), na.rm=TRUE)
+        summarize_at(vars(Freq), list(mean = mean, se = se), na.rm=TRUE)
       
       colnames(species.method.type.id.results.final)[2] <- "mean"
       species.method.type.id.results.final$metric <- "Length Frequency"
@@ -105,13 +90,77 @@ for(i in unique(data_trial.df$common_name)){
 } # i
 NorthAmerica.results.length <- rbindlist(stock.results.PSD, idcol="common_name", fill=TRUE)
 
-write.csv(NorthAmerica.results.length, "C:/Users/etracy1/Desktop/final_AFS_2026/northamerica_length_results_01132026.csv", row.names = FALSE)
+# Assess differences with current summarized data
+old_summary_df <- read.csv("app/standardized_fish_data.csv")
 
+old_summary_single_na <- old_summary_df %>% 
+  filter(area == "North America", 
+         metric == "Length Frequency")
 
+new_summary_df <- NorthAmerica.results.length %>% 
+  mutate(mean = round(mean, 1), 
+         se = round(se, 1), 
+         method = stringr::str_replace_all(method, "_", " "), 
+         waterbody_type = stringr::str_replace_all(waterbody_type, "_", " "), 
+         common_name = case_when(common_name == "Brown Trout (lotic)" ~ "Brown Trout",
+                                 common_name == "Brook Trout (lotic)" ~ "Brook Trout",
+                                 common_name == "Brown Trout (lentic)" ~ "Brown Trout",
+                                 common_name == "Brook Trout (lentic)" ~ "Brook Trout",
+                                 TRUE ~ common_name), 
+         gcat = case_when(gcat == "stock" ~ "Stock-Quality", 
+                          gcat == "quality" ~ "Quality-Preferred", 
+                          gcat == "preferred" ~ "Preferred-Memorable", 
+                          gcat == "memorable" ~ "Memorable-Trophy", 
+                          gcat == "trophy" ~ "Trophy", 
+                          TRUE ~ "ERROR")) %>% 
+  filter(n > 4)
+unique(new_summary_df$gcat)
+
+comp_summary <- full_join(old_summary_single_na, new_summary_df, 
+                          by = c("common_name", "method", "waterbody_type", "gcat", "mean", "se", "metric"), 
+                          keep = TRUE) 
+
+length(which(is.na(comp_summary$common_name.x)))
+length(which(is.na(comp_summary$common_name.y)))
+
+old_only <- comp_summary %>% 
+  filter(is.na(common_name.y)) %>% 
+  select(contains(".x"), N, area) %>% 
+  rename_with(~ gsub(".x$", "", .x))
+new_only <- comp_summary %>% 
+  filter(is.na(common_name.x)) %>% 
+  select(contains(".y"), n) %>% 
+  rename_with(~ gsub(".y$", "", .x))
+
+no_match_comp <- full_join(old_only, new_only, 
+                           by = c("N" = "n",  
+                                  "waterbody_type", 
+                                  "common_name", 
+                                  #"method", 
+                                  "gcat"), 
+                           keep = TRUE) %>% 
+  filter(is.na(common_name.x) | is.na(common_name.y))
+
+# these below have no match
+# first is old summary data with no match; second is new summary data with no match
+length(which(!is.na(no_match_comp$common_name.x)))
+length(which(!is.na(no_match_comp$common_name.y)))
+
+old_only_final <- no_match_comp %>% 
+  filter(is.na(common_name.y)) %>% 
+  select(contains(".x"), N) %>% 
+  rename_with(~ gsub(".x", "", .x))
+new_only_final <- no_match_comp %>% 
+  filter(is.na(common_name.x)) %>% 
+  select(contains(".y"), n) %>% 
+  rename_with(~ gsub(".y", "", .x))
+
+readr::write_csv(old_only_final, "analysis_scripts/no_match/northamerica_length_previous.csv")
+readr::write_csv(new_only_final, "analysis_scripts/no_match/northamerica_length_current.csv")
+
+#write.csv(NorthAmerica.results.length, "C:/Users/etracy1/Desktop/final_AFS_2026/northamerica_length_results_01132026.csv", row.names = FALSE)
 #write.csv(lengthall, "C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/length_test.csv", row.names = FALSE)
-
 #all_rainbowtrout <- rbind.fill(NorthAmerica.results.length, eco.length.results, state.length.results)
-
 #write.csv(NorthAmerica.results.length, "C:/Users/etracy1/Desktop/Backup/length_test.csv", row.names = FALSE)
 
 
