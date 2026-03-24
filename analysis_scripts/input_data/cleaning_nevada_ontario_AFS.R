@@ -10,10 +10,10 @@ library(data.table)
 #data <- read.csv("AZ_test.csv")
 
 #cleaning AFS data, updating Nevada and Ontario
-data <- read.csv("C:/Users/eetracy/Desktop/AFS_lengthweight_cleaned_03182026.csv")
-data_effort <- read.csv("C:/Users/eetracy/Desktop/AFS_outlier_data_cleaned_052824.csv")
-data_2009 <- read.csv("C:/Users/eetracy/Desktop/2009_AFSdata.csv")
-outlier <- read.csv("C:/Users/eetracy/Desktop/AFS_database_chapter/outlier_AFS.csv")
+data <- read.csv("analysis_scripts/input_data/AFS_lengthweight_cleaned_03182026.csv")
+data_effort <- read.csv("analysis_scripts/input_data/AFS_outlier_data_cleaned_052824.csv")
+data_2009 <- read.csv("analysis_scripts/input_data/2009_AFSdata.csv")
+outlier <- read.csv("analysis_scripts/input_data/outlier_AFS.csv")
 
 #fixing Nevada
 data$method[data$state == "Nevada" & data$method == "tow_barge_electrofishing"] <- "boat_electrofishing"
@@ -143,7 +143,7 @@ nrow(data)
 unique(data$state) %>% sort()
 
 
-write.csv(data, "C:/Users/eetracy/Desktop/AFS_lengthweight_cleaned_NV_Ontario_update_03232026.csv")
+#write.csv(data, "analysis_scripts/input_data/AFS_lengthweight_cleaned_NV_Ontario_update_03232026.csv")
 
 ###############################################################################################
 # now joining ontario with effort data
@@ -171,4 +171,4 @@ data_effort <- bind_rows(data_effort, ontario_clean)
 nrow(data_effort)
 unique(data_effort$state) %>% sort()
 
-write.csv(data_effort, "C:/Users/eetracy/Desktop/AFS_effort_cleaned_NV_Ontario_update_03232026.csv")
+#write.csv(data_effort, "analysis_scripts/input_data/AFS_effort_cleaned_NV_Ontario_update_03232026.csv")

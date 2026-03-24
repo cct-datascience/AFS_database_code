@@ -7,14 +7,7 @@ library(magrittr)
 library(reprex)
 library(data.table)
 
-data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_states/AFS_full_data_new_effort_031724.csv")
-# 3/17/24 re run for with new effort data
-data <- read.csv("AFS_fishdata_FINAL_112121.csv")
-data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_states/AZ_test.csv")
-data <- read_xlsx("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_states/AFS_test_data1.xlsx")
-# re-run 3/24/24 
-data <- data_method
-
+data <- read.csv("analysis_scripts/input_data/AFS_effort_cleaned_NV_Ontario_update_03232026.csv")
 
 data$weight_g <- as.numeric(as.character(data$weight_g))
 data$total_length_mm <- as.numeric(as.character(data$total_length_mm))
@@ -75,7 +68,7 @@ for(i in unique(state.s$common_name)){
         
         electro.CPUE <- electro_data%>%
           group_by(common_name, method, waterbody_type, watername_method_yearID)%>%
-          summarize_at(vars(CPUE),funs(mean,se), na.rm=TRUE)
+          summarize_at(vars(CPUE), list(mean = mean, se = se), na.rm=TRUE)
         colnames(electro.CPUE)[5] <- "Mean_by_ID"
         
         electro.CPUE <- electro.CPUE[!is.na(electro.CPUE$Mean_by_ID),]
@@ -104,7 +97,7 @@ for(i in unique(state.s$common_name)){
         
         gill_data_CPUE <- gill_data%>%
           group_by(common_name, method, waterbody_type, watername_method_yearID)%>%
-          summarize_at(vars(CPUE),funs(mean,se), na.rm=TRUE)
+          summarize_at(vars(CPUE), list(mean = mean, se = se), na.rm=TRUE)
         colnames(gill_data_CPUE)[5] <- "Mean_by_ID"
         
         gill_data_CPUE <- gill_data_CPUE[!is.na(gill_data_CPUE$Mean_by_ID),]
@@ -134,7 +127,7 @@ for(i in unique(state.s$common_name)){
         
         backpack_CPUE_distance <- backpack_data%>%
           group_by(common_name, method, waterbody_type, watername_method_yearID)%>%
-          summarize_at(vars(CPUE_distance),funs(mean,se), na.rm=TRUE)
+          summarize_at(vars(CPUE_distance), list(mean = mean, se = se), na.rm=TRUE)
         colnames(backpack_CPUE_distance)[5] <- "Mean_by_ID"
         
         backpack_CPUE_distance <- backpack_CPUE_distance[!is.na(backpack_CPUE_distance$Mean_by_ID),]
@@ -150,7 +143,7 @@ for(i in unique(state.s$common_name)){
         
         backpack_CPUE_time <- backpack_data%>%
           group_by(common_name, method, waterbody_type, watername_method_yearID)%>%
-          summarize_at(vars(CPUE),funs(mean,se), na.rm=TRUE)
+          summarize_at(vars(CPUE), list(mean = mean, se = se), na.rm=TRUE)
         colnames(backpack_CPUE_time)[5] <- "Mean_by_ID"
         
         backpack_CPUE_time <- backpack_CPUE_time[!is.na(backpack_CPUE_time$Mean_by_ID),]
@@ -185,3 +178,38 @@ eco.results[[s]] <- eco.s.results
 } ##s
 eco.CPUE.results <- rbindlist(eco.results)
 
+# Clean up format of summarized data and save out
+new_summary_df <- eco.CPUE.results %>% 
+  mutate(mean = round(mean, 1), 
+         se = round(se, 1), 
+         `5%` = round(`5%`, 1),
+         `25%` = round(`25%`, 1),
+         `50%` = round(`50%`, 1),
+         `75%` = round(`75%`, 1),
+         `95%` = round(`95%`, 1),
+         method = stringr::str_replace_all(method, "_", " "), 
+         waterbody_type = stringr::str_replace_all(waterbody_type, "_", " "), 
+         metric = stringr::str_replace_all(metric, "_", " "), 
+         common_name = case_when(common_name == "Brown Trout (lotic)"      ~ "Brown Trout",
+                                 common_name == "Brook Trout (lotic)"      ~ "Brook Trout",
+                                 common_name == "Brown Trout (lentic)"     ~ "Brown Trout",
+                                 common_name == "Brook Trout (lentic)"     ~ "Brook Trout",
+                                 common_name == "Rainbow Trout (lotic)"    ~ "Rainbow Trout",
+                                 common_name == "Rainbow Trout (lentic)"   ~ "Rainbow Trout",
+                                 common_name == "Cutthroat Trout (lotic)"  ~ "Cutthroat Trout",
+                                 common_name == "Cutthroat Trout (lentic)" ~ "Cutthroat Trout",
+                                 common_name == "Walleye (overall)"        ~ "Walleye",
+                                 common_name == "Spotted Bass (overall)" ~ "Spotted Bass",
+                                 common_name == "Paddlefish (overall)" ~ "Paddlefish", 
+                                 common_name == "Muskellunge (overall)" ~ "Muskellunge", 
+                                 TRUE ~ common_name), 
+         gcat = "") %>% 
+  filter(count > 4) %>% 
+  dplyr::rename(N = count, 
+                area = ecoregion, 
+                X5. = `5%`, 
+                X25. = `25%`, 
+                X50. = `50%`, 
+                X75. = `75%`, 
+                X95. = `95%`)
+readr::write_csv(new_summary_df, "analysis_scripts/output_data/effort_ecoregions.csv")

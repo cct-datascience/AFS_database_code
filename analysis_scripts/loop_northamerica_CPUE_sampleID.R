@@ -6,20 +6,7 @@ library(FSA)
 library(magrittr)
 library(data.table)
 
-setwd ("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_states")
-write.csv(df_effort_day, "C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_states/AFS_full_data_new_effort_032424.csv")
-data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_states/AFS_full_data_new_effort_032424.csv")
-# 3/17/24 re run for with new effort data
-
-# re-run 3/29/24 
-data <- data_method1
-
-# data test 4/3/24
-data <- read.csv("C:/Users/etracy1/Desktop/pina_blanca.csv")
-
-
-#data test 5/28/24
-data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_outlier_data_cleaned_052824.csv")
+data <- read.csv("analysis_scripts/input_data/AFS_effort_cleaned_NV_Ontario_update_03232026.csv")
 
 # I just did a find replace of total_m2 with total_m2_sum 
 
@@ -72,7 +59,7 @@ for(i in unique(data_trial.df$common_name)){
         #mean cpue by ID for only electrofishing
         electro.CPUE <- electro_data%>%
           group_by(common_name, method, waterbody_type, watername_method_yearID)%>%
-          summarize_at(vars(CPUE),funs(mean,se), na.rm=TRUE)
+          summarize_at(vars(CPUE),list(mean = mean, se = se), na.rm=TRUE)
         colnames(electro.CPUE)[5] <- "Mean_by_ID"
         
         #not sure if this is needed? Seems to be creating N count of rows in a column
@@ -103,7 +90,7 @@ for(i in unique(data_trial.df$common_name)){
         
         gill_data_CPUE <- gill_data%>%
           group_by(common_name, method, waterbody_type, watername_method_yearID)%>%
-          summarize_at(vars(CPUE),funs(mean,se), na.rm=TRUE)
+          summarize_at(vars(CPUE),list(mean = mean, se = se), na.rm=TRUE)
         colnames(gill_data_CPUE)[5] <- "Mean_by_ID"
         
         gill_data_CPUE <- gill_data_CPUE[!is.na(gill_data_CPUE$Mean_by_ID),]
@@ -134,7 +121,7 @@ for(i in unique(data_trial.df$common_name)){
         
         backpack_CPUE_distance <- backpack_data%>%
           group_by(common_name, method, waterbody_type, watername_method_yearID)%>%
-          summarize_at(vars(CPUE_distance),funs(mean,se), na.rm=TRUE)
+          summarize_at(vars(CPUE_distance),list(mean = mean, se = se), na.rm=TRUE)
         colnames(backpack_CPUE_distance)[5] <- "Mean_by_ID"
         
         backpack_CPUE_distance <- backpack_CPUE_distance[!is.na(backpack_CPUE_distance$Mean_by_ID),]
@@ -149,7 +136,7 @@ for(i in unique(data_trial.df$common_name)){
         ## Now repeat for time
         backpack_CPUE_time <- backpack_data%>%
           group_by(common_name, method, waterbody_type, watername_method_yearID)%>%
-          summarize_at(vars(CPUE),funs(mean,se), na.rm=TRUE)
+          summarize_at(vars(CPUE),list(mean = mean, se = se), na.rm=TRUE)
         colnames(backpack_CPUE_time)[5] <- "Mean_by_ID"
         
         backpack_CPUE_time <- backpack_CPUE_time[!is.na(backpack_CPUE_time$Mean_by_ID),]
@@ -180,12 +167,38 @@ CPUE_time.all <- rbindlist(stock.results.CPUE_time)
 
 NorthAmerica.results.CPUE <- rbind.fill(CPUE.all, CPUE_time.all)
 
-#rbind together separate NA, Eco, and State excel
-NorthAmerica <- read.csv("Test_results_NA_112122.csv")
-ecoregion <- read.csv("Test_results_eco_112122.csv")
-state <- read.csv("Test_results_state_112122.csv")
-
-all <- rbind.fill(NorthAmerica.results.CPUE, eco.CPUE.results, state.CPUE.results)
-#write.csv(all, "New_effort_AFSresults_031724.csv", row.names = FALSE)
-
-write.csv(all, "C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/CPUE_all_060324.csv", row.names = FALSE)
+# Clean up format of summarized data and save out
+new_summary_df <- NorthAmerica.results.CPUE %>% 
+  mutate(mean = round(mean, 1), 
+         se = round(se, 1), 
+         `5%` = round(`5%`, 1),
+         `25%` = round(`25%`, 1),
+         `50%` = round(`50%`, 1),
+         `75%` = round(`75%`, 1),
+         `95%` = round(`95%`, 1),
+         method = stringr::str_replace_all(method, "_", " "), 
+         waterbody_type = stringr::str_replace_all(waterbody_type, "_", " "), 
+         metric = stringr::str_replace_all(metric, "_", " "), 
+         common_name = case_when(common_name == "Brown Trout (lotic)"      ~ "Brown Trout",
+                                 common_name == "Brook Trout (lotic)"      ~ "Brook Trout",
+                                 common_name == "Brown Trout (lentic)"     ~ "Brown Trout",
+                                 common_name == "Brook Trout (lentic)"     ~ "Brook Trout",
+                                 common_name == "Rainbow Trout (lotic)"    ~ "Rainbow Trout",
+                                 common_name == "Rainbow Trout (lentic)"   ~ "Rainbow Trout",
+                                 common_name == "Cutthroat Trout (lotic)"  ~ "Cutthroat Trout",
+                                 common_name == "Cutthroat Trout (lentic)" ~ "Cutthroat Trout",
+                                 common_name == "Walleye (overall)"        ~ "Walleye",
+                                 common_name == "Spotted Bass (overall)" ~ "Spotted Bass",
+                                 common_name == "Paddlefish (overall)" ~ "Paddlefish", 
+                                 common_name == "Muskellunge (overall)" ~ "Muskellunge", 
+                                 TRUE ~ common_name), 
+         gcat = "", 
+         area = "North America") %>% 
+  filter(count > 4) %>% 
+  dplyr::rename(N = count, 
+                X5. = `5%`, 
+                X25. = `25%`, 
+                X50. = `50%`, 
+                X75. = `75%`, 
+                X95. = `95%`)
+readr::write_csv(new_summary_df, "analysis_scripts/output_data/effort_northamerica.csv")

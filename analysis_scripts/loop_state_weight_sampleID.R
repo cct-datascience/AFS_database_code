@@ -6,18 +6,13 @@ library(FSA)
 library(magrittr)
 library(data.table)
 
+data <- read.csv("analysis_scripts/input_data/AFS_lengthweight_cleaned_NV_Ontario_update_03232026.csv")
 
-#write.csv(data, "Kristina_example_data.csv", row.names = FALSE)
-
-#data <- read.csv("AFS_fishdata_FINAL_112121.csv")
-#data <- read.csv("Kristina_example_data.csv")
-
-# re-run 3/26/24 
-data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_outlier_data_cleaned_052824.csv")
-
-
-#data <- mutate(data,gcat=psdAdd(total_length_mm,common_name))
-
+data <- data %>%
+  mutate(common_name = case_when(
+    common_name == "Spotted Bass" ~ "Spotted Bass (overall)",
+    TRUE ~ common_name
+  ))
 data$weight_g <- as.numeric(as.character(data$weight_g))
 data$total_length_mm <- as.numeric(as.character(data$total_length_mm))
 data$effort <- as.numeric(as.character(data$effort))
@@ -37,6 +32,7 @@ options(scipen=10)
 data_trial.df <- data.frame(data)
 data_trial.df <- data_trial.df[!is.na(data_trial.df$weight_g),]
 data_trial.df <- data_trial.df[!is.na(data_trial.df$waterbody_type),]
+
 state.results <- list()
 
 for(s in unique(data_trial.df$state)){
@@ -71,7 +67,7 @@ for(s in unique(data_trial.df$state)){
           #can I exclude individual relative weight outliers 
           weight.means <- weight_all %>%
             group_by(gcat)%>%
-            summarize_at(vars(Wr),funs( mean), na.rm=TRUE)
+            summarize_at(vars(Wr), list(Wr = mean), na.rm=TRUE)
           
           weight.means$watername_method_yearID <- u
           results.species.method.type.id[[u]] <- weight.means
@@ -123,4 +119,45 @@ for(s in unique(data_trial.df$state)){
 } ##s
 state.weight.results <- rbindlist(state.results)
 
-write.csv(state.weight.results, "AFS_state_weight_092524.csv")
+# Clean up format of summarized data and save out
+new_summary_df <- state.weight.results %>% 
+  filter(!is.na(mean)) %>% 
+  mutate(mean = round(mean, 1), 
+         se = round(se, 1),
+         `5%` = round(`5%`, 1),
+         `25%` = round(`25%`, 1),
+         `50%` = round(`50%`, 1),
+         `75%` = round(`75%`, 1),
+         `95%` = round(`95%`, 1),
+         method = stringr::str_replace_all(method, "_", " "), 
+         waterbody_type = stringr::str_replace_all(waterbody_type, "_", " "), 
+         common_name = case_when(
+           common_name == "Brown Trout (lotic)"      ~ "Brown Trout",
+           common_name == "Brook Trout (lotic)"      ~ "Brook Trout",
+           common_name == "Brown Trout (lentic)"     ~ "Brown Trout",
+           common_name == "Brook Trout (lentic)"     ~ "Brook Trout",
+           common_name == "Rainbow Trout (lotic)"    ~ "Rainbow Trout",
+           common_name == "Rainbow Trout (lentic)"   ~ "Rainbow Trout",
+           common_name == "Cutthroat Trout (lotic)"  ~ "Cutthroat Trout",
+           common_name == "Cutthroat Trout (lentic)" ~ "Cutthroat Trout",
+           common_name == "Walleye (overall)"        ~ "Walleye",
+           common_name == "Spotted Bass (overall)" ~ "Spotted Bass",
+           common_name == "Paddlefish (overall)" ~ "Paddlefish", 
+           common_name == "Muskellunge (overall)" ~ "Muskellunge", 
+           TRUE ~ common_name), 
+         gcat = case_when(gcat == "stock" ~ "Stock-Quality", 
+                          gcat == "quality" ~ "Quality-Preferred", 
+                          gcat == "preferred" ~ "Preferred-Memorable", 
+                          gcat == "memorable" ~ "Memorable-Trophy", 
+                          gcat == "trophy" ~ "Trophy", 
+                          TRUE ~ "ERROR")) %>% 
+  filter(n > 4) %>% 
+  dplyr::rename(N = n, 
+                area = state, 
+                X5. = `5%`, 
+                X25. = `25%`, 
+                X50. = `50%`, 
+                X75. = `75%`, 
+                X95. = `95%`)
+unique(new_summary_df$gcat)
+readr::write_csv(new_summary_df, "analysis_scripts/output_data/weights_state.csv")

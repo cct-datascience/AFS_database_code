@@ -6,15 +6,13 @@ library(FSA)
 library(magrittr)
 library(data.table)
 
-# data <- read.csv("AFS_fishdata_FINAL_112121.csv")
-# data <- read.csv("AZ_test.csv")
-# data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_states/AFS_fishdata_FINAL_012423.csv")
-# 
-# # re-run 3/26/24 
-# # re-run 3/26/24 
-# data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_data_weight_outlier_032424.csv")
-data <- read.csv("analysis_scripts/input_data/AFS_lengthweight_cleaned_03182026.csv")
+data <- read.csv("analysis_scripts/input_data/AFS_lengthweight_cleaned_NV_Ontario_update_03232026.csv")
 
+data <- data %>%
+  mutate(common_name = case_when(
+    common_name == "Spotted Bass" ~ "Spotted Bass (overall)",
+    TRUE ~ common_name
+  ))
 data$weight_g <- as.numeric(as.character(data$weight_g))
 data$total_length_mm <- as.numeric(as.character(data$total_length_mm))
 data$effort <- as.numeric(as.character(data$effort))
@@ -37,13 +35,6 @@ data_trial.df <- data_trial.df[!is.na(data_trial.df$waterbody_type),]
 data_trial.df <- data_trial.df[!is.na(data_trial.df$ecoregion),]
 data_trial.df <- data_trial.df[data_trial.df$ecoregion!=0,]
 
-# for loop testing purposes (todo: delete when no longer needed)
-# data_trial.df <- data_trial.df %>% 
-#   filter(ecoregion == 7, 
-#          common_name != "Cutthroat Trout", 
-#          common_name != "Rainbow Trout")
-data_trial.df <- data_trial.df %>%
-  filter(common_name != "Spotted Bass")
 eco.results <- list()
 
 for(s in unique(data_trial.df$ecoregion)){
@@ -53,35 +44,24 @@ for(s in unique(data_trial.df$ecoregion)){
   stock.results.wr <- list()
 
  for(i in unique(state.s$common_name)){
-   #i <- "Black Crappie"
     species.i <- state.s[state.s$common_name==i,]
     results.species.method.wr <- list()
   
    for(j in unique(species.i$method)){
-     #j <- "boat_electrofishing"
     species.i.method.j <- species.i[species.i$method==j,]
     results.species.method.type <- list()
      
     for(w in unique(species.i.method.j$waterbody_type)){
-      #w <- "small_standing_waters"
       species.i.method.j.type.w <- species.i.method.j[species.i.method.j$waterbody_type==w,]
       results.species.method.type.id <- list()
       
       for(u in unique(species.i.method.j.type.w$watername_method_yearID)){
-        #u <- unique(species.i.method.j.type.w$watername_method_yearID)[2]
         species.i.method.j.type.w.id.u <- species.i.method.j.type.w[species.i.method.j.type.w$watername_method_yearID==u,]
       
       #Relative Weight
-        if(i == "Spotted Bass"){
-          weight <- mutate(species.i.method.j.type.w.id.u, Wr=wrAdd(weight_g, total_length_mm, common_name, 
-                                                                    WsOpts=list("Spotted Bass"=list(group="overall"))))
-          weight_all <- mutate(species.i.method.j.type.w.id.u, Wr=wrAdd(weight_g, total_length_mm, common_name, 
-                                                                        WsOpts=list("Spotted Bass"=list(group="overall"))))
-        } else {
-          weight <- mutate(species.i.method.j.type.w.id.u, Wr=wrAdd(weight_g, total_length_mm, common_name))
-          # Rename your mutated data frame so as to make it clear that it contains potential outliers
-          weight_all <- mutate(species.i.method.j.type.w.id.u, Wr=wrAdd(weight_g, total_length_mm, common_name))
-        }
+        weight <- mutate(species.i.method.j.type.w.id.u, Wr=wrAdd(weight_g, total_length_mm, common_name))
+        # Rename your mutated data frame so as to make it clear that it contains potential outliers
+        weight_all <- mutate(species.i.method.j.type.w.id.u, Wr=wrAdd(weight_g, total_length_mm, common_name))
         
         weight_all$Wr[weight_all$Wr<30 | weight_all$Wr>230] <- NA
         
@@ -141,72 +121,96 @@ eco.results[[s]] <- eco.s.results
 } ##s
 eco.weight.results <- rbindlist(eco.results)
 
-# Assess differences with current summarized data
-old_summary_df <- read.csv("app/standardized_fish_data.csv")
-
-old_summary_single_eco <- old_summary_df %>% 
-  filter(#area == "7 Marine West Coast Forest", 
-         stringr::str_detect(area, "\\d"), 
-         metric == "Relative Weight") %>% 
-  mutate(area = as.numeric(stringr::str_split_i(area, " ", 1)))
-
+# Clean up format of summarized data and save out
 new_summary_df <- eco.weight.results %>% 
   filter(!is.na(mean)) %>% 
   mutate(mean = round(mean, 1), 
-         se = round(se, 1), 
+         se = round(se, 1),
+         `5%` = round(`5%`, 1),
+         `25%` = round(`25%`, 1),
+         `50%` = round(`50%`, 1),
+         `75%` = round(`75%`, 1),
+         `95%` = round(`95%`, 1),
          method = stringr::str_replace_all(method, "_", " "), 
          waterbody_type = stringr::str_replace_all(waterbody_type, "_", " "), 
-         common_name = case_when(common_name == "Brown Trout (lotic)" ~ "Brown Trout",
-                                 common_name == "Brook Trout (lotic)" ~ "Brook Trout",
-                                 TRUE ~ common_name), 
+         common_name = case_when(
+           common_name == "Brown Trout (lotic)"      ~ "Brown Trout",
+           common_name == "Brook Trout (lotic)"      ~ "Brook Trout",
+           common_name == "Brown Trout (lentic)"     ~ "Brown Trout",
+           common_name == "Brook Trout (lentic)"     ~ "Brook Trout",
+           common_name == "Rainbow Trout (lotic)"    ~ "Rainbow Trout",
+           common_name == "Rainbow Trout (lentic)"   ~ "Rainbow Trout",
+           common_name == "Cutthroat Trout (lotic)"  ~ "Cutthroat Trout",
+           common_name == "Cutthroat Trout (lentic)" ~ "Cutthroat Trout",
+           common_name == "Walleye (overall)"        ~ "Walleye",
+           common_name == "Spotted Bass (overall)" ~ "Spotted Bass",
+           common_name == "Paddlefish (overall)" ~ "Paddlefish", 
+           common_name == "Muskellunge (overall)" ~ "Muskellunge", 
+           TRUE ~ common_name), 
          gcat = case_when(gcat == "stock" ~ "Stock-Quality", 
                           gcat == "quality" ~ "Quality-Preferred", 
                           gcat == "preferred" ~ "Preferred-Memorable", 
                           gcat == "memorable" ~ "Memorable-Trophy", 
                           gcat == "trophy" ~ "Trophy", 
                           TRUE ~ "ERROR")) %>% 
-  filter(n > 4)
+  filter(n > 4) %>% 
+  dplyr::rename(N = n, 
+         area = ecoregion, 
+         X5. = `5%`, 
+         X25. = `25%`, 
+         X50. = `50%`, 
+         X75. = `75%`, 
+         X95. = `95%`)
 unique(new_summary_df$gcat)
+readr::write_csv(new_summary_df, "analysis_scripts/output_data/weights_ecoregions.csv")
 
-comp_summary <- full_join(old_summary_single_eco, new_summary_df, 
-                          by = c("common_name", "method", "waterbody_type", "gcat", "mean", "se", "metric"), 
-                          keep = TRUE) #%>% 
-
-length(which(is.na(comp_summary$common_name.x)))
-length(which(is.na(comp_summary$common_name.y)))
-
-old_only <- comp_summary %>% 
-  filter(is.na(common_name.y)) %>% 
-  select(contains(".x"), N, area) %>% 
-  rename_with(~ gsub(".x$", "", .x))
-new_only <- comp_summary %>% 
-  filter(is.na(common_name.x)) %>% 
-  select(contains(".y"), n, ecoregion) %>% 
-  rename_with(~ gsub(".y$", "", .x))
-
-no_match_comp <- full_join(old_only, new_only, 
-                           by = c("N" = "n", 
-                                  "area" = "ecoregion", 
-                                  "waterbody_type", 
-                                  "common_name", 
-                                  #"method", 
-                                  "gcat"), 
-                           keep = TRUE) %>% 
-  #filter(!is.na(common_name.x), !is.na(common_name.y))
-  filter(is.na(common_name.x) | is.na(common_name.y))
-
-# these below have no match
-# first is old summary data with no match; second is new summary data with no match
-length(which(!is.na(no_match_comp$common_name.x)))
-length(which(!is.na(no_match_comp$common_name.y)))
-
-old_only_final <- no_match_comp %>% 
-  filter(is.na(common_name.y)) %>% 
-  select(contains(".x"), N, area) %>% 
-  rename_with(~ gsub(".x", "", .x))
-new_only_final <- no_match_comp %>% 
-  filter(is.na(common_name.x)) %>% 
-  select(contains(".y"), n, ecoregion) %>% 
-  rename_with(~ gsub(".y", "", .x))
-
-readr::write_csv(old_only_final, "analysis_scripts/no_match/ecoregion_weight_previous.csv")
+# Assess differences with current summarized data
+# old_summary_df <- read.csv("app/standardized_fish_data.csv")
+# 
+# old_summary_single_eco <- old_summary_df %>% 
+#   filter(stringr::str_detect(area, "\\d"), 
+#          metric == "Relative Weight") %>% 
+#   mutate(area = as.numeric(stringr::str_split_i(area, " ", 1)))
+# 
+# comp_summary <- full_join(old_summary_single_eco, new_summary_df, 
+#                           by = c("common_name", "method", "waterbody_type", "gcat", "mean", "se", "metric"), 
+#                           keep = TRUE) 
+# 
+# length(which(is.na(comp_summary$common_name.x)))
+# length(which(is.na(comp_summary$common_name.y)))
+# 
+# old_only <- comp_summary %>% 
+#   filter(is.na(common_name.y)) %>% 
+#   select(contains(".x"), N, area) %>% 
+#   rename_with(~ gsub(".x$", "", .x))
+# new_only <- comp_summary %>% 
+#   filter(is.na(common_name.x)) %>% 
+#   select(contains(".y"), n, ecoregion) %>% 
+#   rename_with(~ gsub(".y$", "", .x))
+# 
+# no_match_comp <- full_join(old_only, new_only, 
+#                            by = c("N" = "n", 
+#                                   "area" = "ecoregion", 
+#                                   "waterbody_type", 
+#                                   "common_name", 
+#                                   #"method", 
+#                                   "gcat"), 
+#                            keep = TRUE) %>% 
+#   #filter(!is.na(common_name.x), !is.na(common_name.y))
+#   filter(is.na(common_name.x) | is.na(common_name.y))
+# 
+# # these below have no match
+# # first is old summary data with no match; second is new summary data with no match
+# length(which(!is.na(no_match_comp$common_name.x)))
+# length(which(!is.na(no_match_comp$common_name.y)))
+# 
+# old_only_final <- no_match_comp %>% 
+#   filter(is.na(common_name.y)) %>% 
+#   select(contains(".x"), N, area) %>% 
+#   rename_with(~ gsub(".x", "", .x))
+# new_only_final <- no_match_comp %>% 
+#   filter(is.na(common_name.x)) %>% 
+#   select(contains(".y"), n, ecoregion) %>% 
+#   rename_with(~ gsub(".y", "", .x))
+# 
+# #readr::write_csv(old_only_final, "analysis_scripts/no_match/ecoregion_weight_previous.csv")

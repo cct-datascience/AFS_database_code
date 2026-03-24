@@ -6,27 +6,13 @@ library(FSA)
 library(magrittr)
 library(data.table)
 
-#data <- read.csv("AFS_fishdata_FINAL_112121.csv")
-#data <- read.csv("AZ_test.csv")
+data <- read.csv("analysis_scripts/input_data/AFS_lengthweight_cleaned_NV_Ontario_update_03232026.csv")
 
-# re-run 3/26/24 
-data <- read.csv("C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/AFS_data_weight_outlier_032424.csv")
-
-#Rainbow Trout name change
-data_lakes <- data[data$waterbody_type =="small_standing_waters" | data$waterbody_type =="large_standing_waters"| data$waterbody_type =="two_story_standing_waters",]
-data_lakes$common_name[data_lakes$common_name=="Rainbow Trout"] <- "Rainbow Trout (lentic)"
-data_rivers <- data[data$waterbody_type =="rivers" | data$waterbody_type =="wadeable_streams",]
-data_rivers$common_name[data_rivers$common_name=="Rainbow Trout"] <- "Rainbow Trout (lotic)"
-data_weight <- rbind(data_lakes, data_rivers)
-
-data$common_name[data$common_name=="Brook Trout (lotic)"] <- "Brook Trout"
-
-data_subset  <- filter(data, common_name== "Brook Trout")
-
-
-data <- data_subset
-
-
+data <- data %>%
+  mutate(common_name = case_when(
+    common_name == "Spotted Bass" ~ "Spotted Bass (overall)",
+    TRUE ~ common_name
+  ))
 data$weight_g <- as.numeric(as.character(data$weight_g))
 data$total_length_mm <- as.numeric(as.character(data$total_length_mm))
 data$effort <- as.numeric(as.character(data$effort))
@@ -47,12 +33,12 @@ data_trial.df <- data.frame(data)
 data_trial.df <- data_trial.df[!is.na(data_trial.df$weight_g),]
 data_trial.df <- data_trial.df[!is.na(data_trial.df$total_length_mm),]
 data_trial.df <- data_trial.df[!is.na(data_trial.df$waterbody_type),]
+
 stock.results.wr <- list()
 
 for(i in unique(data_trial.df$common_name)){
   species.i <- data_trial.df[data_trial.df$common_name==i,]
   results.species.method <- list()
-  #ws.species.i <- wsVal(i)
   
   for(j in unique(species.i$method)){
     species.i.method.j <- species.i[species.i$method==j,]
@@ -77,7 +63,7 @@ for(i in unique(data_trial.df$common_name)){
         #can I exclude individual relative weight outliers 
         weight.means <- weight_all %>%
           group_by(gcat)%>%
-          summarize_at(vars(Wr),funs( mean), na.rm=TRUE)
+          summarize_at(vars(Wr), list(Wr = mean), na.rm=TRUE)
         
         weight.means$watername_method_yearID <- u
         results.species.method.type.id[[u]] <- weight.means
@@ -126,8 +112,45 @@ for(i in unique(data_trial.df$common_name)){
 } # i
 NorthAmerica.results.weight <- rbindlist(stock.results.wr, idcol="common_name", fill=TRUE)
 
-weight_all <- rbind.fill(NorthAmerica.results.weight, eco.weight.results, state.weight.results)
-
-#write.csv(NorthAmerica.results.CPUE, "CPUE_test_012124.csv")
-write.csv(weight_all, "C:/Users/etracy1/Desktop/Backup/R_directory/AFS/StandardMethods/brook_trout_weight.csv", row.names = FALSE)
-
+# Clean up format of summarized data and save out
+new_summary_df <- NorthAmerica.results.weight %>% 
+  filter(!is.na(mean)) %>% 
+  mutate(mean = round(mean, 1), 
+         se = round(se, 1),
+         `5%` = round(`5%`, 1),
+         `25%` = round(`25%`, 1),
+         `50%` = round(`50%`, 1),
+         `75%` = round(`75%`, 1),
+         `95%` = round(`95%`, 1),
+         method = stringr::str_replace_all(method, "_", " "), 
+         waterbody_type = stringr::str_replace_all(waterbody_type, "_", " "), 
+         common_name = case_when(
+           common_name == "Brown Trout (lotic)"      ~ "Brown Trout",
+           common_name == "Brook Trout (lotic)"      ~ "Brook Trout",
+           common_name == "Brown Trout (lentic)"     ~ "Brown Trout",
+           common_name == "Brook Trout (lentic)"     ~ "Brook Trout",
+           common_name == "Rainbow Trout (lotic)"    ~ "Rainbow Trout",
+           common_name == "Rainbow Trout (lentic)"   ~ "Rainbow Trout",
+           common_name == "Cutthroat Trout (lotic)"  ~ "Cutthroat Trout",
+           common_name == "Cutthroat Trout (lentic)" ~ "Cutthroat Trout",
+           common_name == "Walleye (overall)"        ~ "Walleye",
+           common_name == "Spotted Bass (overall)" ~ "Spotted Bass",
+           common_name == "Paddlefish (overall)" ~ "Paddlefish", 
+           common_name == "Muskellunge (overall)" ~ "Muskellunge", 
+           TRUE ~ common_name), 
+         gcat = case_when(gcat == "stock" ~ "Stock-Quality", 
+                          gcat == "quality" ~ "Quality-Preferred", 
+                          gcat == "preferred" ~ "Preferred-Memorable", 
+                          gcat == "memorable" ~ "Memorable-Trophy", 
+                          gcat == "trophy" ~ "Trophy", 
+                          TRUE ~ "ERROR"), 
+         area = "North America") %>% 
+  filter(n > 4) %>% 
+  dplyr::rename(N = n, 
+                X5. = `5%`, 
+                X25. = `25%`, 
+                X50. = `50%`, 
+                X75. = `75%`, 
+                X95. = `95%`)
+unique(new_summary_df$gcat)
+readr::write_csv(new_summary_df, "analysis_scripts/output_data/weights_northamerica.csv")
