@@ -127,6 +127,14 @@ ontario_clean <- ontario_clean[ontario_clean$gcat != "substock" & !is.na(ontario
 ontario_clean$id <- NULL
 ontario_clean$ecoregion <- as.integer(stringr::str_extract(ontario_clean$ecoregion_name, "^\\d+"))
 
+# Fix gill net method and add missing count
+ontario_clean <- ontario_clean %>% 
+  mutate(method = case_when(month %in% 1:6 & method == "gill_net" ~ "gill_net_spring", 
+                            month %in% 7:12 & method == "gill_net" ~ "gill_net_fall", 
+                            TRUE ~ method)) %>% 
+  group_by(common_name, method, waterbody_type, watername_method_yearID) %>% 
+  dplyr::mutate(count = n())
+
 data$day <- as.integer(data$day)
 data$month <- as.integer(data$month)
 data$year <- as.integer(data$year)
@@ -171,4 +179,4 @@ data_effort <- bind_rows(data_effort, ontario_clean)
 nrow(data_effort)
 unique(data_effort$state) %>% sort()
 
-#write.csv(data_effort, "analysis_scripts/input_data/AFS_effort_cleaned_NV_Ontario_update_03232026.csv")
+write.csv(data_effort, "analysis_scripts/input_data/AFS_effort_cleaned_NV_Ontario_update_03232026.csv")
