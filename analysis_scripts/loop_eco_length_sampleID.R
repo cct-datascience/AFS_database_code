@@ -4,7 +4,7 @@ library(purrr)
 library(FSA)
 library(data.table)
 
-data <- read.csv("analysis_scripts/input_data/AFS_final_01132026.csv")
+data <- read.csv("analysis_scripts/input_data/AFS_lengthweight_cleaned_03182026.csv")
 
 data$weight_g <- as.numeric(as.character(data$weight_g))
 data$total_length_mm <- as.numeric(as.character(data$total_length_mm))
@@ -126,6 +126,12 @@ new_summary_df <- eco.length.results %>%
                                  common_name == "Brook Trout (lotic)" ~ "Brook Trout",
                                  common_name == "Brown Trout (lentic)" ~ "Brown Trout",
                                  common_name == "Brook Trout (lentic)" ~ "Brook Trout",
+                                 common_name == "Rainbow Trout (lotic)" ~ "Rainbow Trout",
+                                 common_name == "Rainbow Trout (lentic)" ~ "Rainbow Trout",
+                                 common_name == "Cutthroat Trout (lotic)" ~ "Cutthroat Trout",
+                                 common_name == "Walleye (overall)" ~ "Walleye",
+                                 common_name == "Muskellunge (overall)" ~ "Muskellunge",
+                                 common_name == "Paddlefish (overall)" ~ "Paddlefish",
                                  TRUE ~ common_name), 
          gcat = case_when(gcat == "stock" ~ "Stock-Quality", 
                           gcat == "quality" ~ "Quality-Preferred", 
@@ -135,6 +141,7 @@ new_summary_df <- eco.length.results %>%
                           TRUE ~ "ERROR")) %>% 
   filter(n > 4)
 unique(new_summary_df$gcat)
+readr::write_csv(new_summary_df, "analysis_scripts/output_data/lengths_ecoregions.csv")
 
 comp_summary <- full_join(old_summary_eco, new_summary_df, 
                           by = c("area" = "ecoregion", "common_name", "method", "waterbody_type", "gcat", "mean", "se", "metric"), 
@@ -177,5 +184,5 @@ new_only_final <- no_match_comp %>%
   select(contains(".y"), n, ecoregion) %>% 
   rename_with(~ gsub(".y", "", .x))
 
-readr::write_csv(old_only_final, "analysis_scripts/no_match/ecoregion_length_previous.csv")
+# readr::write_csv(old_only_final, "analysis_scripts/no_match/ecoregion_length_previous.csv")
 readr::write_csv(new_only_final, "analysis_scripts/no_match/ecoregion_length_current.csv")

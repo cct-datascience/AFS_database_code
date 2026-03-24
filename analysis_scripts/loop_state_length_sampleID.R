@@ -4,7 +4,7 @@ library(purrr)
 library(FSA)
 library(data.table)
 
-data <- read.csv("analysis_scripts/input_data/AFS_final_01132026.csv")
+data <- read.csv("analysis_scripts/input_data/AFS_lengthweight_cleaned_03182026.csv")
 
 data$weight_g <- as.numeric(as.character(data$weight_g))
 data$total_length_mm <- as.numeric(as.character(data$total_length_mm))
@@ -124,7 +124,7 @@ state.length.results <- rbindlist(state.results.PSD)
 old_summary_df <- read.csv("app/standardized_fish_data.csv")
 
 old_summary_state <- old_summary_df %>% 
-  filter(area %notin% c("Ontario", "North America", "10 North American Deserts", "12 Southern Semi-Arid Highlands", "13 Temperate Sierras", "15 Tropical Wet Forests Northern Forests", "4 Hudson Plain", "5 Northern Forests", "6 Northwestern Forested Mountains", "7 Marine West Coast Forest", "8 Eastern Temperate Forests", "9 Great Plains"),  
+  filter(area %notin% c("North America", "10 North American Deserts", "12 Southern Semi-Arid Highlands", "13 Temperate Sierras", "15 Tropical Wet Forests Northern Forests", "4 Hudson Plain", "5 Northern Forests", "6 Northwestern Forested Mountains", "7 Marine West Coast Forest", "8 Eastern Temperate Forests", "9 Great Plains"),  
          metric == "Length Frequency")
 
 new_summary_df <- state.length.results %>% 
@@ -136,6 +136,13 @@ new_summary_df <- state.length.results %>%
                                  common_name == "Brook Trout (lotic)" ~ "Brook Trout",
                                  common_name == "Brown Trout (lentic)" ~ "Brown Trout",
                                  common_name == "Brook Trout (lentic)" ~ "Brook Trout",
+                                 common_name == "Rainbow Trout (lotic)" ~ "Rainbow Trout",
+                                 common_name == "Rainbow Trout (lentic)" ~ "Rainbow Trout",
+                                 common_name == "Cutthroat Trout (lotic)" ~ "Cutthroat Trout",
+                                 common_name == "Cutthroat Trout (lentic)" ~ "Cutthroat Trout",
+                                 common_name == "Walleye (overall)" ~ "Walleye",
+                                 common_name == "Muskellunge (overall)" ~ "Muskellunge",
+                                 common_name == "Paddlefish (overall)" ~ "Paddlefish",
                                  TRUE ~ common_name), 
          gcat = case_when(gcat == "stock" ~ "Stock-Quality", 
                           gcat == "quality" ~ "Quality-Preferred", 
@@ -145,6 +152,7 @@ new_summary_df <- state.length.results %>%
                           TRUE ~ "ERROR")) %>% 
   filter(n > 4)
 unique(new_summary_df$gcat)
+readr::write_csv(new_summary_df, "analysis_scripts/output_data/lengths_states.csv")
 
 comp_summary <- full_join(old_summary_state, new_summary_df, 
                           by = c("area" = "state", "common_name", "method", "waterbody_type", "gcat", "mean", "se", "metric"), 
@@ -186,7 +194,7 @@ new_only_final <- no_match_comp %>%
   select(contains(".y"), n, state) %>% 
   rename_with(~ gsub(".y$", "", .x))
 
-readr::write_csv(old_only_final, "analysis_scripts/no_match/state_length_previous.csv")
-readr::write_csv(new_only_final, "analysis_scripts/no_match/state_length_current.csv")
+#readr::write_csv(old_only_final, "analysis_scripts/no_match/state_length_previous.csv")
+#readr::write_csv(new_only_final, "analysis_scripts/no_match/state_length_current.csv")
 
 
