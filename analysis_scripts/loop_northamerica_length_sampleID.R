@@ -124,7 +124,6 @@ new_summary_df <- NorthAmerica.results.length %>%
   filter(n > 4) %>% 
   dplyr::rename(N = n)
 unique(new_summary_df$gcat)
-readr::write_csv(new_summary_df, "analysis_scripts/output_data/lengths_northamerica.csv")
 
 # # Assess differences with current summarized data
 # old_summary_df <- read.csv("app/standardized_fish_data.csv")

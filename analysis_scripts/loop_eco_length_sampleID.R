@@ -136,43 +136,41 @@ new_summary_df <- eco.length.results %>%
   dplyr::rename(N = n, 
                 area = ecoregion)
 unique(new_summary_df$gcat)
-readr::write_csv(new_summary_df, "analysis_scripts/output_data/lengths_ecoregions.csv")
-
+#readr::write_csv(new_summary_df, "analysis_scripts/output_data/lengths_ecoregions.csv")
 
 # # Assess differences with current summarized data
 # old_summary_df <- read.csv("app/standardized_fish_data.csv")
 # 
-# old_summary_eco <- old_summary_df %>% 
-#   filter(#area == "7 Marine West Coast Forest", 
-#          stringr::str_detect(area, "\\d"), 
-#          metric == "Length Frequency") %>% 
+# old_summary_eco <- old_summary_df %>%
+#   filter(#area == "7 Marine West Coast Forest",
+#          stringr::str_detect(area, "\\d"),
+#          metric == "Length Frequency") %>%
 #   mutate(area = as.numeric(stringr::str_split_i(area, " ", 1)))
 # 
-# 
-# comp_summary <- full_join(old_summary_eco, new_summary_df, 
-#                           by = c("area" = "ecoregion", "common_name", "method", "waterbody_type", "gcat", "mean", "se", "metric"), 
-#                           keep = TRUE) 
+# comp_summary <- full_join(old_summary_eco, new_summary_df,
+#                           by = c("area", "common_name", "method", "waterbody_type", "gcat", "mean", "se", "metric"),
+#                           keep = TRUE)
 # 
 # length(which(is.na(comp_summary$common_name.x)))
 # length(which(is.na(comp_summary$common_name.y)))
 # 
-# old_only <- comp_summary %>% 
-#   filter(is.na(common_name.y)) %>% 
-#   select(contains(".x"), N, area) %>% 
+# old_only <- comp_summary %>%
+#   filter(is.na(common_name.y)) %>%
+#   select(contains(".x")) %>%
 #   rename_with(~ gsub(".x$", "", .x))
-# new_only <- comp_summary %>% 
-#   filter(is.na(common_name.x)) %>% 
-#   select(contains(".y"), n, ecoregion) %>% 
+# new_only <- comp_summary %>%
+#   filter(is.na(common_name.x)) %>%
+#   select(contains(".y")) %>%
 #   rename_with(~ gsub(".y$", "", .x))
 # 
-# no_match_comp <- full_join(old_only, new_only, 
-#                            by = c("N" = "n", 
-#                                   "area" = "ecoregion", 
-#                                   "waterbody_type", 
-#                                   "common_name", 
-#                                   #"method", 
-#                                   "gcat"), 
-#                            keep = TRUE) %>% 
+# no_match_comp <- full_join(old_only, new_only,
+#                            by = c("N",
+#                                   "area",
+#                                   "waterbody_type",
+#                                   "common_name",
+#                                   #"method",
+#                                   "gcat"),
+#                            keep = TRUE) %>%
 #   #filter(!is.na(common_name.x), !is.na(common_name.y))
 #   filter(is.na(common_name.x) | is.na(common_name.y))
 # 
@@ -181,13 +179,13 @@ readr::write_csv(new_summary_df, "analysis_scripts/output_data/lengths_ecoregion
 # length(which(!is.na(no_match_comp$common_name.x)))
 # length(which(!is.na(no_match_comp$common_name.y)))
 # 
-# old_only_final <- no_match_comp %>% 
-#   filter(is.na(common_name.y)) %>% 
-#   select(contains(".x"), N, area) %>% 
+# old_only_final <- no_match_comp %>%
+#   filter(is.na(common_name.y)) %>%
+#   select(contains(".x")) %>%
 #   rename_with(~ gsub(".x", "", .x))
-# new_only_final <- no_match_comp %>% 
-#   filter(is.na(common_name.x)) %>% 
-#   select(contains(".y"), n, ecoregion) %>% 
+# new_only_final <- no_match_comp %>%
+#   filter(is.na(common_name.x)) %>%
+#   select(contains(".y")) %>%
 #   rename_with(~ gsub(".y", "", .x))
 # 
 # # readr::write_csv(old_only_final, "analysis_scripts/no_match/ecoregion_length_previous.csv")

@@ -3,11 +3,12 @@ library(readr)
 
 # To generate each summary data file output
 # This takes about a half hour to run
-summarized_data_scripts <- list.files("analysis_scripts", pattern = "loop_*", full.names = TRUE)
-for(file in summarized_data_scripts){
-  print(file)
-  source(file)
-}
+# Only rerun if these all need to be regenerated
+# summarized_data_scripts <- list.files("analysis_scripts", pattern = "loop_*", full.names = TRUE)
+# for(file in summarized_data_scripts){
+#   print(file)
+#   source(file)
+# }
 
 # To put together all summary data files into one file
 summarized_data_files <- list.files("analysis_scripts/output_data", pattern = "*.csv")
@@ -32,6 +33,6 @@ summarized_data_combined <- summarized_data_combined %>%
                           area == "9" ~ "9 Great Plains",
                           TRUE ~ area))
 
-write_csv(summarized_data_combined, "app/standardized_fish_data_03242026.csv")
+write_csv(summarized_data_combined, "app/standardized_fish_data_03252026.csv")
 
 prev_sum_data <- read.csv("app/standardized_fish_data.csv")

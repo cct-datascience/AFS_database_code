@@ -57,11 +57,37 @@ for(s in unique(data_trial.df$state)){
           species.i.method.j.type.w.id.u <- species.i.method.j.type.w[species.i.method.j.type.w$watername_method_yearID==u,]
         
         #Relative Weight
-          weight <- mutate(species.i.method.j.type.w.id.u, Wr=wrAdd(weight_g, total_length_mm, common_name))
-          # Rename your mutated data frame so as to make it clear that it contains potential outliers
-          
-          weight_all <- mutate(species.i.method.j.type.w.id.u, Wr=wrAdd(weight_g, total_length_mm, common_name))
-          
+          if(str_detect(i, "lentic")){
+            species.i.method.j.type.w.id.u <- species.i.method.j.type.w.id.u %>% 
+              mutate(base_common_name = str_remove(common_name, " \\(lentic\\)"))
+            weight_all <- mutate(species.i.method.j.type.w.id.u, 
+                                 Wr=wrAdd(weight_g, total_length_mm, base_common_name, 
+                                          WsOpts=list("Brook Trout"=list(group="overall"), 
+                                                      "Brown Trout"=list(group="lentic"), 
+                                                      "Cutthroat Trout"=list(group="lentic"), 
+                                                      "Rainbow Trout"=list(group="lentic"))))
+          } else if(str_detect(i, "lotic")){
+            species.i.method.j.type.w.id.u <- species.i.method.j.type.w.id.u %>% 
+              mutate(base_common_name = str_remove(common_name, " \\(lotic\\)"))
+            weight_all <- mutate(species.i.method.j.type.w.id.u, 
+                                 Wr=wrAdd(weight_g, total_length_mm, base_common_name, 
+                                          WsOpts=list("Brook Trout"=list(group="overall"), 
+                                                      "Brown Trout"=list(group="lotic"), 
+                                                      "Cutthroat Trout"=list(group="lotic"), 
+                                                      "Rainbow Trout"=list(group="lotic"))))
+          } else if(str_detect(i, "overall")){
+            species.i.method.j.type.w.id.u <- species.i.method.j.type.w.id.u %>% 
+              mutate(base_common_name = str_remove(common_name, " \\(overall\\)"))
+            weight_all <- mutate(species.i.method.j.type.w.id.u, 
+                                 Wr=wrAdd(weight_g, total_length_mm, base_common_name, 
+                                          WsOpts=list("Walleye"=list(group="overall"), 
+                                                      "Spotted Bass"=list(group="overall"), 
+                                                      "Paddlefish"=list(group="overall"), 
+                                                      "Muskellunge"=list(group="overall"))))
+          } else {
+            weight_all <- mutate(species.i.method.j.type.w.id.u, Wr=wrAdd(weight_g, total_length_mm, common_name))
+          }
+
           weight_all$Wr[weight_all$Wr<30 | weight_all$Wr>230] <- NA
           
           #can I exclude individual relative weight outliers 
@@ -161,3 +187,52 @@ new_summary_df <- state.weight.results %>%
                 X95. = `95%`)
 unique(new_summary_df$gcat)
 readr::write_csv(new_summary_df, "analysis_scripts/output_data/weights_state.csv")
+
+# # Assess differences with current summarized data
+old_summary_df <- read.csv("app/standardized_fish_data.csv")
+
+old_summary_state <- old_summary_df %>%
+  filter(area %notin% c("North America", "10 North American Deserts", "12 Southern Semi-Arid Highlands", "13 Temperate Sierras", "15 Tropical Wet Forests Northern Forests", "4 Hudson Plain", "5 Northern Forests", "6 Northwestern Forested Mountains", "7 Marine West Coast Forest", "8 Eastern Temperate Forests", "9 Great Plains"),
+         metric == "Relative Weight")
+
+comp_summary <- full_join(old_summary_state, new_summary_df,
+                          by = c("common_name", "method", "waterbody_type", "gcat", "mean", "se", "metric"),
+                          keep = TRUE)
+
+length(which(is.na(comp_summary$common_name.x)))
+length(which(is.na(comp_summary$common_name.y)))
+
+old_only <- comp_summary %>%
+  filter(is.na(common_name.y)) %>%
+  select(contains(".x")) %>%
+  rename_with(~ gsub(".x$", "", .x))
+new_only <- comp_summary %>%
+  filter(is.na(common_name.x)) %>%
+  select(contains(".y")) %>%
+  rename_with(~ gsub(".y$", "", .x))
+
+no_match_comp <- full_join(old_only, new_only,
+                           by = c("N",
+                                  "area",
+                                  "waterbody_type",
+                                  "common_name",
+                                  "method",
+                                  "gcat"),
+                           keep = TRUE) %>%
+  #filter(!is.na(common_name.x), !is.na(common_name.y))
+  filter(is.na(common_name.x) | is.na(common_name.y))
+
+# these below have no match
+# first is old summary data with no match; second is new summary data with no match
+length(which(!is.na(no_match_comp$common_name.x)))
+length(which(!is.na(no_match_comp$common_name.y)))
+
+old_only_final <- no_match_comp %>%
+  filter(is.na(common_name.y)) %>%
+  select(contains(".x")) %>%
+  rename_with(~ gsub(".x", "", .x))
+new_only_final <- no_match_comp %>%
+  filter(is.na(common_name.x)) %>%
+  select(contains(".y")) %>%
+  rename_with(~ gsub(".y", "", .x))
+
