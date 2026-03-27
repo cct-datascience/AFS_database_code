@@ -35,6 +35,13 @@ data_trial.df <- data_trial.df[(data_trial.df$ecoregion != 0),]
 data_trial.df <- data_trial.df[data_trial.df$ecoregion!=11,]
 data_trial.df <- data_trial.df[data_trial.df$ecoregion!=14,]
 #data_trial.df1 <- data_trial.df1[data_trial.df1$ecoregion!=5,]
+data_trial.df <- data_trial.df %>% 
+  mutate(effort = case_when(method == "backpack_electrofishing" & waterbody_type == "wadeable_streams" ~ NA, 
+                            method == "backpack_electrofishing" & waterbody_type == "rivers" ~ NA, 
+                            method == "tow_barge_electrofishing" & waterbody_type == "wadeable_streams" ~ NA, 
+                            method == "tow_barge_electrofishing" & waterbody_type == "rivers" ~ NA, 
+                            TRUE ~ effort))
+
 
 eco.results <- list()
 
@@ -114,7 +121,7 @@ for(i in unique(state.s$common_name)){
          | "snorkel" %in% species.i.method.j.type.w$method
          | "tow_barge_electrofishing" %in% species.i.method.j.type.w$method) {
         backpack_data <- species.i.method.j.type.w
-        backpack_data$total_m2_sum <- as.numeric(as.character(backpack_data$total_m2_sum))
+        #backpack_data$total_m2_sum <- as.numeric(as.character(backpack_data$total_m2_sum))
         backpack_data$count <- as.numeric(backpack_data$count)
        
         #number of fish *100/ divided by total disance sampled m2 to convert to fish/100m2
@@ -204,7 +211,8 @@ new_summary_df <- eco.CPUE.results %>%
                                  common_name == "Muskellunge (overall)" ~ "Muskellunge", 
                                  TRUE ~ common_name), 
          gcat = "") %>% 
-  filter(count > 4) %>% 
+  filter(count > 4, 
+         mean != "Inf") %>% 
   dplyr::rename(N = count, 
                 area = ecoregion, 
                 X5. = `5%`, 
@@ -213,3 +221,53 @@ new_summary_df <- eco.CPUE.results %>%
                 X75. = `75%`, 
                 X95. = `95%`)
 readr::write_csv(new_summary_df, "analysis_scripts/output_data/effort_ecoregions.csv")
+
+# Assess differences with current summarized data
+old_summary_df <- read.csv("app/standardized_fish_data.csv")
+
+old_summary_eco <- old_summary_df %>%
+  filter(#area == "7 Marine West Coast Forest",
+         stringr::str_detect(area, "\\d"),
+         str_detect(metric, "CPUE")) %>%
+  mutate(area = as.numeric(stringr::str_split_i(area, " ", 1)))
+
+comp_summary <- full_join(old_summary_eco, new_summary_df,
+                          by = c("area", "common_name", "method", "waterbody_type", "gcat", "mean", "se", "metric"),
+                          keep = TRUE)
+
+length(which(is.na(comp_summary$common_name.x)))
+length(which(is.na(comp_summary$common_name.y)))
+
+old_only <- comp_summary %>%
+  filter(is.na(common_name.y)) %>%
+  select(contains(".x")) %>%
+  rename_with(~ gsub(".x$", "", .x))
+new_only <- comp_summary %>%
+  filter(is.na(common_name.x)) %>%
+  select(contains(".y")) %>%
+  rename_with(~ gsub(".y$", "", .x))
+
+no_match_comp <- full_join(old_only, new_only,
+                           by = c("N",
+                                  "area",
+                                  "waterbody_type",
+                                  "common_name",
+                                  #"method",
+                                  "gcat"),
+                           keep = TRUE) %>%
+  #filter(!is.na(common_name.x), !is.na(common_name.y))
+  filter(is.na(common_name.x) | is.na(common_name.y))
+
+# these below have no match
+# first is old summary data with no match; second is new summary data with no match
+length(which(!is.na(no_match_comp$common_name.x)))
+length(which(!is.na(no_match_comp$common_name.y)))
+
+old_only_final <- no_match_comp %>%
+  filter(is.na(common_name.y)) %>%
+  select(contains(".x")) %>%
+  rename_with(~ gsub(".x", "", .x))
+new_only_final <- no_match_comp %>%
+  filter(is.na(common_name.x)) %>%
+  select(contains(".y")) %>%
+  rename_with(~ gsub(".y", "", .x))

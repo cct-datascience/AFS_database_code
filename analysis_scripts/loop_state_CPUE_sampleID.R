@@ -42,7 +42,12 @@ data_trial.df <- data_trial.df[data_trial.df$state!="California",]
 #data_trial.df1 <- data_trial.df1[data_trial.df1$state!="South Dakota",]
 #data_trial.df1 <- data_trial.df1[data_trial.df1$state!="Colorado",]
 #data_trial.df1 <- data_trial.df1[data_trial.df1$state!="Ontario",]
-
+data_trial.df <- data_trial.df %>% 
+  mutate(effort = case_when(method == "backpack_electrofishing" & waterbody_type == "wadeable_streams" ~ NA, 
+                            method == "backpack_electrofishing" & waterbody_type == "rivers" ~ NA, 
+                            method == "tow_barge_electrofishing" & waterbody_type == "wadeable_streams" ~ NA, 
+                            method == "tow_barge_electrofishing" & waterbody_type == "rivers" ~ NA, 
+                            TRUE ~ effort))
 #Sackatchewan has effort_day but NA in the effort column, why?
 
 state.results <- list()
@@ -182,9 +187,10 @@ for(s in unique(data_trial.df$state)){
   CPUE_time <- rbindlist(stock.results.CPUE_time, idcol = "common_name",  fill=TRUE)
   
   state.s.results <- rbind.fill(CPUE_distance, CPUE_time)
-  state.s.results$state <- s
-  state.results[[s]] <- state.s.results
-
+  if(nrow(state.s.results) != 0){
+    state.s.results$state <- s
+    state.results[[s]] <- state.s.results
+  }
 } ## s    
 state.CPUE.results <- rbindlist(state.results)
 
@@ -214,7 +220,8 @@ new_summary_df <- state.CPUE.results %>%
                                  common_name == "Muskellunge (overall)" ~ "Muskellunge", 
                                  TRUE ~ common_name), 
          gcat = "") %>% 
-  filter(count > 4) %>% 
+  filter(count > 4, 
+         mean != "Inf") %>% 
   dplyr::rename(N = count, 
                 area = state, 
                 X5. = `5%`, 
@@ -224,4 +231,50 @@ new_summary_df <- state.CPUE.results %>%
                 X95. = `95%`)
 readr::write_csv(new_summary_df, "analysis_scripts/output_data/effort_states.csv")
 
+# Assess differences with current summarized data
+old_summary_df <- read.csv("app/standardized_fish_data.csv")
+
+old_summary_state <- old_summary_df %>%
+  filter(area %notin% c("North America", "10 North American Deserts", "12 Southern Semi-Arid Highlands", "13 Temperate Sierras", "15 Tropical Wet Forests Northern Forests", "4 Hudson Plain", "5 Northern Forests", "6 Northwestern Forested Mountains", "7 Marine West Coast Forest", "8 Eastern Temperate Forests", "9 Great Plains"),
+         str_detect(metric, "CPUE"))
+
+comp_summary <- full_join(old_summary_state, new_summary_df,
+                          by = c("area", "common_name", "method", "waterbody_type", "gcat", "mean", "se", "metric"),
+                          keep = TRUE)
+
+length(which(is.na(comp_summary$common_name.x)))
+length(which(is.na(comp_summary$common_name.y)))
+
+old_only <- comp_summary %>%
+  filter(is.na(common_name.y)) %>%
+  select(contains(".x")) %>%
+  rename_with(~ gsub(".x$", "", .x))
+new_only <- comp_summary %>%
+  filter(is.na(common_name.x)) %>%
+  select(contains(".y")) %>%
+  rename_with(~ gsub(".y$", "", .x))
+
+no_match_comp <- full_join(old_only, new_only,
+                           by = c("N",
+                                  "area",
+                                  "waterbody_type",
+                                  "common_name",
+                                  #"method",
+                                  "gcat"),
+                           keep = TRUE) %>%
+  filter(is.na(common_name.x) | is.na(common_name.y))
+
+# these below have no match
+# first is old summary data with no match; second is new summary data with no match
+length(which(!is.na(no_match_comp$common_name.x)))
+length(which(!is.na(no_match_comp$common_name.y)))
+
+old_only_final <- no_match_comp %>%
+  filter(is.na(common_name.y)) %>%
+  select(contains(".x")) %>%
+  rename_with(~ gsub(".x$", "", .x))
+new_only_final <- no_match_comp %>%
+  filter(is.na(common_name.x)) %>%
+  select(contains(".y")) %>%
+  rename_with(~ gsub(".y$", "", .x))
 
