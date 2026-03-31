@@ -43,7 +43,7 @@ plotDownload <- function(input, output, session, plotFun) {
 }
 
 # Read in summary fish metrics
-metrics <- read_csv('standardized_fish_data.csv') %>%
+metrics <- read_csv('standardized_fish_data_03272026.csv') %>%
   relocate(area) %>%
   relocate(N, .after = last_col()) %>%
   mutate(gcat = case_when(gcat == "Stock-Quality" ~ "S-Q",
@@ -783,7 +783,37 @@ server <- function(input, output) {
     uu_all <- bind_rows(uu_all, uu_state)
     if(exists("uu_ecoregion")) uu_all <- bind_rows(uu_all, uu_ecoregion)
     
+    # Get FSA subcategories of UU data
+    uu_all <- uu_all %>% 
+      mutate(FSA_group = case_when(waterbody_type == "small_standing_waters" & 
+                                     common_name == "Brown Trout" ~ "lentic", 
+                                   waterbody_type == "small_standing_waters" & 
+                                     common_name == "Cutthroat Trout" ~ "lentic", 
+                                   waterbody_type == "small_standing_waters" & 
+                                     common_name == "Rainbow Trout" ~ "lentic", 
+                                   waterbody_type == "large_standing_waters" & 
+                                     common_name == "Brown Trout" ~ "lentic", 
+                                   waterbody_type == "large_standing_waters" & 
+                                     common_name == "Cutthroat Trout" ~ "lentic", 
+                                   waterbody_type == "large_standing_waters" & 
+                                     common_name == "Rainbow Trout" ~ "lentic", 
+                                   waterbody_type == "wadeable_streams" & 
+                                     common_name == "Brown Trout" ~ "lotic", 
+                                   waterbody_type == "wadeable_streams" & 
+                                     common_name == "Cutthroat Trout" ~ "lotic", 
+                                   waterbody_type == "wadeable_streams" & 
+                                     common_name == "Rainbow Trout" ~ "lotic", 
+                                   waterbody_type == "rivers" & 
+                                     common_name == "Brown Trout" ~ "lotic",
+                                   waterbody_type == "rivers" & 
+                                     common_name == "Cutthroat Trout" ~ "lotic", 
+                                   waterbody_type == "rivers" & 
+                                     common_name == "Rainbow Trout" ~ "lotic", 
+                                   common_name == "Brook Trout" ~ "overall", 
+                                   TRUE ~ NA))
+    
     # Calculate 3 metrics for user data
+
     uu_counts <- uu_all %>% 
       group_by(type, area, common_name, method, waterbody_type) %>%
       summarize(N = n())

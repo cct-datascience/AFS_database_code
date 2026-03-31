@@ -21,7 +21,76 @@ calculate_cpue <- function(df){
   } else {
     stopifnot(c("type", "area", "common_name", "method", "waterbody_type", 
                 "year", "effort") %in% colnames(df)) #todo check these
-    cpue <- df %>% 
+  
+    cpue_overall <- df %>% 
+      filter(FSA_group == "overall") %>% 
+      group_by(type, area, waterbody_name, year, method, waterbody_type, common_name) %>% 
+      mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = list("Brook Trout"=list(group="overall")))) %>% 
+      filter(gcat != "substock") %>%
+      summarize(n_fish = n(), 
+                effort_sampleID = mean(effort)) %>% 
+      mutate(effort = case_when(method %in% time_methods ~ effort_sampleID / 3600, 
+                                method %in% number_methods ~ effort_sampleID)) %>% 
+      mutate(cpue = n_fish / effort) %>% # n is number of fish
+      group_by(type, area, common_name, method, waterbody_type) %>%
+      summarize_at(vars(cpue), list(mean = mean, se = se,
+                                    `5%` = ~quantile(x = ., probs = 0.05),
+                                    `25%` = ~quantile(x = ., probs = 0.25),
+                                    `50%` = ~quantile(x = ., probs = 0.50),
+                                    `75%` = ~quantile(x = ., probs = 0.75),
+                                    `95%` = ~quantile(x = ., probs = 0.95)),
+                   na.rm = TRUE) %>%
+      mutate(metric = "CPUE") %>% 
+      ungroup()
+    
+    cpue_lentic <- df %>% 
+      filter(FSA_group == "lentic") %>% 
+      group_by(type, area, waterbody_name, year, method, waterbody_type, common_name) %>% 
+      mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = list("Brown Trout"=list(group="lentic"), 
+                                                                                              "Cutthroat Trout"=list(group="lentic"), 
+                                                                                              "Rainbow Trout"=list(group="lentic")))) %>% 
+      filter(gcat != "substock") %>%
+      summarize(n_fish = n(), 
+                effort_sampleID = mean(effort)) %>% 
+      mutate(effort = case_when(method %in% time_methods ~ effort_sampleID / 3600, 
+                                method %in% number_methods ~ effort_sampleID)) %>% 
+      mutate(cpue = n_fish / effort) %>% # n is number of fish
+      group_by(type, area, common_name, method, waterbody_type) %>%
+      summarize_at(vars(cpue), list(mean = mean, se = se,
+                                    `5%` = ~quantile(x = ., probs = 0.05),
+                                    `25%` = ~quantile(x = ., probs = 0.25),
+                                    `50%` = ~quantile(x = ., probs = 0.50),
+                                    `75%` = ~quantile(x = ., probs = 0.75),
+                                    `95%` = ~quantile(x = ., probs = 0.95)),
+                   na.rm = TRUE) %>%
+      mutate(metric = "CPUE") %>% 
+      ungroup()
+    
+    cpue_lotic <- df %>% 
+      filter(FSA_group == "lotic") %>% 
+      group_by(type, area, waterbody_name, year, method, waterbody_type, common_name) %>% 
+      mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = list("Brown Trout"=list(group="lotic"), 
+                                                                                              "Cutthroat Trout"=list(group="lotic"), 
+                                                                                              "Rainbow Trout"=list(group="lotic")))) %>% 
+      filter(gcat != "substock") %>%
+      summarize(n_fish = n(), 
+                effort_sampleID = mean(effort)) %>% 
+      mutate(effort = case_when(method %in% time_methods ~ effort_sampleID / 3600, 
+                                method %in% number_methods ~ effort_sampleID)) %>% 
+      mutate(cpue = n_fish / effort) %>% # n is number of fish
+      group_by(type, area, common_name, method, waterbody_type) %>%
+      summarize_at(vars(cpue), list(mean = mean, se = se,
+                                    `5%` = ~quantile(x = ., probs = 0.05),
+                                    `25%` = ~quantile(x = ., probs = 0.25),
+                                    `50%` = ~quantile(x = ., probs = 0.50),
+                                    `75%` = ~quantile(x = ., probs = 0.75),
+                                    `95%` = ~quantile(x = ., probs = 0.95)),
+                   na.rm = TRUE) %>%
+      mutate(metric = "CPUE") %>% 
+      ungroup()
+    
+    cpue_other <- df %>% 
+      filter(is.na(FSA_group)) %>% 
       group_by(type, area, waterbody_name, year, method, waterbody_type, common_name) %>% 
       mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental")) %>% 
       filter(gcat != "substock") %>%
@@ -40,6 +109,9 @@ calculate_cpue <- function(df){
                    na.rm = TRUE) %>%
       mutate(metric = "CPUE") %>% 
       ungroup()
+    
+    cpue <- bind_rows(cpue_overall, cpue_lentic, cpue_lotic, cpue_other)
+    
   }
   return(cpue)
 }
@@ -47,7 +119,55 @@ calculate_cpue <- function(df){
 calculate_lf <- function(df){
   stopifnot(c("type", "area", "common_name", "method", "waterbody_type", 
               "year", "total_length") %in% colnames(df))
-  lf <- df %>% 
+  
+  lf_overall <- df %>% 
+    filter(FSA_group == "overall") %>% 
+    mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = list("Brook Trout"=list(group="overall")))) %>% 
+    group_by(type, area, common_name, method, waterbody_type, year) %>% 
+    count(gcat) %>% 
+    mutate(lenfreq = (n / sum(n)) * 100) %>% 
+    group_by(type, area, common_name, method, waterbody_type, gcat) %>% 
+    summarize_at(vars(lenfreq), list(mean = mean, se = FSA::se), na.rm = TRUE) %>% 
+    mutate(metric = "Length Frequency", 
+           gcat = factor(gcat, levels = c("stock", "quality", "preferred",
+                                          "memorable", "trophy"))) %>%
+    filter(!is.na(gcat)) %>% 
+    ungroup()
+  
+  lf_lentic <- df %>% 
+    filter(FSA_group == "lentic") %>% 
+    mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = list("Brown Trout"=list(group="lentic"), 
+                                                                                            "Cutthroat Trout"=list(group="lentic"), 
+                                                                                            "Rainbow Trout"=list(group="lentic")))) %>% 
+    group_by(type, area, common_name, method, waterbody_type, year) %>% 
+    count(gcat) %>% 
+    mutate(lenfreq = (n / sum(n)) * 100) %>% 
+    group_by(type, area, common_name, method, waterbody_type, gcat) %>% 
+    summarize_at(vars(lenfreq), list(mean = mean, se = FSA::se), na.rm = TRUE) %>% 
+    mutate(metric = "Length Frequency", 
+           gcat = factor(gcat, levels = c("stock", "quality", "preferred",
+                                          "memorable", "trophy"))) %>%
+    filter(!is.na(gcat)) %>% 
+    ungroup()
+  
+  lf_lotic <- df %>% 
+    filter(FSA_group == "lotic") %>% 
+    mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = list("Brown Trout"=list(group="lotic"), 
+                                                                                            "Cutthroat Trout"=list(group="lotic"), 
+                                                                                            "Rainbow Trout"=list(group="lotic")))) %>% 
+    group_by(type, area, common_name, method, waterbody_type, year) %>% 
+    count(gcat) %>% 
+    mutate(lenfreq = (n / sum(n)) * 100) %>% 
+    group_by(type, area, common_name, method, waterbody_type, gcat) %>% 
+    summarize_at(vars(lenfreq), list(mean = mean, se = FSA::se), na.rm = TRUE) %>% 
+    mutate(metric = "Length Frequency", 
+           gcat = factor(gcat, levels = c("stock", "quality", "preferred",
+                                          "memorable", "trophy"))) %>%
+    filter(!is.na(gcat)) %>% 
+    ungroup()
+  
+  lf_other <- df %>% 
+    filter(is.na(FSA_group)) %>% 
     mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental")) %>% 
     group_by(type, area, common_name, method, waterbody_type, year) %>% 
     count(gcat) %>% 
@@ -59,6 +179,9 @@ calculate_lf <- function(df){
                                           "memorable", "trophy"))) %>%
     filter(!is.na(gcat)) %>% 
     ungroup()
+
+  lf <- bind_rows(lf_overall, lf_lentic, lf_lotic, lf_other)
+  
   return(lf)
 }
 
@@ -81,7 +204,74 @@ calculate_rw <- function(df){
   } else {
     stopifnot(c("type", "area", "common_name", "method", "waterbody_type", "year", 
                 "total_length", "weight") %in% colnames(df))
-    rw <- df %>% 
+    
+    rw_overall <- df %>% 
+      filter(FSA_group == "overall") %>% 
+      mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = list("Brook Trout"=list(group="overall"))), 
+             relweight = FSA::wrAdd(wt = weight, len = total_length, spec = common_name, WsOpts = list("Brook Trout"=list(group="overall"))), 
+             relweight = as.numeric(relweight)) %>% 
+      group_by(type, area, common_name, method, waterbody_type, gcat) %>% 
+      summarize_at(vars(relweight), list(mean = mean, se = FSA::se, 
+                                         `5%` = ~quantile(x = ., probs = 0.05, na.rm = TRUE),
+                                         `25%` = ~quantile(x = ., probs = 0.25, na.rm = TRUE),
+                                         `50%` = ~quantile(x = ., probs = 0.50, na.rm = TRUE),
+                                         `75%` = ~quantile(x = ., probs = 0.75, na.rm = TRUE),
+                                         `95%` = ~quantile(x = ., probs = 0.95, na.rm = TRUE)), na.rm = TRUE) %>% 
+      mutate(mean = ifelse(is.nan(mean), NA, mean), 
+             metric = "Relative Weight", 
+             gcat = factor(gcat, levels = c("stock", "quality", "preferred",
+                                            "memorable", "trophy"))) %>%
+      filter(!is.na(gcat)) %>% 
+      ungroup()
+    
+    rw_lentic <- df %>% 
+      filter(FSA_group == "lentic") %>% 
+      mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = list("Brown Trout"=list(group="lentic"), 
+                                                                                              "Cutthroat Trout"=list(group="lentic"), 
+                                                                                              "Rainbow Trout"=list(group="lentic"))), 
+             relweight = FSA::wrAdd(wt = weight, len = total_length, spec = common_name, WsOpts = list("Brown Trout"=list(group="lentic"), 
+                                                                                                       "Cutthroat Trout"=list(group="lentic"), 
+                                                                                                       "Rainbow Trout"=list(group="lentic"))), 
+             relweight = as.numeric(relweight)) %>% 
+      group_by(type, area, common_name, method, waterbody_type, gcat) %>% 
+      summarize_at(vars(relweight), list(mean = mean, se = FSA::se, 
+                                         `5%` = ~quantile(x = ., probs = 0.05, na.rm = TRUE),
+                                         `25%` = ~quantile(x = ., probs = 0.25, na.rm = TRUE),
+                                         `50%` = ~quantile(x = ., probs = 0.50, na.rm = TRUE),
+                                         `75%` = ~quantile(x = ., probs = 0.75, na.rm = TRUE),
+                                         `95%` = ~quantile(x = ., probs = 0.95, na.rm = TRUE)), na.rm = TRUE) %>% 
+      mutate(mean = ifelse(is.nan(mean), NA, mean), 
+             metric = "Relative Weight", 
+             gcat = factor(gcat, levels = c("stock", "quality", "preferred",
+                                            "memorable", "trophy"))) %>%
+      filter(!is.na(gcat)) %>% 
+      ungroup()
+    
+    rw_lotic <- df %>% 
+      filter(FSA_group == "lotic") %>% 
+      mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = list("Brown Trout"=list(group="lotic"), 
+                                                                                              "Cutthroat Trout"=list(group="lotic"), 
+                                                                                              "Rainbow Trout"=list(group="lotic"))), 
+             relweight = FSA::wrAdd(wt = weight, len = total_length, spec = common_name, WsOpts = list("Brown Trout"=list(group="lotic"), 
+                                                                                                       "Cutthroat Trout"=list(group="lotic"), 
+                                                                                                       "Rainbow Trout"=list(group="lotic"))), 
+             relweight = as.numeric(relweight)) %>% 
+      group_by(type, area, common_name, method, waterbody_type, gcat) %>% 
+      summarize_at(vars(relweight), list(mean = mean, se = FSA::se, 
+                                         `5%` = ~quantile(x = ., probs = 0.05, na.rm = TRUE),
+                                         `25%` = ~quantile(x = ., probs = 0.25, na.rm = TRUE),
+                                         `50%` = ~quantile(x = ., probs = 0.50, na.rm = TRUE),
+                                         `75%` = ~quantile(x = ., probs = 0.75, na.rm = TRUE),
+                                         `95%` = ~quantile(x = ., probs = 0.95, na.rm = TRUE)), na.rm = TRUE) %>% 
+      mutate(mean = ifelse(is.nan(mean), NA, mean), 
+             metric = "Relative Weight", 
+             gcat = factor(gcat, levels = c("stock", "quality", "preferred",
+                                            "memorable", "trophy"))) %>%
+      filter(!is.na(gcat)) %>% 
+      ungroup()
+    
+    rw_other <- df %>% 
+      filter(is.na(FSA_group)) %>% 
       mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental"), 
              relweight = FSA::wrAdd(wt = weight, len = total_length, spec = common_name), 
              relweight = as.numeric(relweight)) %>% 
@@ -98,7 +288,8 @@ calculate_rw <- function(df){
                                             "memorable", "trophy"))) %>%
       filter(!is.na(gcat)) %>% 
       ungroup()
+    
+    rw <- bind_rows(rw_overall, rw_lentic, rw_lotic, rw_other)
   }
-  
   return(rw)
 }
