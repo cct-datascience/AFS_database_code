@@ -31,8 +31,13 @@ summarized_data_combined <- summarized_data_combined %>%
                           area == "7" ~ "7 Marine West Coast Forest",
                           area == "8" ~ "8 Eastern Temperate Forests",
                           area == "9" ~ "9 Great Plains",
-                          TRUE ~ area))
+                          TRUE ~ area)) %>% 
+  rename(`5%` = X5., 
+         `25%` = X25., 
+         `50%` = X50., 
+         `75%` = X75., 
+         `95%` = X95.)
 
-write_csv(summarized_data_combined, "app/standardized_fish_data_03252026.csv")
+write_csv(summarized_data_combined, "app/standardized_fish_data_03272026.csv")
 
 prev_sum_data <- read.csv("app/standardized_fish_data.csv")
