@@ -1250,7 +1250,7 @@ plotLengthFrequencyuser <- reactive({
                         labels = c(stand_N_label, user_N_label)) +
       theme_classic(base_size = 20) +
       xlab("Proportional size distribution categories") +
-      theme(legend.position = c(0.85, 0.85), 
+      theme(legend.position = c(0.75, 0.8), 
             legend.text = ggtext::element_markdown(), 
             legend.key.spacing.y = unit(0.25, "cm"))
   }
@@ -1325,7 +1325,7 @@ plotRelativeWeightuser <- reactive({
       theme_classic(base_size = 20) +
       xlab("Proportional size distribution categories") +
       theme(legend.position = "inside", 
-            legend.position.inside = c(0.85, 0.85), 
+            legend.position.inside = c(0.8, 0.85), 
             axis.title.y = ggtext::element_markdown()) 
     
   }

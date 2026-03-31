@@ -123,6 +123,7 @@ calculate_lf <- function(df){
   lf_overall <- df %>% 
     filter(FSA_group == "overall") %>% 
     mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = list("Brook Trout"=list(group="overall")))) %>% 
+    filter(gcat != "substock") %>%
     group_by(type, area, common_name, method, waterbody_type, year) %>% 
     count(gcat) %>% 
     mutate(lenfreq = (n / sum(n)) * 100) %>% 
@@ -131,7 +132,6 @@ calculate_lf <- function(df){
     mutate(metric = "Length Frequency", 
            gcat = factor(gcat, levels = c("stock", "quality", "preferred",
                                           "memorable", "trophy"))) %>%
-    filter(!is.na(gcat)) %>% 
     ungroup()
   
   lf_lentic <- df %>% 
@@ -139,6 +139,7 @@ calculate_lf <- function(df){
     mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = list("Brown Trout"=list(group="lentic"), 
                                                                                             "Cutthroat Trout"=list(group="lentic"), 
                                                                                             "Rainbow Trout"=list(group="lentic")))) %>% 
+    filter(gcat != "substock") %>%
     group_by(type, area, common_name, method, waterbody_type, year) %>% 
     count(gcat) %>% 
     mutate(lenfreq = (n / sum(n)) * 100) %>% 
@@ -147,7 +148,6 @@ calculate_lf <- function(df){
     mutate(metric = "Length Frequency", 
            gcat = factor(gcat, levels = c("stock", "quality", "preferred",
                                           "memorable", "trophy"))) %>%
-    filter(!is.na(gcat)) %>% 
     ungroup()
   
   lf_lotic <- df %>% 
@@ -155,6 +155,7 @@ calculate_lf <- function(df){
     mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = list("Brown Trout"=list(group="lotic"), 
                                                                                             "Cutthroat Trout"=list(group="lotic"), 
                                                                                             "Rainbow Trout"=list(group="lotic")))) %>% 
+    filter(gcat != "substock") %>%
     group_by(type, area, common_name, method, waterbody_type, year) %>% 
     count(gcat) %>% 
     mutate(lenfreq = (n / sum(n)) * 100) %>% 
@@ -163,12 +164,12 @@ calculate_lf <- function(df){
     mutate(metric = "Length Frequency", 
            gcat = factor(gcat, levels = c("stock", "quality", "preferred",
                                           "memorable", "trophy"))) %>%
-    filter(!is.na(gcat)) %>% 
     ungroup()
   
   lf_other <- df %>% 
     filter(is.na(FSA_group)) %>% 
     mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental")) %>% 
+    filter(gcat != "substock") %>%
     group_by(type, area, common_name, method, waterbody_type, year) %>% 
     count(gcat) %>% 
     mutate(lenfreq = (n / sum(n)) * 100) %>% 
@@ -177,7 +178,6 @@ calculate_lf <- function(df){
     mutate(metric = "Length Frequency", 
            gcat = factor(gcat, levels = c("stock", "quality", "preferred",
                                           "memorable", "trophy"))) %>%
-    filter(!is.na(gcat)) %>% 
     ungroup()
 
   lf <- bind_rows(lf_overall, lf_lentic, lf_lotic, lf_other)
