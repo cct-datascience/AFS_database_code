@@ -788,11 +788,15 @@ server <- function(input, output) {
       mutate(FSA_group = case_when(waterbody_type == "small_standing_waters" & 
                                      common_name == "Brown Trout" ~ "lentic", 
                                    waterbody_type == "small_standing_waters" & 
+                                     common_name == "Brook Trout" ~ "lentic", 
+                                   waterbody_type == "small_standing_waters" & 
                                      common_name == "Cutthroat Trout" ~ "lentic", 
                                    waterbody_type == "small_standing_waters" & 
                                      common_name == "Rainbow Trout" ~ "lentic", 
                                    waterbody_type == "large_standing_waters" & 
                                      common_name == "Brown Trout" ~ "lentic", 
+                                   waterbody_type == "large_standing_waters" & 
+                                     common_name == "Brook Trout" ~ "lentic", 
                                    waterbody_type == "large_standing_waters" & 
                                      common_name == "Cutthroat Trout" ~ "lentic", 
                                    waterbody_type == "large_standing_waters" & 
@@ -800,16 +804,19 @@ server <- function(input, output) {
                                    waterbody_type == "wadeable_streams" & 
                                      common_name == "Brown Trout" ~ "lotic", 
                                    waterbody_type == "wadeable_streams" & 
+                                     common_name == "Brook Trout" ~ "lotic", 
+                                   waterbody_type == "wadeable_streams" & 
                                      common_name == "Cutthroat Trout" ~ "lotic", 
                                    waterbody_type == "wadeable_streams" & 
                                      common_name == "Rainbow Trout" ~ "lotic", 
                                    waterbody_type == "rivers" & 
                                      common_name == "Brown Trout" ~ "lotic",
                                    waterbody_type == "rivers" & 
+                                     common_name == "Brook Trout" ~ "lotic",
+                                   waterbody_type == "rivers" & 
                                      common_name == "Cutthroat Trout" ~ "lotic", 
                                    waterbody_type == "rivers" & 
                                      common_name == "Rainbow Trout" ~ "lotic", 
-                                   common_name == "Brook Trout" ~ "overall", 
                                    TRUE ~ NA))
     
     # Calculate 3 metrics for user data

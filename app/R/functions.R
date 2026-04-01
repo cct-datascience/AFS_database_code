@@ -47,6 +47,7 @@ calculate_cpue <- function(df){
       filter(FSA_group == "lentic") %>% 
       group_by(type, area, waterbody_name, year, method, waterbody_type, common_name) %>% 
       mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = list("Brown Trout"=list(group="lentic"), 
+                                                                                              "Brook Trout"=list(group="lentic"), 
                                                                                               "Cutthroat Trout"=list(group="lentic"), 
                                                                                               "Rainbow Trout"=list(group="lentic")))) %>% 
       filter(gcat != "substock") %>%
@@ -70,6 +71,7 @@ calculate_cpue <- function(df){
       filter(FSA_group == "lotic") %>% 
       group_by(type, area, waterbody_name, year, method, waterbody_type, common_name) %>% 
       mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = list("Brown Trout"=list(group="lotic"), 
+                                                                                              "Brook Trout"=list(group="lotic"), 
                                                                                               "Cutthroat Trout"=list(group="lotic"), 
                                                                                               "Rainbow Trout"=list(group="lotic")))) %>% 
       filter(gcat != "substock") %>%
@@ -137,6 +139,7 @@ calculate_lf <- function(df){
   lf_lentic <- df %>% 
     filter(FSA_group == "lentic") %>% 
     mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = list("Brown Trout"=list(group="lentic"), 
+                                                                                            "Brook Trout"=list(group="lentic"), 
                                                                                             "Cutthroat Trout"=list(group="lentic"), 
                                                                                             "Rainbow Trout"=list(group="lentic")))) %>% 
     filter(gcat != "substock") %>%
@@ -153,6 +156,7 @@ calculate_lf <- function(df){
   lf_lotic <- df %>% 
     filter(FSA_group == "lotic") %>% 
     mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = list("Brown Trout"=list(group="lotic"), 
+                                                                                            "Brook Trout"=list(group="lotic"), 
                                                                                             "Cutthroat Trout"=list(group="lotic"), 
                                                                                             "Rainbow Trout"=list(group="lotic")))) %>% 
     filter(gcat != "substock") %>%
@@ -205,6 +209,7 @@ calculate_rw <- function(df){
     stopifnot(c("type", "area", "common_name", "method", "waterbody_type", "year", 
                 "total_length", "weight") %in% colnames(df))
     
+    #todo: fix this so brook trout split into lentic and lotic for length calc, but overall for rel weight calc
     rw_overall <- df %>% 
       filter(FSA_group == "overall") %>% 
       mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = list("Brook Trout"=list(group="overall"))), 
@@ -227,9 +232,11 @@ calculate_rw <- function(df){
     rw_lentic <- df %>% 
       filter(FSA_group == "lentic") %>% 
       mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = list("Brown Trout"=list(group="lentic"), 
+                                                                                              "Brook Trout"=list(group="lentic"), 
                                                                                               "Cutthroat Trout"=list(group="lentic"), 
                                                                                               "Rainbow Trout"=list(group="lentic"))), 
-             relweight = FSA::wrAdd(wt = weight, len = total_length, spec = common_name, WsOpts = list("Brown Trout"=list(group="lentic"), 
+             relweight = FSA::wrAdd(wt = weight, len = total_length, spec = common_name, WsOpts = list("Brown Trout"=list(group="lentic"),
+                                                                                                       "Brook Trout"=list(group="overall"),
                                                                                                        "Cutthroat Trout"=list(group="lentic"), 
                                                                                                        "Rainbow Trout"=list(group="lentic"))), 
              relweight = as.numeric(relweight)) %>% 
@@ -250,9 +257,11 @@ calculate_rw <- function(df){
     rw_lotic <- df %>% 
       filter(FSA_group == "lotic") %>% 
       mutate(gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = list("Brown Trout"=list(group="lotic"), 
+                                                                                              "Brook Trout"=list(group="lotic"), 
                                                                                               "Cutthroat Trout"=list(group="lotic"), 
                                                                                               "Rainbow Trout"=list(group="lotic"))), 
-             relweight = FSA::wrAdd(wt = weight, len = total_length, spec = common_name, WsOpts = list("Brown Trout"=list(group="lotic"), 
+             relweight = FSA::wrAdd(wt = weight, len = total_length, spec = common_name, WsOpts = list("Brown Trout"=list(group="lotic"),
+                                                                                                       "Brook Trout"=list(group="overall"),
                                                                                                        "Cutthroat Trout"=list(group="lotic"), 
                                                                                                        "Rainbow Trout"=list(group="lotic"))), 
              relweight = as.numeric(relweight)) %>% 
