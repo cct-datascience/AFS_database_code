@@ -55,7 +55,17 @@ metrics <- read_csv('standardized_fish_data_03272026.csv') %>%
   mutate(method = str_replace_all(method, " ", "_"), 
          waterbody_type = str_replace_all(waterbody_type, " ", "_"), 
          metric = str_replace_all(metric, "CPUE distance", "CPUE")) %>% 
-  filter(method %in% c("boat_electrofishing", "raft_electrofishing", "gill_net_fall", "gill_net_spring", "drifting_trammel_net", "large_catfish_hoopnet", "bag_seine", "stream_seine", "backpack_electrofishing", "tow_barge_electrofishing"))
+  filter(method %in% c("boat_electrofishing", 
+                       "raft_electrofishing", 
+                       "gill_net_fall", 
+                       "gill_net_spring", 
+                       "drifting_trammel_net", 
+                       "large_catfish_hoop_net", 
+                       "hoop_net", 
+                       "bag_seine", 
+                       "stream_seine", 
+                       "backpack_electrofishing", 
+                       "tow_barge_electrofishing"))
 
 # Develop vectors of unique entries
 uni.type <- c("North America", "Ecoregion", "State/Province")
