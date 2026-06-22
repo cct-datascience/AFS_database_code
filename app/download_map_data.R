@@ -1,7 +1,7 @@
 # Download and unzip EPA Ecoregions data
 # More info: https://www.epa.gov/eco-research/ecoregions 
 
-ecoregions_url <- "https://gaftp.epa.gov/EPADataCommons/ORD/Ecoregions/cec_na/na_cec_eco_l1.zip"
+ecoregions_url <- "https://dmap-prod-oms-edc.s3.us-east-1.amazonaws.com/ORD/Ecoregions/cec_na/na_cec_eco_l1.zip"
 ecoregions_path <- "app/ecoregions1.zip"
 
 if(!file.exists("app/ecoregions1/NA_CEC_Eco_Level1.shp")){
