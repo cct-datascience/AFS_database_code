@@ -27,7 +27,7 @@ plotDownloadUI <- function(id, height = 400) {
   )
 }
 
-plotDownload <- function(input, output, session, plotFun) {
+plotDownload <- function(input, output, session, plotFun, width = 9, height = 6) {
   output$plot <- renderPlot({
     plotFun()
   })
@@ -37,7 +37,7 @@ plotDownload <- function(input, output, session, plotFun) {
       "plot.png"
     },
     content = function(file) {
-      ggsave(file, plotFun(), width = 9, height = 6)
+      ggsave(file, plotFun(), width = width, height = height)
     }
   )
 }
@@ -90,7 +90,8 @@ ecoregions_trans <- ecoregions %>%
 # To get the app to run, read in the `toy_locs.csv` file to populate this data object with fake data.
 
 # # Read in lat/longs
-locs <- read_csv("sites.csv") %>%
+# locs <- read_csv("sites.csv") %>%
+locs <- read_csv("toy_locs.csv") %>%
   select(-date) %>% # not parseable as is
   mutate(ecoregion = case_when(ecoregion == "13" ~ "13 Temperate Sierras", 
                                ecoregion == "10" ~ "10 North American Deserts",
@@ -118,10 +119,19 @@ ex <- read_csv("example_user_upload_data.csv")
 # Create a "not in" function
 `%nin%` <- negate(`%in%`)
 
+# Helper to avoid repeating area-filter logic across three tabs
+area_choices <- function(type) {
+  if (type == "North America") return("North America")
+  if (type == "Ecoregion")     return(uni.area[1:10])
+  temp <- uni.area[uni.area != "North America"]
+  temp[-1:-10]
+}
+
+
 #Shiny App
 ui <- navbarPage(title = "AFS Standard Sampling App", tags$a(style='background-color:white;position:absolute;right:10px;top:15px;',tags$img(src='AFS_logo.png'), href = "https://fisheries.org/"), 
                  theme = bslib::bs_theme(bootswatch = "sandstone"),
-                 tabPanel("About",
+                 tabPanel(tagList(icon("circle-info"), "About"),
                           wellPanel(
                             tags$head(tags$style(
                               type="text/css",
@@ -129,55 +139,45 @@ ui <- navbarPage(title = "AFS Standard Sampling App", tags$a(style='background-c
                             )),
                             imageOutput("pics"),
                             h2("About Standard Sampling", align = "center"),
-                            h4("Standardization of sampling methods allows fisheries professionals to compare data across large spatial and temporal scales, encourages data sharing and improves communication. 
-In light of these benefits, the American Fisheries Society published the first edition of Standard Methods for Sampling North American Freshwater Fishes in 2009. 
-A new edition of these methods was published September 2024.  
-The goals of this project were to:"),
-                            br(),
-                            h4("(1) recommend standardized freshwater fish sampling methods for North America, and"),
-                            h4("(2) provide an online database of fish data collected using AFS recommended standard methods where data from individual water bodies could be compared to existing rangewide, ecoregion, and state standards."),
-                            br(),
-                            h4("Since publication, numerous fisheries professionals have adopted the standard methods and many have noted the database as an important tool in management. 
-The database allows for comparison of fish metrics commonly used in management to assess population health including growth, condition, length-frequency, and catch per unit effort data collected using standard methods.
-When developing version two of the database, we examined the strengths and weaknesses of methods used for requesting, analyzing, and displaying data in an online format.
-We used this information to achieve our goals of maximizing use and providing simple means to update this program for comparison of fisheries data."),
-                            br(),
-                            h4("We hope that these methods can be adopted by others, particularly those in data-poor regions, to maximize the ability to compare data. "),
+                            p("Standardization of sampling methods allows fisheries professionals to compare data across large spatial and temporal scales, encourages data sharing and improves communication. In light of these benefits, the American Fisheries Society published the first edition of ", em("Standard Methods for Sampling North American Freshwater Fishes", .noWS = "outside"), " in 2009. A new edition of these methods was published September 2024. The goal of this project, involving over 500 Canadian, Mexican, and United States fisheries scientists, was to recommend standardized freshwater fish sampling methods for North America.", style = "font-size:18px;"),
+                            p("As a companion to these books, an online webtool was developed to compare fish data collected from an individual water body using AFS standard methods to rangewide, ecoregion, and state averages calculated from a database of thousands of fish surveys of millions of individual fish collected using the same AFS standard methods.", style = "font-size:18px;"),
+                            p("Numerous fisheries professionals have adopted the AFS standard methods and many have noted the webtool as important for management. The webtool allows for comparison of fish metrics commonly used in management to assess population health including condition, length-frequency, and catch per unit effort using data collected using standard methods. When developing this version two of the webtool, we examined the strengths and weaknesses of methods used for requesting, analyzing, and displaying data in an online format. We used this information to achieve our goals of maximizing use and providing simple means to update this program for comparison of fisheries data.", style = "font-size:18px;"),
+                            p("We hope that AFS standard sampling methods can be adopted by others, particularly those in data-poor regions, to maximize the ability to compare data.", style = "font-size:18px;"),
                             h2("Details About App Usage", align = "center"), 
-                            h4("Here, you can compare your data from an individual water body,", strong("collected using a standard AFS method"), "to averages across the range of the species, ecoregion, and statewide. This tool will help you assess if fish you have collected are high, average or low for the metric in question."),
-                            h4("We collected thousands of data sets on fishes from across Canada, the United States, and some from Mexico to build comparison summaries. A ", strong("data set (", .noWS = "after"), em("N"), strong(")", .noWS = "before"), " is defined as data collected with AFS standard gears and methods during routine monitoring programs of an entire fish community or a population of specific fish ", strong("in a single waterbody conducted once during a year"), ". For example, data collected from Bass Lake (a small standing water body) sampled by boat electrofishing for Largemouth Bass in 2014 would represent 1 data set. In some cases, data sets included multi-day surveys of the same waterbody (e.g., large reservoirs) where the effort was summed across all sampling days. This excludes surveys targeting specific size groups or those with other biases (e.g., egg counts, juveniles fish surveys)."), 
-                            h4("You will see the following tabs in the bar at the top of the page: "), 
+                            p("Here, you can compare your data from an individual water body,", strong("collected using a standard AFS method"), "to averages across the range of the species, ecoregion, and statewide. This tool will help you assess if fish you have collected are high, average or low for the metric in question.", style = "font-size:18px;"),
+                            p("We collected thousands of data sets on fishes from across Canada, the United States, and some from Mexico to build comparison summaries. A ", strong("data set (", .noWS = "after"), em("N"), strong(")", .noWS = "before"), " is defined as data collected with AFS standard gears and methods during routine monitoring programs of an entire fish community or a population of specific fish ", strong("in a single waterbody conducted once during a year"), ". For example, data collected from Bass Lake (a small standing water body) sampled by boat electrofishing for Largemouth Bass in 2014 would represent 1 data set. In some cases, data sets included multi-day surveys of the same waterbody (e.g., large reservoirs) where the effort was summed across all sampling days. This excludes surveys targeting specific size groups or those with other biases (e.g., egg counts, juveniles fish surveys).", style = "font-size:18px;"), 
+                            p("You will see the following tabs in the bar at the top of the page: ", style = "font-size:18px;"), 
                             br(), 
-                            h4("- ", strong("About", .noWS = "outside"), ": gives an overview about the standard sampling webtool"), 
-                            h4("- ", strong("Explore", .noWS = "outside"), ": displays desired subsets of the standard data in a map and a table"), 
-                            h4("- ", strong("View", .noWS = "outside"), ": displays desired subsets of the standard data in graphical form"), 
-                            h4("- ", strong("Compare Your Data", .noWS = "outside"), ": allows you to compare your data from a waterbody to standard data in rangewide, ecoregion, or state summaries"), 
+                            p("- ", strong("About", .noWS = "outside"), ": gives an overview about the standard sampling webtool", style = "font-size:18px;"), 
+                            p("- ", strong("Explore", .noWS = "outside"), ": displays desired subsets of the standard data in a map and a table", style = "font-size:18px;"), 
+                            p("- ", strong("View", .noWS = "outside"), ": displays desired subsets of the standard data in graphical form", style = "font-size:18px;"), 
+                            p("- ", strong("Compare Your Data", .noWS = "outside"), ": allows you to compare your data from a waterbody to standard data in rangewide, ecoregion, or state summaries", style = "font-size:18px;"), 
                             br(), 
-                            h4("Most of the app components can be translated into another language by going to ", 
+                            p("Most of the app components can be translated into another language by going to ", 
                                a("Google Translate", href="https://translate.google.com/?sl=auto&tl=en&op=websites", .noWS = "outside"), 
-                               " and entering the URL for the app, then selecting the desired language. Maps and plot can only currently be generated using the original version of the app. "), 
+                               " and entering the URL for the app, then selecting the desired language. Maps and plot can only currently be generated using the original version of the app. ", style = "font-size:18px;"), 
                             br(), 
-                            h4(strong("If you would like the text of the app bigger, you can increase the font size by hitting the control and plus (+) keys on Windows, or command and plus (+) keys on Macs.")), 
+                            p(strong("If you would like the text of the app bigger, you can increase the font size by hitting the control and plus (+) keys on Windows, or command and plus (+) keys on Macs."), style = "font-size:18px;"), 
                             br(), 
                             h2("Moving Forward", align = "center"), 
-                            h4("These data sets were collected and compiled by ", 
+                            p("These data sets were collected and compiled by ", 
                                a("Scott Bonar's lab", href="https://azcfwru.wixsite.com/azcfwru", .noWS = "outside"), 
-                               ". Only summaries can be shared. Individual data sets cannot be shared with others because of legal restrictions on their use. As funding permits, additional data will be added to this app, including for more collection methods."), 
-                            h4("All feedback on this app is greatly appreciated, and can be provided by sending an email to ", 
+                               ". Only summaries can be shared. Individual data sets cannot be shared with others because of legal restrictions on their use. As funding permits, additional data will be added to this app, including for more collection methods.", style = "font-size:18px;"), 
+                            p("All feedback on this app is greatly appreciated, and can be provided by sending an email to ", 
                                a("Dr. Bonar", href="mailto:SBonar@ag.arizona.edu", .noWS = "outside"), 
                                " or by submitting an ", 
                                a("issue", href="https://github.com/cct-datascience/AFS_database_code/issues", .noWS = "outside"), 
                                " through the project's ", 
                                a("GitHub repository", href="https://github.com/cct-datascience/AFS_database_code", .noWS = "outside"), 
-                               ", which is also where the code is located."), 
-                            h4("Developed in collaboration with the University of Arizona ",
-                               a("CCT Data Science", href="https://datascience.cct.arizona.edu/"), "team."),
-                            h4 ("Sponsored by:"), 
+                               ", which is also where the code is located.", style = "font-size:18px;"), 
+                            p("Developed in collaboration with the University of Arizona ",
+                               a("CCT Data Science", href="https://datascience.cct.arizona.edu/"), "team.", style = "font-size:18px;"),
+                            p("Sponsored by:", style = "font-size:18px;"), 
                             imageOutput("logo")
                           )
                  ),
                  
-                 tabPanel(title = "Explore",
+                 tabPanel(title = tagList(icon("map-location-dot"), "Explore"),
                           sidebarLayout(
                             sidebarPanel(
                               "Welcome to the American Fisheries Society Standard Sampling Database App!", 
@@ -216,7 +216,7 @@ We used this information to achieve our goals of maximizing use and providing si
                             
                             mainPanel(
                               tabsetPanel(
-                                tabPanel("Map", 
+                                tabPanel(tagList(icon("map"), "Map"), 
                                          br(), 
                                          h6("Points show approximate locations of data, and colored areas indicate", 
                                             strong("EPA Ecoregions Level I"), 
@@ -229,14 +229,14 @@ We used this information to achieve our goals of maximizing use and providing si
                                                        height = 500),
                                          textOutput("report_absent1"),
                                          textOutput("report_absent2")), 
-                                tabPanel("Table", 
+                                tabPanel(tagList(icon("table"), "Table"), 
                                          DTOutput("filtertable"))
                               )
                             )
                           )
                  ), 
                  
-                 tabPanel(title = "View",
+                 tabPanel(title = tagList(icon("table"), "View"),
                           sidebarLayout(
                             sidebarPanel(
                               "Welcome to the American Fisheries Society Standard Sampling Database App!", 
@@ -269,44 +269,70 @@ We used this information to achieve our goals of maximizing use and providing si
                                       plotDownloadUI("RW_plot"),
                                       br(), 
                                       p("Relative weight by proportional size distribution categories. Points indicate means and lines indicate standard error.", style = "font-size:25px;"),
+                                      uiOutput("rw_n_caption_view"),
                                       hr(), 
                                       plotDownloadUI("CPUE_plot", height = "200px"), 
                                       br(), 
-                                      p("Catch per unit effort. The box represents the middle 50% of the standard data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers. CPUE units depend on collection method: boat and raft electrofishing are fish per hour, gill net is fish per net nights, drifting trammel net is fish per 100-m drift, large catfish hoopnet is fish per 24 hour set, bag seine is fish per 0.25 arc (small standing waters) or 0.5 arc (rivers), stream seine is fish per 10-15m haul, and backpack and tow barge electrofishing are fish per 100m².", style = "font-size:25px;")
+                                      p("Catch per unit effort. The vertical line marks the mean CPUE, with the shaded band showing +/- 1 standard error. CPUE units depend on collection method: boat and raft electrofishing are fish per hour, gill net is fish per net nights, drifting trammel net is fish per 100-m drift, large catfish hoopnet is fish per 24 hour set, bag seine is fish per 0.25 arc (small standing waters) or 0.5 arc (rivers), stream seine is fish per 10-15m haul, and backpack and tow barge electrofishing are fish per 100m².", style = "font-size:25px;")
                             )
                           )
                  ),
-                 tabPanel(title = "Compare Your Data",
+                 tabPanel(title = tagList(icon("arrow-right-arrow-left"), "Compare Your Data"),
                           sidebarLayout(
                             sidebarPanel(
-                              "Welcome to the American Fisheries Society Standard Sampling Database App!",
-                              br(),
-                              br(), 
-                              "Download a template for your data here: ", 
-                              br(), 
-                              downloadButton("download", "download"), 
-                              br(),
-                              br(), 
-                              "Upload your fish data for comparison here: ", 
-                              fileInput("upload", NULL,
-                                        buttonLabel =  "upload",
-                                        multiple = FALSE, 
-                                        accept = (".csv"), 
-                                        placeholder = ""), 
-                              "To view plots of standard fish data, select one option from each menu below.",
+                              div(style = "background-color: #f7f3ee; border-left: 4px solid #325d88; padding: 12px 15px; border-radius: 4px; margin-bottom: 15px;",
+                                  h5(icon("fish"), " Welcome!", style = "margin-top: 0;"),
+                                  p("Compare your own fish survey data to standardized values across North America, your ecoregion, or your state.", 
+                                    style = "margin-bottom: 0; font-size: 14px;")
+                              ),
+                              div(style = "margin-bottom: 18px;",
+                                  h5(span(style = "display:inline-block; background-color:#325d88; color:white; border-radius:50%; width:24px; height:24px; text-align:center; line-height:24px; margin-right:8px;", "1"), 
+                                     "Get the template"),
+                                  downloadButton("download", "Download CSV template"),
+                                  p("Use this template if you need it. If your data is already in a properly formatted CSV file, you can skip ahead to Step 2.", 
+                                    style = "font-size: 13px; margin: 6px 0 0 32px; color: #555;")
+                              ),
+                              div(style = "margin-bottom: 18px;",
+                                  h5(span(style = "display:inline-block; background-color:#325d88; color:white; border-radius:50%; width:24px; height:24px; text-align:center; line-height:24px; margin-right:8px;", "2"), 
+                                     "Upload your data"),
+                                  fileInput("upload", NULL,
+                                            buttonLabel =  "Choose file...",
+                                            multiple = FALSE, 
+                                            accept = (".csv"), 
+                                            placeholder = "No file selected"),
+                                  textInput("waterbody_label", "Waterbody name (optional)", 
+                                            placeholder = "e.g., Alamo Lake")
+                              ),
+                              div(style = "margin-bottom: 8px;",
+                                  h5(span(style = "display:inline-block; background-color:#325d88; color:white; border-radius:50%; width:24px; height:24px; text-align:center; line-height:24px; margin-right:8px;", "3"), 
+                                     "Choose what to compare")
+                              ),
                               uiOutput("dyn_type"),
                               uiOutput("dyn_area3"),
                               uiOutput("dyn_spp3"),
                               uiOutput("dyn_method3"),
                               uiOutput("dyn_watertype3"),
+                              hr(),
+                              div(style = "margin-bottom: 8px;",
+                                  h5(span(style = "display:inline-block; background-color:#325d88; color:white; border-radius:50%; width:24px; height:24px; text-align:center; line-height:24px; margin-right:8px;", "4"), 
+                                     "See your results"),
+                                  p("Your results appear in the ", strong("Results Table"), " and ", strong("Results Plots"), " tabs to the right.", 
+                                    style = "font-size: 13px; margin-left: 32px;")
+                              ),
                               downloadButton("filterdownloaduu", "Download plot data")
                             ),
                             mainPanel(
                               tabsetPanel(
-                                tabPanel("Instructions", 
+                                tabPanel(tagList(icon("circle-info"), "Instructions"), 
                                          uiOutput("instructions"), 
                                          DTOutput("example")),
-                                tabPanel("Comparisons", 
+                                tabPanel(tagList(icon("table"), "Results Table"), 
+                                         br(),
+                                         h6("If no table is displayed, upload a dataset and choose your filters in the sidebar."),
+                                         br(),
+                                         DTOutput("uu_results_table"),
+                                         uiOutput("n_definitions")),
+                                tabPanel(tagList(icon("chart-column"), "Results Plots"), 
                                          br(), 
                                          h6("If no plots are displayed, upload a dataset to generate comparison plots."), 
                                          br(), 
@@ -316,11 +342,12 @@ We used this information to achieve our goals of maximizing use and providing si
                                          hr(),
                                          plotDownloadUI("RW_plot_UU"),
                                          br(), 
-                                         p("Relative weight by proportional size distribution categories. Points indicate means and lines indicate standard error.", style = "font-size:25px;"),
+                                         div(style = "font-size:25px;", uiOutput("rw_caption")),
+                                         uiOutput("rw_n_caption"),
                                          hr(),
                                          plotDownloadUI("CPUE_plot_UU", height = "200px"), 
                                          br(), 
-                                         p("Catch per unit effort. The box represents the middle 50% of the standard data with the median value indicated by the line inside. The whiskers extend to the smallest and largest values within 1.5 times the inter quartile range and any individual points outside are outliers. The dashed line represents CPUE for the waterbody. CPUE units depend on collection method: boat and raft electrofishing are fish per hour, gill net is fish per net nights, drifting trammel net is fish per 100-m drift, large catfish hoopnet is fish per 24 hour set, bag seine is fish per 0.25 arc (small standing waters) or 0.5 arc (rivers), stream seine is fish per 10-15m haul, and backpack and tow barge electrofishing are fish per 100m².", style = "font-size:25px;"))
+                                         div(style = "font-size:25px;", uiOutput("cpue_caption")))
                               )
                             )
                             
@@ -334,6 +361,18 @@ We used this information to achieve our goals of maximizing use and providing si
 
 
 server <- function(input, output) {
+  
+  wrap_br <- function(x, width = 22) {
+    paste(strwrap(x, width = width), collapse = "<br>")
+  }
+  
+  wb_label <- reactive({
+    if (is.null(input$waterbody_label) || trimws(input$waterbody_label) == "") {
+      "Waterbody"
+    } else {
+      trimws(input$waterbody_label)
+    }
+  })
   
   output$pics <- renderImage({
     list(
@@ -355,37 +394,14 @@ server <- function(input, output) {
   
   # Render a UI for selecting area depending on North America, Ecoregions, or State/Province
   output$dyn_area <- renderUI({
-    if(input$typechoice == "North America") {
-      temp <- "North America"
-    } else if(input$typechoice == "Ecoregion") {
-      temp <- uni.area[1:10] #TODO: fix this so it's only ecoregions and doesn't include states
-    } else if(input$typechoice == "State/Province") {
-      temp2 <-  uni.area[uni.area %nin% 'North America']
-      temp <- temp2[-1:-10]
-    }
-    
-    selectInput(inputId = "areachoice",
-                label = "Select area:", 
-                choices = temp,
-                selected = temp[1],
-                multiple = TRUE)
+    temp <- area_choices(input$typechoice)
+    selectInput("areachoice", "Select area:", choices = temp, selected = temp[1], multiple = TRUE)
   })
   
   # Render a UI for selecting area depending on North America, Ecoregions, or State/Province for tab2
   output$dyn_area2 <- renderUI({
-    if(input$typechoice2 == "North America") {
-      temp <- "North America"
-    } else if(input$typechoice2 == "Ecoregion") {
-      temp <- uni.area[1:10]
-    } else if(input$typechoice2 == "State/Province") {
-      temp2 <-  uni.area[uni.area %nin% 'North America']
-      temp <- temp2[-1:-10]
-    }
-    
-    selectInput(inputId = "areachoice2",
-                label = "Select area:", 
-                choices = temp,
-                selected = temp[1])
+    temp <- area_choices(input$typechoice2)
+    selectInput("areachoice2", "Select area:", choices = temp, selected = temp[1])
   })
   
   # Provide downloadable template for user upload data
@@ -398,61 +414,21 @@ server <- function(input, output) {
     }
   )
   
-  # Read in raw user upload data to be used in reactive UI's
+  # uu_raw: used only for populating sidebar dropdowns — reads the original
+  # uploaded CSV once. Uses the same file path as uu_metrics_cache but is a 
+  # separate reactive so dropdown population doesn't depend on metric calculations.
   uu_raw <- reactive({
-    inFile <- input$upload
-    uu <- read_csv(inFile$datapath)
+    req(input$upload)
+    uu <- read_csv(input$upload$datapath)
     
-    invalid_species_names <- uu %>% select(common_name) %>% filter(common_name %nin% unique(metrics$common_name)) %>% pull()
-    
-    #todo: redo validation
-    # if(any(is.na(uu))){
-    #   validate("Uploaded dataset must have no empty rows")
-    # }
-    # 
-    # # Return informative messages if uu data format is incorrect
-    # validate(
-    #   need("state" %in% colnames(uu), "Uploaded dataset is missing state column"),
-    #   need("waterbody_name" %in% colnames(uu), "Uploaded dataset is missing waterbody_name column"),
-    #   need("common_name" %in% colnames(uu), "Uploaded dataset is missing common_name column"),
-    #   need("method" %in% colnames(uu), "Uploaded dataset is missing method column"),
-    #   need("year" %in% colnames(uu), "Uploaded dataset is missing year column"),
-    #   need(n_distinct(uu$state) == 1, "State column should contain only one state"),
-    #   need(n_distinct(uu$waterbody_name) == 1, "Waterbody column should contain only one name"), 
-    #   need(length(invalid_species_names) == 0, paste0("Species name must match one in the provided list in instructions tab. These names are not valid: ", invalid_species_names))
-    # )
-    
-    # Duplicate records for all types
-    uu_state <- uu %>% 
-      select(-one_of("ecoregion")) %>% 
-      mutate(type = "state") %>% 
-      rename(area = state)
+    uu_state <- uu %>% select(-any_of("ecoregion")) %>% mutate(type = "state") %>% rename(area = state)
+    uu_all   <- uu %>% select(-state, -any_of("ecoregion")) %>% mutate(type = "all", area = "North America")
+    uu_all   <- bind_rows(uu_all, uu_state)
     
     if ("ecoregion" %in% names(uu)) {
-      uu_ecoregion <- uu %>% 
-        select(-state) %>% 
-        mutate(type = "ecoregion") %>% 
-        rename(area = ecoregion)
+      uu_all <- bind_rows(uu_all, uu %>% select(-state) %>% mutate(type = "ecoregion") %>% rename(area = ecoregion))
     }
-    
-    uu_all <- uu %>% 
-      select(-state) %>% 
-      select(-one_of("ecoregion")) %>% 
-      mutate(type = "all", area = "North America")
-    
-    uu_all <- bind_rows(uu_all, uu_state)
-    if(exists("uu_ecoregion")) uu_all <- bind_rows(uu_all, uu_ecoregion)
-    
-    if(exists("uu_state")){
-      rm(uu_state)
-    }
-    
-    if(exists("uu_ecoregion")){
-      rm(uu_ecoregion)
-    }
-    
-    print(uu_all)
-    
+    uu_all
   })
   
   # Render a UI for selecting area 
@@ -484,15 +460,11 @@ server <- function(input, output) {
     } else if(input$typechoice3 == "Ecoregion") {
       temp <- uu_raw() %>%
         filter(type == "ecoregion") %>%
-        select(area) %>%
-        unique() %>%
-        pull()
+        distinct(area) %>% pull()
     } else if(input$typechoice3 == "State/Province") {
       temp <- uu_raw() %>%
         filter(type == "state") %>%
-        select(area) %>%
-        unique() %>%
-        pull()
+        distinct(area) %>% pull()
     }
     
     selectInput(inputId = "areachoice3",
@@ -508,9 +480,7 @@ server <- function(input, output) {
     
     temp <- uu_raw() %>%
       filter(area == input$areachoice3) %>%
-      select(common_name) %>%
-      unique() %>%
-      pull()
+      distinct(common_name) %>% pull()
     
     selectInput(inputId = "sppchoice3",
                 label = "Select species:",
@@ -527,9 +497,7 @@ server <- function(input, output) {
     temp <- uu_raw() %>%
       filter(area == input$areachoice3,
              common_name == input$sppchoice3) %>%
-      select(method) %>%
-      unique() %>%
-      pull()
+      distinct(method) %>% pull()
     
     selectInput(inputId = "methodchoice3",
                 label = "Select method:",
@@ -548,9 +516,7 @@ server <- function(input, output) {
       filter(area == input$areachoice3,
              common_name == input$sppchoice3,
              method == input$methodchoice3) %>%
-      select(waterbody_type) %>%
-      unique() %>%
-      pull()
+      distinct(waterbody_type) %>% pull()
     
     selectInput(inputId = "watertypechoice3",
                 label = "Select waterbody type:",
@@ -576,22 +542,12 @@ server <- function(input, output) {
     
   })
   
-  # For downloading the entire dataset for tab 1 explore
-  full_df <- reactive({
-    
-    all_df <-  metrics %>%
-      arrange(common_name) %>%
-      select(area, common_name, method, waterbody_type, gcat, metric, N, mean, 
-             se, `5%`, `25%`, `50%`, `75%`, `95%`) 
-  })
-  
   output$alldownload <- downloadHandler(
-    filename = function() {
-      paste0("AFS-all-", Sys.Date(), ".csv")
-    },
-    
-    content = function(file) {
-      write.csv(full_df(), file)
+    filename = function() { paste0("AFS-all-", Sys.Date(), ".csv") },
+    content  = function(file) {
+      write.csv(metrics %>% arrange(common_name) %>%
+                  select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
+                         se, `5%`, `25%`, `50%`, `75%`, `95%`), file)
     }
   )
   
@@ -697,12 +653,7 @@ server <- function(input, output) {
       arrange(common_name) %>%
       select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
              se, `5%`, `25%`, `50%`, `75%`, `95%`)
-    print(f_df)
     
-  })
-  
-  observeEvent(input$areachoice2, {
-    print(paste0("You have chosen: ", input$areachoice2))
   })
   
   output$filterdownload <- downloadHandler(
@@ -760,108 +711,118 @@ server <- function(input, output) {
     
   })
 
-  uu_processed <- reactive({
-    # Suppresses error messages for plots until inputs are chosen
-    req(input$areachoice3)
-    req(input$sppchoice3)
-    req(input$methodchoice3)
-    req(input$watertypechoice3)
+  # ── Build uu_all and compute all metrics once on upload ──────────────────
+  # This is the expensive step (CSV read + psdAdd + 3 metric calculations).
+  # It is cached here and only re-runs when a new file is uploaded.
+  uu_metrics_cache <- reactive({
+    req(input$upload)
+    uu <- read_csv(input$upload$datapath)
     
-    inFile <- input$upload
-    uu <- read_csv(inFile$datapath)
-    print("UU original")
-    print(uu)
-    
-    # Duplicate records for all types
-    uu_state <- uu %>% 
-      select(-one_of("ecoregion")) %>% 
-      mutate(type = "state") %>% 
-      rename(area = state)
-    
-    if ("ecoregion" %in% names(uu)) {
-      uu_ecoregion <- uu %>% 
-        select(-state) %>% 
-        mutate(type = "ecoregion") %>% 
-        rename(area = ecoregion)
-    }
-    
-    uu_all <- uu %>% 
-      select(-state) %>% 
-      select(-one_of("ecoregion")) %>% 
-      mutate(type = "all", area = "North America")
+    uu_state <- uu %>% select(-any_of("ecoregion")) %>% mutate(type = "state")  %>% rename(area = state)
+    uu_all    <- uu %>% select(-state, -any_of("ecoregion")) %>% mutate(type = "all", area = "North America")
     
     uu_all <- bind_rows(uu_all, uu_state)
-    if(exists("uu_ecoregion")) uu_all <- bind_rows(uu_all, uu_ecoregion)
     
-    # Get FSA subcategories of UU data
-    uu_all <- uu_all %>% 
-      mutate(FSA_group = case_when(waterbody_type == "small_standing_waters" & 
-                                     common_name == "Brown Trout" ~ "lentic", 
-                                   waterbody_type == "small_standing_waters" & 
-                                     common_name == "Brook Trout" ~ "lentic", 
-                                   waterbody_type == "small_standing_waters" & 
-                                     common_name == "Cutthroat Trout" ~ "lentic", 
-                                   waterbody_type == "small_standing_waters" & 
-                                     common_name == "Rainbow Trout" ~ "lentic", 
-                                   waterbody_type == "large_standing_waters" & 
-                                     common_name == "Brown Trout" ~ "lentic", 
-                                   waterbody_type == "large_standing_waters" & 
-                                     common_name == "Brook Trout" ~ "lentic", 
-                                   waterbody_type == "large_standing_waters" & 
-                                     common_name == "Cutthroat Trout" ~ "lentic", 
-                                   waterbody_type == "large_standing_waters" & 
-                                     common_name == "Rainbow Trout" ~ "lentic", 
-                                   waterbody_type == "wadeable_streams" & 
-                                     common_name == "Brown Trout" ~ "lotic", 
-                                   waterbody_type == "wadeable_streams" & 
-                                     common_name == "Brook Trout" ~ "lotic", 
-                                   waterbody_type == "wadeable_streams" & 
-                                     common_name == "Cutthroat Trout" ~ "lotic", 
-                                   waterbody_type == "wadeable_streams" & 
-                                     common_name == "Rainbow Trout" ~ "lotic", 
-                                   waterbody_type == "rivers" & 
-                                     common_name == "Brown Trout" ~ "lotic",
-                                   waterbody_type == "rivers" & 
-                                     common_name == "Brook Trout" ~ "lotic",
-                                   waterbody_type == "rivers" & 
-                                     common_name == "Cutthroat Trout" ~ "lotic", 
-                                   waterbody_type == "rivers" & 
-                                     common_name == "Rainbow Trout" ~ "lotic", 
-                                   TRUE ~ NA))
+    if ("ecoregion" %in% names(uu)) {
+      uu_all <- bind_rows(uu_all, uu %>% select(-state) %>% mutate(type = "ecoregion") %>% rename(area = ecoregion))
+    }
     
-    # Calculate 3 metrics for user data
-
-    uu_counts <- uu_all %>% 
-      group_by(type, area, common_name, method, waterbody_type) %>%
-      summarize(N = n())
-
-    uu_cpue <- calculate_cpue(uu_all)
-    uu_lf <- calculate_lf(uu_all)
-    uu_rw <- calculate_rw(uu_all)
+    # FSA sub-group assignment (collapsed from 20 conditions to 4)
+    trout_spp   <- c("Brown Trout", "Brook Trout", "Cutthroat Trout", "Rainbow Trout")
+    lentic_wbs  <- c("small_standing_waters", "large_standing_waters")
+    lotic_wbs   <- c("wadeable_streams", "rivers")
     
-    uu_process <- bind_rows(uu_cpue, uu_lf, uu_rw) %>% 
-      left_join(uu_counts, by = c("type", "area", "common_name", "method", "waterbody_type")) %>% 
-      mutate(gcat = case_when(gcat == "stock" ~ "S-Q",
-                              gcat == "quality" ~ "Q-P",
+    uu_all <- uu_all %>%
+      mutate(FSA_group = case_when(
+        common_name %in% trout_spp & waterbody_type %in% lentic_wbs ~ "lentic",
+        common_name %in% trout_spp & waterbody_type %in% lotic_wbs  ~ "lotic",
+        common_name == "Brook Trout" ~ "overall",
+        TRUE ~ NA_character_
+      ))
+    
+    # Calculate all 3 metrics and N — expensive steps, cached here
+    uu_counts <- calculate_total_n(uu_all)
+    uu_cpue   <- calculate_cpue(uu_all)
+    uu_lf     <- calculate_lf(uu_all)
+    uu_rw     <- calculate_rw(uu_all)
+    
+    bind_rows(uu_cpue, uu_lf, uu_rw) %>%
+      left_join(uu_counts, by = c("type", "area", "common_name", "method", "waterbody_type"),
+                suffix = c("", "_total")) %>%
+      mutate(N = coalesce(N, N_total)) %>%
+      select(-N_total) %>%
+      mutate(gcat = case_when(gcat == "stock"     ~ "S-Q",
+                              gcat == "quality"   ~ "Q-P",
                               gcat == "preferred" ~ "P-M",
                               gcat == "memorable" ~ "M-T",
-                              gcat == "trophy" ~ "T") %>%
+                              gcat == "trophy"    ~ "T") %>%
                factor(levels = c("S-Q", "Q-P", "P-M", "M-T", "T")))
+  })
+
+  # uu_processed: fast filter-only step, re-runs when dropdowns change
+  uu_processed <- reactive({
+    req(input$areachoice3, input$sppchoice3, input$methodchoice3, input$watertypechoice3)
     
-    f_df <-  uu_process %>%
-      filter(metric %in% uni.metric,
-             area %in% input$areachoice3,
-             common_name %in% input$sppchoice3,
-             method %in% input$methodchoice3,
+    uu_metrics_cache() %>%
+      filter(metric         %in% uni.metric,
+             area           %in% input$areachoice3,
+             common_name    %in% input$sppchoice3,
+             method         %in% input$methodchoice3,
              waterbody_type %in% input$watertypechoice3) %>%
       arrange(common_name) %>%
       select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
              se, `5%`, `25%`, `50%`, `75%`, `95%`)
+  })
+  
+  output$uu_results_table <- renderDT({
+    temp <- both() %>% 
+      mutate(across(c(mean, se, `5%`, `25%`, `50%`, `75%`, `95%`), ~round(., 1)))
     
-    print("UU filtered")
-    print(f_df$metric)
-    print(f_df, n = Inf)
+    datatable(temp, options = list(lengthChange = FALSE, pageLength = 25))
+  })
+  
+  output$n_definitions <- renderUI({
+    temp <- both()
+    if (nrow(temp) == 0) return(NULL)
     
+    metrics_present <- unique(temp$metric)
+    
+    # Get actual region name from the standardized rows
+    stand_area <- temp %>% 
+      filter(!(data_source %in% c(wb_label(), "Waterbody"))) %>%
+      distinct(data_source) %>% 
+      pull(data_source) %>% 
+      first()
+    if (is.null(stand_area) || is.na(stand_area)) stand_area <- "the selected area"
+    
+    wb <- wb_label()
+    
+    lines <- c()
+    if ("CPUE" %in% metrics_present) {
+      lines <- c(lines, paste0(
+        "<li><strong>CPUE rows</strong> &mdash; for <em>", stand_area, 
+        "</em>, <em>N</em> is the number of contributing surveys/datasets averaged together. For <em>", wb,
+        "</em>, <em>n</em> is the number of transects or net sets averaged together.</li>"))
+    }
+    if ("Length Frequency" %in% metrics_present) {
+      lines <- c(lines, paste0(
+        "<li><strong>Length Frequency rows</strong> &mdash; for <em>", stand_area,
+        "</em>, <em>N</em> is the number of contributing surveys/datasets. For <em>", wb,
+        "</em>, <em>n</em> is the total number of fish (stock length and above) in the survey.</li>"))
+    }
+    if ("Relative Weight" %in% metrics_present) {
+      lines <- c(lines, paste0(
+        "<li><strong>Relative Weight rows</strong> &mdash; for <em>", stand_area,
+        "</em>, <em>N</em> is the number of contributing surveys/datasets that included fish in that size category. For <em>", wb,
+        "</em>, <em>n</em> is the number of individual fish in that size category.</li>"))
+    }
+    
+    HTML(paste0(
+      "<div style='font-size:14px; color:#555; margin-top:10px;'>",
+      "<strong>What does N/n mean in this table?</strong><ul>",
+      paste(lines, collapse = ""),
+      "</ul></div>"
+    ))
   })
   
   # For downloading the filtered dataset for tab 3 comparison
@@ -871,10 +832,10 @@ server <- function(input, output) {
     both_df <- uu_processed() %>% 
       bind_rows(filtered3(), .id = "id") %>% 
       rename(data_source = id) %>% 
-      mutate(data_source = case_when(data_source == 1 ~ "User upload", 
-                                     data_source == 2 ~ "Standardized")) %>%
+      mutate(data_source = case_when(data_source == 1 ~ wb_label(), 
+                                     data_source == 2 ~ area)) %>%
       arrange(metric) %>%
-      select(metric, data_source, area, common_name, method, waterbody_type, gcat, N, mean, 
+      select(metric, data_source, common_name, method, waterbody_type, gcat, N, mean, 
              se, `5%`, `25%`, `50%`, `75%`, `95%`) 
   })
   
@@ -1005,6 +966,24 @@ server <- function(input, output) {
   
   callModule(plotDownload, "RW_plot", plotRelativeWeight)
   
+  output$rw_n_caption_view <- renderUI({
+    temp <- filtered2() %>% 
+      filter(metric == "Relative Weight") %>% 
+      filter(!is.na(N)) %>% 
+      arrange(gcat)
+    
+    if (nrow(temp) == 0) return(NULL)
+    
+    stand_text <- temp %>% 
+      mutate(txt = paste0(gcat, " (*N* = ", N, ")")) %>% 
+      pull(txt) %>% 
+      paste(collapse = ", ")
+    
+    HTML(markdown::markdownToHTML(text = paste0(
+      "Sample sizes by proportional size distribution category &mdash; ", stand_text, "."
+    ), fragment.only = TRUE))
+  })
+  
   
   plotCPUE <- reactive({
     
@@ -1019,15 +998,18 @@ server <- function(input, output) {
                  label = "No CPUE data for selected options") +
         theme_void()
     } else {
-      fig <- ggplot(temp, aes(y = area)) +
-        geom_boxplot(aes(xmin = `5%`,
-                         xlower = `25%`,
-                         xmiddle = `50%`,
-                         xupper = `75%`,
-                         xmax = `95%`),
-                     stat = "identity", 
-                     fill = "white") +
-        scale_x_continuous("CPUE") +
+      temp <- temp %>% 
+        mutate(area_num = as.numeric(factor(area)))
+      
+      fig <- ggplot(temp) +
+        geom_rect(aes(xmin = mean - se, xmax = mean + se, 
+                     ymin = area_num - 0.12, ymax = area_num + 0.12), 
+                 fill = "grey60", alpha = 0.4) +
+        geom_segment(aes(x = mean, xend = mean, 
+                         y = area_num - 0.12, yend = area_num + 0.12), 
+                     color = "grey30", linewidth = 1.5) +
+        scale_x_continuous("CPUE", expand = expansion(mult = c(0.05, 0.1))) +
+        scale_y_continuous(breaks = NULL) +
         theme_classic(base_size = 20) +
         labs(title = paste0("*N* = ", N)) +
         theme(axis.title.y = element_blank(),
@@ -1040,7 +1022,7 @@ server <- function(input, output) {
     
   })
   
-  callModule(plotDownload, "CPUE_plot", plotCPUE)
+  callModule(plotDownload, "CPUE_plot", plotCPUE, width = 10, height = 3.5)
   
   mtext <- "
 <br>
@@ -1115,10 +1097,14 @@ Required columns in input dataframe:
   - `total_length` is fish total length (TL) in mm
   - `weight` is fish record weight (g). A column named `weight` is required, but the data is is *optional* and the rest of the column can be left blank
   - `effort` is specified in **Collection method**. A column named `effort` is required, but the data is is *optional* and the rest of the column can be left blank
+- **Sampling unit**:
+  - `transect_or_net_set` identifies which individual transect (for electrofishing) or net set (for netting methods) each fish record came from
+      - Use a simple numeric or text ID (e.g., 1, 2, 3... or T1, T2, T3...) that is consistent for every fish caught within the same transect/net set
+      - CPUE is now calculated separately for each transect/net set and then averaged, which lets the app report a mean CPUE with a standard error instead of a single pooled number
 - **Collection method**: see the table below for details
   - `method` must exactly match one of the options in 'Method name'
-  - `effort` is the **total** effort of the survey, report number of effort units
-      - Examples of effort: 4,556 seconds for electrofishing, 36 net nights for gill net surveys, 5 100-m drifts for drifting trammel net
+  - `effort` is the effort for that **individual transect or net set** (not summed across the whole survey), report number of effort units
+      - Examples of effort: 600 seconds for a single electrofishing transect, 1 net night for a single gill net set, 1 100-m drift for a single drifting trammel net haul
   - The 'gill_net_spring' method is for gill netting done between January and June (months 1 - 6), and 'gill_net_fall' is for between July and December (months 7 - 12)
   - Data for additional collection methods will be added in the future
 
@@ -1210,7 +1196,8 @@ Required columns in input dataframe:
 output$instructions <- renderUI({
   tf <- tempfile()
   knit(text = mtext, output = tf)
-  HTML(markdown::markdownToHTML(file = tf))
+  div(style = "background-color: #ffffff; border: 1px solid #e0dcd5; border-radius: 6px; padding: 18px 22px; margin-bottom: 15px;",
+      HTML(markdown::markdownToHTML(file = tf)))
 })
 
 output$example <- renderDT(datatable(ex, options = list(lengthChange = FALSE, 
@@ -1233,14 +1220,20 @@ plotLengthFrequencyuser <- reactive({
     distinct(N) %>% 
     pull(N)
   
-  stand_N_label <- paste0("Standardized average <br> length frequency <br> (*N* = ", stand_N, " datasets)")
+  stand_area <- temp %>% 
+    filter(data_source == "Standardized") %>% 
+    distinct(area) %>% 
+    pull(area) %>% 
+    first()
+  
+  stand_N_label <- paste0(wrap_br(stand_area), " average <br> length frequency <br> (*N* = ", stand_N, " datasets)")
   
   user_N <- temp %>% 
     filter(data_source == "User upload") %>% 
     distinct(N) %>% 
     pull(N)
   
-  user_N_label <- paste0("Waterbody length <br> frequency <br> (n = ", user_N, " fish)")
+  user_N_label <- paste0(wb_label(), " length <br> frequency <br> (*n* = ", user_N, " fish)")
   
   stand_only <- temp %>% 
     filter(data_source == "Standardized")
@@ -1293,6 +1286,11 @@ plotRelativeWeightuser <- reactive({
   user_only <- temp %>% 
     filter(data_source == "User upload")
   
+  stand_area <- stand_only %>% 
+    distinct(area) %>% 
+    pull(area) %>% 
+    first()
+  
   if (nrow(user_only) == 0){
     
     fig <- ggplot() +
@@ -1337,12 +1335,15 @@ plotRelativeWeightuser <- reactive({
       ylim(50, 160) +
       geom_hline(yintercept = 100, linetype = "dashed") +
       labs(y = "Relative weight (<i>W<sub>r</sub></i>)") +
-      scale_color_manual(name = "Data source", values = c("black", "grey60"), 
-                         labels = c("Standardized data", "Waterbody")) +
+      scale_color_manual(name = "Data source", 
+                         breaks = c("Standardized", "User upload"),
+                         values = c("Standardized" = "black", "User upload" = "grey60"), 
+                         labels = c("Standardized" = wrap_br(stand_area), "User upload" = wb_label())) +
       theme_classic(base_size = 20) +
       xlab("Proportional size distribution categories") +
       theme(legend.position = "inside", 
             legend.position.inside = c(0.8, 0.85), 
+            legend.text = ggtext::element_markdown(),
             axis.title.y = ggtext::element_markdown()) 
     
   }
@@ -1352,6 +1353,65 @@ plotRelativeWeightuser <- reactive({
 })
 
 callModule(plotDownload, "RW_plot_UU", plotRelativeWeightuser)
+
+output$rw_caption <- renderUI({
+  temp <- uu_processed() %>% 
+    bind_rows(filtered3(), .id = "id") %>% 
+    rename(data_source = id) %>% 
+    mutate(data_source = case_when(data_source == 1 ~ "User upload", 
+                                   data_source == 2 ~ "Standardized")) %>% 
+    filter(metric == "Relative Weight")
+  
+  stand_area <- temp %>% 
+    filter(data_source == "Standardized") %>% 
+    distinct(area) %>% 
+    pull(area) %>% 
+    first()
+  
+  if (is.null(stand_area) || length(stand_area) == 0) stand_area <- "the selected area"
+  
+  HTML(markdown::markdownToHTML(text = paste0(
+    "Relative weight by proportional size distribution categories. Points indicate means and lines indicate standard error. Note that these two means are calculated differently: the ", stand_area, 
+    " value is the average of each contributing survey's own average relative weight in that category, while the ", wb_label(),
+    " value is the average across the individual fish uploaded in that category."
+  ), fragment.only = TRUE))
+})
+
+output$rw_n_caption <- renderUI({
+  temp <- uu_processed() %>% 
+    bind_rows(filtered3(), .id = "id") %>% 
+    rename(data_source = id) %>% 
+    mutate(data_source = case_when(data_source == 1 ~ "User upload", 
+                                   data_source == 2 ~ "Standardized")) %>% 
+    filter(metric == "Relative Weight") %>% 
+    filter(!is.na(N)) %>% 
+    arrange(gcat)
+  
+  if (nrow(temp) == 0) return(NULL)
+  
+  stand_area <- temp %>% 
+    filter(data_source == "Standardized") %>% 
+    distinct(area) %>% 
+    pull(area) %>% 
+    first()
+  
+  stand_text <- temp %>% 
+    filter(data_source == "Standardized") %>% 
+    mutate(txt = paste0(gcat, " (*N* = ", N, ")")) %>% 
+    pull(txt) %>% 
+    paste(collapse = ", ")
+  
+  user_text <- temp %>% 
+    filter(data_source == "User upload") %>% 
+    mutate(txt = paste0(gcat, " (*n* = ", N, ")")) %>% 
+    pull(txt) %>% 
+    paste(collapse = ", ")
+  
+  HTML(markdown::markdownToHTML(text = paste0(
+    "Sample sizes by proportional size distribution category &mdash; ", stand_area, ": ", stand_text, 
+    ". ", wb_label(), ": ", user_text, "."
+  ), fragment.only = TRUE))
+})
 
 plotCPUEuser <- reactive({
   temp <- uu_processed() %>% 
@@ -1370,20 +1430,13 @@ plotCPUEuser <- reactive({
   
   stand_N_label <- paste0("Standardized data <br> (*N* = ", stand_N, " datasets)")
   
-  user_N_label <- paste0("Waterbody")
+  user_N_label <- paste0(wb_label())
   
   stand_only <- temp %>% 
     filter(data_source == "Standardized")
   
   user_only <- temp %>% 
     filter(data_source == "User upload")
-  
-  value_uu_cpue <- temp %>% 
-    filter(data_source == "User upload") %>% 
-    select(mean) %>% 
-    pull()
-  
-  value_uu_cpue_df <- data.frame(xintercept = value_uu_cpue)
   
   if (nrow(user_only) == 0){
     
@@ -1401,25 +1454,113 @@ plotCPUEuser <- reactive({
     
   } else {
     
-    fig <- ggplot(temp, aes(y = area, fill = data_source)) +
-      geom_boxplot(data = filter(temp, data_source == "Standardized"), 
-                   aes(xmin = `5%`,
-                       xlower = `25%`,
-                       xmiddle = `50%`,
-                       xupper = `75%`,
-                       xmax = `95%`),
-                   stat = "identity") +
-      geom_vline(data = value_uu_cpue_df, aes(xintercept = xintercept, linetype = "Waterbody"), color = "grey40", size = 1.5) +
-      scale_x_continuous("CPUE") +
-      scale_fill_manual(name = "Data source", values = c("white", "grey60"), 
-                        labels = c(stand_N_label, user_N_label)) +
-      scale_linetype_manual("", values = c("Waterbody" = 2)) +
+    temp <- temp %>% 
+      mutate(area_num = as.numeric(factor(area)), 
+             y_pos = case_when(data_source == "Standardized" ~ area_num - 0.3, 
+                               data_source == "User upload" ~ area_num + 0.3))
+    
+    stand_ticks <- temp %>% 
+      filter(data_source == "Standardized") %>% 
+      group_by(y_pos) %>% 
+      slice(1) %>% 
+      ungroup() %>% 
+      select(y_pos, area, `5%`, `25%`, `50%`, `75%`, `95%`) %>% 
+      pivot_longer(cols = c(`5%`, `25%`, `50%`, `75%`, `95%`), 
+                   names_to = "percentile", values_to = "x") %>% 
+      mutate(is_median = percentile == "50%", 
+             label_offset = case_when(percentile %in% c("5%", "50%", "95%") ~ 0.2, 
+                                      percentile %in% c("25%", "75%") ~ 0.27), 
+             label_hjust = case_when(percentile == "5%"  ~ 0, 
+                                     percentile == "95%" ~ 1, 
+                                     TRUE                ~ 0.5))
+    
+    stand_band <- temp %>% 
+      filter(data_source == "Standardized") %>% 
+      group_by(y_pos) %>% 
+      slice(1) %>% 
+      ungroup()
+    
+    user_band <- temp %>% 
+      filter(data_source == "User upload") %>% 
+      group_by(y_pos) %>% 
+      slice(1) %>% 
+      ungroup()
+    
+    # Estimate the user's approximate percentile rank by linear interpolation 
+    # between the 5 known standardized percentile points (5/25/50/75/95th).
+    # This is an approximation, not an exact percentile, since we only have 
+    # 5 reference points rather than the full underlying distribution.
+    known_p <- c(5, 25, 50, 75, 95)
+    
+    ordinal_suffix <- function(n) {
+      if (n %% 100 %in% 11:13) return("th")
+      switch(as.character(n %% 10), "1" = "st", "2" = "nd", "3" = "rd", "th")
+    }
+    
+    estimate_pct_rank <- function(user_mean, stand_row) {
+      known_x <- c(stand_row$`5%`, stand_row$`25%`, stand_row$`50%`, stand_row$`75%`, stand_row$`95%`)
+      if (user_mean <= known_x[1]) {
+        max(1, round(5 * user_mean / known_x[1]))
+      } else if (user_mean >= known_x[5]) {
+        min(99, round(95 + (user_mean - known_x[5]) / (known_x[5] - known_x[4]) * 4))
+      } else {
+        round(approx(x = known_x, y = known_p, xout = user_mean)$y)
+      }
+    }
+    
+    user_band <- user_band %>% 
+      left_join(stand_band %>% select(area, `5%`, `25%`, `50%`, `75%`, `95%`), 
+                by = "area", suffix = c("", "_std")) %>% 
+      rowwise() %>% 
+      mutate(pct_rank = estimate_pct_rank(mean, 
+                                          tibble(`5%` = `5%_std`, `25%` = `25%_std`, 
+                                                `50%` = `50%_std`, `75%` = `75%_std`, `95%` = `95%_std`))) %>% 
+      ungroup()
+    
+    fig <- ggplot() +
+      geom_segment(data = stand_ticks, 
+                   aes(x = x, xend = x, 
+                       y = y_pos - ifelse(is_median, 0.16, 0.1), 
+                       yend = y_pos + ifelse(is_median, 0.16, 0.1), 
+                       linewidth = is_median), 
+                   color = "grey50") +
+      geom_text(data = stand_ticks, 
+                aes(x = x, y = y_pos + label_offset, label = percentile, hjust = label_hjust), 
+                size = 4, color = "grey50") +
+      geom_rect(data = stand_band, 
+               aes(xmin = mean - se, xmax = mean + se, 
+                   ymin = y_pos - 0.06, ymax = y_pos + 0.06), 
+               fill = "steelblue", alpha = 0.5) +
+      geom_segment(data = stand_band, 
+                   aes(x = mean, xend = mean, 
+                       y = y_pos - 0.06, yend = y_pos + 0.06), 
+                   color = "steelblue4", linewidth = 1.2) +
+      geom_rect(data = user_band, 
+               aes(xmin = mean - se, xmax = mean + se, 
+                   ymin = y_pos - 0.12, ymax = y_pos + 0.12), 
+               fill = "grey30", alpha = 0.4) +
+      geom_segment(data = user_band, 
+                   aes(x = mean, xend = mean, 
+                       y = y_pos - 0.12, yend = y_pos + 0.12), 
+                   color = "grey30", linewidth = 1.5) +
+      geom_text(data = user_band, 
+                aes(x = mean, y = y_pos - 0.2, 
+                    label = paste0("~", pct_rank, sapply(pct_rank, ordinal_suffix), " percentile"),
+                    hjust = ifelse(pct_rank > 50, 1, 0)), 
+                size = 4, color = "grey30", fontface = "italic") +
+      geom_text(data = stand_ticks %>% distinct(y_pos, area), 
+                aes(x = Inf, y = y_pos, label = str_wrap(area, width = 20)), 
+                hjust = 1, size = 4, color = "grey50", fontface = "bold", lineheight = 0.9) +
+      geom_text(data = user_band, 
+                aes(x = Inf, y = y_pos, label = str_wrap(wb_label(), width = 20)), 
+                hjust = 1, size = 4, color = "grey30", fontface = "bold", lineheight = 0.9) +
+      scale_x_continuous("CPUE", expand = expansion(mult = c(0.05, 0.55))) +
+      scale_y_continuous(breaks = NULL, expand = expansion(mult = c(0.15, 0.25))) +
+      scale_linewidth_manual(values = c("FALSE" = 0.6, "TRUE" = 1.3), guide = "none") +
       theme_classic(base_size = 20) +
       theme(axis.title.y = element_blank(),
             axis.text.y = element_blank(),
-            axis.ticks.y = element_blank(), 
-            #legend.title = element_blank(), 
-            legend.text = ggtext::element_markdown())
+            axis.ticks.y = element_blank())
     
   }
   
@@ -1427,7 +1568,34 @@ plotCPUEuser <- reactive({
   
 })
 
-callModule(plotDownload, "CPUE_plot_UU", plotCPUEuser)
+callModule(plotDownload, "CPUE_plot_UU", plotCPUEuser, width = 10, height = 3.5)
+
+output$cpue_caption <- renderUI({
+  temp <- uu_processed() %>% 
+    bind_rows(filtered3(), .id = "id") %>% 
+    rename(data_source = id) %>% 
+    mutate(data_source = case_when(data_source == 1 ~ "User upload", 
+                                   data_source == 2 ~ "Standardized")) %>% 
+    filter(metric == "CPUE")
+  
+  stand_area <- temp %>% 
+    filter(data_source == "Standardized") %>% 
+    distinct(area) %>% 
+    pull(area) %>% 
+    first()
+  
+  if (is.null(stand_area) || length(stand_area) == 0) stand_area <- "the selected area"
+  
+  HTML(markdown::markdownToHTML(text = paste0(
+    "Catch per unit effort. The grey ticks above the ", stand_area, 
+    " row mark the 5th, 25th, 50th (median, bold tick), 75th, and 95th percentiles of CPUE across many sampled datasets in ", stand_area, 
+    ", so you can see roughly where ", wb_label(), "'s CPUE falls within that regional distribution. The blue line and band on that same row show the ", stand_area, 
+    " mean CPUE +/- 1 standard error. The dark vertical line and shaded band on the ", wb_label(), 
+    " row show the survey mean CPUE +/- 1 standard error, averaged across transects/net sets. The italic label below the ", wb_label(),
+    " line gives an approximate percentile rank (estimated by interpolating between the 5th/25th/50th/75th/95th percentile points above) showing roughly where ", wb_label(),
+    "'s mean CPUE falls within the ", stand_area, " distribution. CPUE units depend on collection method: boat and raft electrofishing are fish per hour, gill net is fish per net nights, drifting trammel net is fish per 100-m drift, large catfish hoopnet is fish per 24 hour set, bag seine is fish per 0.25 arc (small standing waters) or 0.5 arc (rivers), stream seine is fish per 10-15m haul, and backpack and tow barge electrofishing are fish per 100m²."
+  ), fragment.only = TRUE))
+})
 
 }
 
