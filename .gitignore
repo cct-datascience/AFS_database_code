@@ -20,3 +20,6 @@ app/process_user_data.html
 
 # Rstudio connect files
 app/rsconnect/
+
+# Claude Code local tooling config
+.claude/

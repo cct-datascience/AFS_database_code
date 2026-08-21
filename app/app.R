@@ -11,7 +11,7 @@ library(ggtext)
 # library(periscope)
 
 # Module code
-plotDownloadUI <- function(id, height = 400) {
+plotDownloadUI <- function(id, height = 400, width = "100%") {
   ns <- NS(id)
   tagList(
     fluidRow(
@@ -21,20 +21,20 @@ plotDownloadUI <- function(id, height = 400) {
       )
     ),
     fluidRow(
-      plotOutput(ns('plot'), height = height)
+      plotOutput(ns('plot'), height = height, width = width)
     )
-    
+
   )
 }
 
-plotDownload <- function(input, output, session, plotFun, width = 9, height = 6) {
+plotDownload <- function(input, output, session, plotFun, width = 9, height = 6, file_ext = "png") {
   output$plot <- renderPlot({
     plotFun()
   })
-  
+
   output$download_plot <- downloadHandler(
     filename = function() {
-      "plot.png"
+      paste0("plot.", file_ext)
     },
     content = function(file) {
       ggsave(file, plotFun(), width = width, height = height)
@@ -127,9 +127,49 @@ area_choices <- function(type) {
   temp[-1:-10]
 }
 
+# Fixed list of the 14 EPA Level 1 ecoregion names, independent of which ones
+# happen to have standardized data loaded this year -- used to catch
+# typos/misspellings in a user's uploaded `ecoregion` column. A mismatch
+# there fails silently otherwise: the row just never matches a standardized
+# area, with no indication it's a typo rather than a real database gap.
+valid_ecoregions <- c("0 Water", "3 Taiga", "4 Hudson Plain", "5 Northern Forests",
+                      "6 Northwestern Forested Mountains", "7 Marine West Coast Forest",
+                      "8 Eastern Temperate Forests", "9 Great Plains",
+                      "10 North American Deserts", "11 Mediterranean California",
+                      "12 Southern Semi-Arid Highlands", "13 Temperate Sierras",
+                      "14 Tropical Dry Forests", "15 Tropical Wet Forests Northern Forests")
+
+# States/provinces the standardized database has comparison data for.
+# Ecoregion area strings all start with a digit, so excluding those plus
+# "North America" leaves just states/provinces.
+valid_states <- uni.area[uni.area != "North America" & !str_detect(uni.area, "^[0-9]")]
+
+# For each value in `bad`, find the closest fuzzy match in `valid` (if any)
+# to suggest as a likely intended spelling in the validation warning.
+suggest_closest <- function(bad, valid) {
+  vapply(bad, function(x) {
+    hit <- agrep(x, valid, max.distance = 0.3, ignore.case = TRUE, value = TRUE)
+    if (length(hit) > 0) hit[1] else NA_character_
+  }, character(1))
+}
+
+# Read a user's uploaded CSV and normalize whitespace in the state/ecoregion
+# columns (trim + collapse doubled/irregular internal spaces). These columns
+# are matched against standardized area names by exact string equality
+# elsewhere, so a stray double space (invisible in normal text -- e.g. "8
+# Eastern Temperate Forests" typed with two spaces after "8") would otherwise
+# silently break that match with no visible difference in the UI.
+read_user_upload <- function(path) {
+  uu <- read_csv(path)
+  if ("state" %in% names(uu))     uu$state     <- str_squish(uu$state)
+  if ("ecoregion" %in% names(uu)) uu$ecoregion <- str_squish(uu$ecoregion)
+  uu
+}
+
 
 #Shiny App
-ui <- navbarPage(title = "AFS Standard Sampling App", tags$a(style='background-color:white;position:absolute;right:10px;top:15px;',tags$img(src='AFS_logo.png'), href = "https://fisheries.org/"), 
+ui <- navbarPage(title = "AFS Standard Sampling App",
+                 header = tags$a(style='background-color:white;position:absolute;right:10px;top:15px;',tags$img(src='AFS_logo.png'), href = "https://fisheries.org/"),
                  theme = bslib::bs_theme(bootswatch = "sandstone"),
                  tabPanel(tagList(icon("circle-info"), "About"),
                           wellPanel(
@@ -300,11 +340,12 @@ ui <- navbarPage(title = "AFS Standard Sampling App", tags$a(style='background-c
                                             multiple = FALSE, 
                                             accept = (".csv"), 
                                             placeholder = "No file selected"),
-                                  textInput("waterbody_label", "Waterbody name (optional)", 
+                                  textInput("waterbody_label", "Waterbody name (optional)",
                                             placeholder = "e.g., Alamo Lake")
                               ),
+                              uiOutput("uu_validation_warnings"),
                               div(style = "margin-bottom: 8px;",
-                                  h5(span(style = "display:inline-block; background-color:#325d88; color:white; border-radius:50%; width:24px; height:24px; text-align:center; line-height:24px; margin-right:8px;", "3"), 
+                                  h5(span(style = "display:inline-block; background-color:#325d88; color:white; border-radius:50%; width:24px; height:24px; text-align:center; line-height:24px; margin-right:8px;", "3"),
                                      "Choose what to compare")
                               ),
                               uiOutput("dyn_type"),
@@ -345,7 +386,7 @@ ui <- navbarPage(title = "AFS Standard Sampling App", tags$a(style='background-c
                                          div(style = "font-size:25px;", uiOutput("rw_caption")),
                                          uiOutput("rw_n_caption"),
                                          hr(),
-                                         plotDownloadUI("CPUE_plot_UU", height = "200px"), 
+                                         plotDownloadUI("CPUE_plot_UU", height = "400px", width = "100%"),
                                          br(), 
                                          div(style = "font-size:25px;", uiOutput("cpue_caption")))
                               )
@@ -360,7 +401,7 @@ ui <- navbarPage(title = "AFS Standard Sampling App", tags$a(style='background-c
 
 
 
-server <- function(input, output) {
+server <- function(input, output, session) {
   
   wrap_br <- function(x, width = 22) {
     paste(strwrap(x, width = width), collapse = "<br>")
@@ -419,7 +460,7 @@ server <- function(input, output) {
   # separate reactive so dropdown population doesn't depend on metric calculations.
   uu_raw <- reactive({
     req(input$upload)
-    uu <- read_csv(input$upload$datapath)
+    uu <- read_user_upload(input$upload$datapath)
     
     uu_state <- uu %>% select(-any_of("ecoregion")) %>% mutate(type = "state") %>% rename(area = state)
     uu_all   <- uu %>% select(-state, -any_of("ecoregion")) %>% mutate(type = "all", area = "North America")
@@ -430,8 +471,52 @@ server <- function(input, output) {
     }
     uu_all
   })
-  
-  # Render a UI for selecting area 
+
+  # Catch ecoregion/state values that don't exactly match a standardized
+  # area name -- rows with these values silently show no standardized
+  # comparison data otherwise, indistinguishable from a genuine database gap.
+  uu_validation <- reactive({
+    req(input$upload)
+    raw <- uu_raw()
+
+    bad_ecoregion <- raw %>% filter(type == "ecoregion") %>% distinct(area) %>% pull() %>%
+      setdiff(valid_ecoregions)
+
+    bad_state <- raw %>% filter(type == "state") %>% distinct(area) %>% pull() %>%
+      setdiff(valid_states)
+
+    list(bad_ecoregion = bad_ecoregion, bad_state = bad_state)
+  })
+
+  output$uu_validation_warnings <- renderUI({
+    v <- uu_validation()
+
+    warning_block <- function(bad_values, valid_values, label) {
+      if (length(bad_values) == 0) return(NULL)
+      suggestions <- suggest_closest(bad_values, valid_values)
+      items <- map2(bad_values, suggestions, function(bad, s) {
+        if (!is.na(s)) tags$li(tags$code(bad), " — did you mean ", tags$code(s), "?")
+        else tags$li(tags$code(bad), " — not a recognized ", label)
+      })
+      tagList(
+        tags$p(strong(length(bad_values)), " ", label, " value(s) in your file don't match the standardized database. Rows with these values will show no standardized comparison data until fixed:"),
+        tags$ul(items)
+      )
+    }
+
+    msgs <- tagList(
+      warning_block(v$bad_ecoregion, valid_ecoregions, "ecoregion"),
+      warning_block(v$bad_state, valid_states, "state/province")
+    )
+
+    if (length(v$bad_ecoregion) == 0 && length(v$bad_state) == 0) return(NULL)
+
+    div(style = "background-color:#fdf2e9; border-left:4px solid #e67e22; padding:10px 14px; border-radius:4px; margin-bottom:15px; font-size:13px;",
+        icon("triangle-exclamation"), strong(" Data check:"),
+        msgs)
+  })
+
+  # Render a UI for selecting area
   output$dyn_type <- renderUI({
     req(input$upload)
     
@@ -716,7 +801,7 @@ server <- function(input, output) {
   # It is cached here and only re-runs when a new file is uploaded.
   uu_metrics_cache <- reactive({
     req(input$upload)
-    uu <- read_csv(input$upload$datapath)
+    uu <- read_user_upload(input$upload$datapath)
     
     uu_state <- uu %>% select(-any_of("ecoregion")) %>% mutate(type = "state")  %>% rename(area = state)
     uu_all    <- uu %>% select(-state, -any_of("ecoregion")) %>% mutate(type = "all", area = "North America")
@@ -741,12 +826,13 @@ server <- function(input, output) {
       ))
     
     # Calculate all 3 metrics and N — expensive steps, cached here
-    uu_counts <- calculate_total_n(uu_all)
-    uu_cpue   <- calculate_cpue(uu_all)
-    uu_lf     <- calculate_lf(uu_all)
-    uu_rw     <- calculate_rw(uu_all)
-    
-    bind_rows(uu_cpue, uu_lf, uu_rw) %>%
+    uu_counts     <- calculate_total_n(uu_all)
+    uu_cpue       <- calculate_cpue(uu_all)
+    uu_cpue_total <- calculate_cpue_total(uu_all)
+    uu_lf         <- calculate_lf(uu_all)
+    uu_rw         <- calculate_rw(uu_all)
+
+    bind_rows(uu_cpue, uu_cpue_total, uu_lf, uu_rw) %>%
       left_join(uu_counts, by = c("type", "area", "common_name", "method", "waterbody_type"),
                 suffix = c("", "_total")) %>%
       mutate(N = coalesce(N, N_total)) %>%
@@ -770,7 +856,7 @@ server <- function(input, output) {
              method         %in% input$methodchoice3,
              waterbody_type %in% input$watertypechoice3) %>%
       arrange(common_name) %>%
-      select(area, common_name, method, waterbody_type, gcat, metric, N, mean,
+      select(area, common_name, method, waterbody_type, gcat, metric, cpue_calc, cpue_method, N, mean,
              se, `5%`, `25%`, `50%`, `75%`, `95%`)
   })
   
@@ -800,9 +886,9 @@ server <- function(input, output) {
     lines <- c()
     if ("CPUE" %in% metrics_present) {
       lines <- c(lines, paste0(
-        "<li><strong>CPUE rows</strong> &mdash; for <em>", stand_area, 
+        "<li><strong>CPUE rows</strong> &mdash; for <em>", stand_area,
         "</em>, <em>N</em> is the number of contributing surveys/datasets averaged together. For <em>", wb,
-        "</em>, <em>n</em> is the number of transects or net sets averaged together.</li>"))
+        "</em>, two CPUE values are shown: the <strong>Per-Transect Mean (&plusmn; SE)</strong> row's <em>n</em> is the number of transects or net sets averaged together; the <strong>Total (Pooled)</strong> row's <em>n</em> is the total number of fish (of that species) used in the pooled total-fish/total-effort ratio, and has no standard error since it is a single combined value rather than an average across samples.</li>"))
     }
     if ("Length Frequency" %in% metrics_present) {
       lines <- c(lines, paste0(
@@ -829,14 +915,15 @@ server <- function(input, output) {
   
   both <- reactive({
     
-    both_df <- uu_processed() %>% 
-      bind_rows(filtered3(), .id = "id") %>% 
-      rename(data_source = id) %>% 
-      mutate(data_source = case_when(data_source == 1 ~ wb_label(), 
-                                     data_source == 2 ~ area)) %>%
-      arrange(metric) %>%
-      select(metric, data_source, common_name, method, waterbody_type, gcat, N, mean, 
-             se, `5%`, `25%`, `50%`, `75%`, `95%`) 
+    both_df <- uu_processed() %>%
+      bind_rows(filtered3(), .id = "id") %>%
+      rename(data_source = id) %>%
+      mutate(data_source = case_when(data_source == 1 ~ wb_label(),
+                                     data_source == 2 ~ area),
+             cpue_method = coalesce(cpue_method, "")) %>%
+      arrange(metric, common_name, cpue_calc) %>%
+      select(metric, data_source, common_name, method, waterbody_type, gcat, cpue_method, N, mean,
+             se, `5%`, `25%`, `50%`, `75%`, `95%`)
   })
   
   output$filterdownloaduu <- downloadHandler(
@@ -1413,162 +1500,312 @@ output$rw_n_caption <- renderUI({
   ), fragment.only = TRUE))
 })
 
-plotCPUEuser <- reactive({
-  temp <- uu_processed() %>% 
-    bind_rows(filtered3(), .id = "id") %>% 
-    rename(data_source = id) %>% 
-    mutate(data_source = case_when(data_source == 1 ~ "User upload", 
-                                   data_source == 2 ~ "Standardized")) %>% 
+# Measures the actual rendered width of text via grid font metrics (a
+# grobWidth of a wrapped, multi-line string already returns the width of its
+# widest line, so this works for wrapped axis labels too). fontface must
+# match whatever the text actually renders as -- bold and italic glyphs are
+# measurably wider than plain at the same point size, and the value/median
+# labels this feeds into are rendered bold, so measuring them as plain text
+# would systematically underestimate their true width.
+text_width_in <- function(labels, font_size, fontface = "plain") {
+  pt_const <- 72.27 / 25.4
+  fontsize_pt <- font_size * pt_const
+  vapply(labels, function(lab) {
+    grid::convertWidth(grid::grobWidth(grid::textGrob(lab, gp = grid::gpar(fontsize = fontsize_pt, fontface = fontface))),
+                       "inches", valueOnly = TRUE)
+  }, numeric(1))
+}
+
+# A centered label whose left edge would cross the left boundary gets
+# left-aligned instead (text extends rightward from its true value, away
+# from the axis) -- needed for very low CPUE values (e.g. a rare species)
+# that sit close to the y-axis. Symmetrically, a label whose right edge
+# would cross the right boundary gets right-aligned instead (text extends
+# leftward) -- needed for high CPUE values/long labels (e.g. "(N=2)" tacked
+# onto an already-long IQR label) that sit close to the plot's right edge.
+# The 20% pad is deliberate slack on top of the measured width:
+# text-measurement via grid can still differ slightly from one rendering
+# backend to the next (font hinting, subpixel rounding) even after matching
+# device and font weight, so this errs toward flipping alignment a little
+# early rather than clipping.
+safe_hjust <- function(x, labels, label_size, left_boundary, right_boundary, data_units_per_inch, fontface = "plain") {
+  half_width_units <- (text_width_in(labels, label_size, fontface) / 2) * data_units_per_inch * 1.2
+  case_when(
+    x - half_width_units < left_boundary  ~ 0,
+    x + half_width_units > right_boundary ~ 1,
+    TRUE ~ 0.5
+  )
+}
+
+# SE is undefined (NA) with only one transect/net-set -- sd() of a single
+# value has no meaning -- so the mean is shown alone, flagged with its N
+# instead of a broken "X ± NA" label. With only two, SE is technically
+# defined but rests on a single degree of freedom, so it's flagged the same
+# way as a caution rather than presented as if it were a solid estimate.
+mean_label_text <- function(mean, se, N, unit_label) {
+  case_when(
+    is.na(se) ~ paste0(round(mean, 1), " ", unit_label, " (N=", N, ")"),
+    N <= 2    ~ paste0(round(mean, 1), " ± ", round(se, 1), " ", unit_label, " (N=", N, ")"),
+    TRUE      ~ paste0(round(mean, 1), " ± ", round(se, 1), " ", unit_label)
+  )
+}
+
+# IQR (25th-75th percentile) is the spread measure that pairs with a median,
+# the same way SE pairs with a mean -- both are already computed for every
+# CPUE row, so this adds no new statistics, just displays ones that existed
+# but weren't shown. Below 3 transects/datasets the median is mathematically
+# identical to the mean (the middle of one point is itself; the middle of
+# two is their average) -- still shown, but flagged with its N so it reads
+# as "this is the same as the mean, and here's why" rather than looking like
+# an independent second estimate.
+median_label_text <- function(median, p25, p75, N, unit_label) {
+  base <- paste0(round(median, 1), " ", unit_label, " (IQR: ", round(p25, 1), "–", round(p75, 1), ")")
+  ifelse(N <= 2, paste0(base, " (N=", N, ")"), base)
+}
+
+ordinal_suffix <- function(n) {
+  if (n %% 100 %in% 11:13) return("th")
+  switch(as.character(n %% 10), "1" = "st", "2" = "nd", "3" = "rd", "th")
+}
+
+# Estimates the waterbody's approximate percentile rank by linear
+# interpolation between the 5 known standardized percentile points (5th,
+# 25th, 50th, 75th, 95th). An approximation, not an exact percentile, since
+# only 5 reference points are known rather than the full underlying
+# distribution.
+estimate_pct_rank <- function(value, ref) {
+  known_p <- c(5, 25, 50, 75, 95)
+  known_x <- c(ref$`5%`, ref$`25%`, ref$`50%`, ref$`75%`, ref$`95%`)
+  if (value <= known_x[1]) {
+    max(1, round(5 * value / known_x[1]))
+  } else if (value >= known_x[5]) {
+    min(99, round(95 + (value - known_x[5]) / (known_x[5] - known_x[4]) * 4))
+  } else {
+    round(approx(x = known_x, y = known_p, xout = value)$y)
+  }
+}
+
+build_cpue_user_plot <- function(label_size = 4, plot_width_in = 12.5) {
+  # Text-width measurements below (text_width_in/safe_hjust) need a graphics
+  # device open to report font metrics. For the on-screen render, Shiny's
+  # own device is already active when this runs. But for the download,
+  # ggsave() evaluates this whole function to get its plot argument BEFORE
+  # it opens its own output device -- so without this, the measurements
+  # would run against whatever device happens to be active on the server
+  # (often none), which can report different font metrics than the actual
+  # output device and throw off exactly the calculations meant to keep text
+  # clear of the axis. Opening a fixed, consistent device here for the
+  # measurements guarantees the same answer regardless of caller.
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add = TRUE)
+
+  # All spacing below was hand-tuned for label_size = 4; scale it proportionally
+  # so a bigger font (e.g. 5.5 on-screen) gets bigger gaps too, instead of the
+  # same absolute spacing becoming too tight for larger text.
+  s <- label_size / 4
+
+  temp <- uu_processed() %>%
+    bind_rows(filtered3(), .id = "id") %>%
+    rename(data_source = id) %>%
+    mutate(data_source = case_when(data_source == 1 ~ "User upload",
+                                   data_source == 2 ~ "Standardized")) %>%
     filter(metric == "CPUE")
-  print("Check")
-  print(temp, n = Inf)
-  
-  stand_N <- temp %>% 
-    filter(data_source == "Standardized") %>% 
-    distinct(N) %>% 
-    pull(N)
-  
-  stand_N_label <- paste0("Standardized data <br> (*N* = ", stand_N, " datasets)")
-  
-  user_N_label <- paste0(wb_label())
-  
-  stand_only <- temp %>% 
+
+  stand_only <- temp %>%
     filter(data_source == "Standardized")
-  
-  user_only <- temp %>% 
+
+  user_only <- temp %>%
     filter(data_source == "User upload")
-  
+
   if (nrow(user_only) == 0){
-    
+
     fig <- ggplot() +
       annotate("text", x = 1, y = 1, size = 8,
                label = "The uploaded data included no efforts. \n Please include efforts to generate this plot") +
       theme_void()
-    
+
   } else if(nrow(stand_only) == 0){
-    
+
     fig <- ggplot() +
       annotate("text", x = 1, y = 1, size = 8,
                label = "No standardized data \n corresponding to uploaded data") +
       theme_void()
-    
+
   } else {
-    
-    temp <- temp %>% 
-      mutate(area_num = as.numeric(factor(area)), 
-             y_pos = case_when(data_source == "Standardized" ~ area_num - 0.3, 
-                               data_source == "User upload" ~ area_num + 0.3))
-    
-    stand_ticks <- temp %>% 
-      filter(data_source == "Standardized") %>% 
-      group_by(y_pos) %>% 
-      slice(1) %>% 
-      ungroup() %>% 
-      select(y_pos, area, `5%`, `25%`, `50%`, `75%`, `95%`) %>% 
-      pivot_longer(cols = c(`5%`, `25%`, `50%`, `75%`, `95%`), 
-                   names_to = "percentile", values_to = "x") %>% 
-      mutate(is_median = percentile == "50%", 
-             label_offset = case_when(percentile %in% c("5%", "50%", "95%") ~ 0.2, 
-                                      percentile %in% c("25%", "75%") ~ 0.27), 
-             label_hjust = case_when(percentile == "5%"  ~ 0, 
-                                     percentile == "95%" ~ 1, 
-                                     TRUE                ~ 0.5))
-    
-    stand_band <- temp %>% 
-      filter(data_source == "Standardized") %>% 
-      group_by(y_pos) %>% 
-      slice(1) %>% 
-      ungroup()
-    
-    user_band <- temp %>% 
-      filter(data_source == "User upload") %>% 
-      group_by(y_pos) %>% 
-      slice(1) %>% 
-      ungroup()
-    
-    # Estimate the user's approximate percentile rank by linear interpolation 
-    # between the 5 known standardized percentile points (5/25/50/75/95th).
-    # This is an approximation, not an exact percentile, since we only have 
-    # 5 reference points rather than the full underlying distribution.
-    known_p <- c(5, 25, 50, 75, 95)
-    
-    ordinal_suffix <- function(n) {
-      if (n %% 100 %in% 11:13) return("th")
-      switch(as.character(n %% 10), "1" = "st", "2" = "nd", "3" = "rd", "th")
-    }
-    
-    estimate_pct_rank <- function(user_mean, stand_row) {
-      known_x <- c(stand_row$`5%`, stand_row$`25%`, stand_row$`50%`, stand_row$`75%`, stand_row$`95%`)
-      if (user_mean <= known_x[1]) {
-        max(1, round(5 * user_mean / known_x[1]))
-      } else if (user_mean >= known_x[5]) {
-        min(99, round(95 + (user_mean - known_x[5]) / (known_x[5] - known_x[4]) * 4))
-      } else {
-        round(approx(x = known_x, y = known_p, xout = user_mean)$y)
-      }
-    }
-    
-    user_band <- user_band %>% 
-      left_join(stand_band %>% select(area, `5%`, `25%`, `50%`, `75%`, `95%`), 
-                by = "area", suffix = c("", "_std")) %>% 
-      rowwise() %>% 
-      mutate(pct_rank = estimate_pct_rank(mean, 
-                                          tibble(`5%` = `5%_std`, `25%` = `25%_std`, 
-                                                `50%` = `50%_std`, `75%` = `75%_std`, `95%` = `95%_std`))) %>% 
-      ungroup()
-    
+
+    unit_label <- cpue_unit_label(temp$method[1], temp$waterbody_type[1])
+
+    stand_band <- temp %>%
+      filter(data_source == "Standardized") %>%
+      slice(1)
+
+    # Two user rows share data_source == "User upload", split explicitly by
+    # cpue_calc rather than assuming one row per data_source.
+    user_transect <- temp %>%
+      filter(data_source == "User upload", cpue_calc == "transect")
+
+    user_total <- temp %>%
+      filter(data_source == "User upload", cpue_calc == "total")
+
+    # SE is undefined (NA) with only one transect/net-set -- sd() of a
+    # single value has no meaning -- so it's treated as zero (no visible
+    # error bar) here rather than left NA, which would otherwise turn the
+    # entire x-range NA and blank out every label position in the plot.
+    stand_se_safe <- coalesce(stand_band$se, 0)
+    transect_se_safe <- coalesce(user_transect$se, 0)
+
+    # Four lines -- Mean (± SE) and Median (± IQR), once for the standardized
+    # area and once for the user's own per-transect data -- plus the pooled
+    # total on its own line below. Ranking a mean against a percentile-built
+    # reference and a median against the same reference mixes two different
+    # kinds of statistics, so each gets its own line with its own matching
+    # error measure instead of being overlaid on one row: SE for a mean, IQR
+    # (25th-75th percentile) for a median, since a median's spread isn't a
+    # standard error. The median line is always shown, even with only 1-2
+    # transects/datasets where it's mathematically identical to the mean --
+    # median_label_text() flags that case with "(N=...)" rather than hiding
+    # the line outright.
+    # Each median's percentile rank is shown right below its value: exactly
+    # "50th percentile" for the area (true by definition of a median, not a
+    # calculation), and an estimated rank for the waterbody -- where its
+    # median falls within the area's reference distribution, interpolated
+    # from the same 5 known percentile points used elsewhere.
+    transect_pct_rank <- estimate_pct_rank(user_transect$`50%`, stand_band)
+
+    rows <- bind_rows(
+      stand_band %>% transmute(row_label = paste0(area, " — Mean"),
+                               center = mean, lo = mean - stand_se_safe, hi = mean + stand_se_safe,
+                               value_label = mean_label_text(mean, se, N, unit_label), pct_label = NA_character_,
+                               color = "steelblue4"),
+      stand_band %>% transmute(row_label = paste0(area, " — Median"),
+                               center = `50%`, lo = `25%`, hi = `75%`,
+                               value_label = median_label_text(`50%`, `25%`, `75%`, N, unit_label),
+                               pct_label = "50th percentile", color = "steelblue4"),
+      user_transect %>% transmute(row_label = paste0(wb_label(), " — Per-Transect Mean"),
+                                  center = mean, lo = mean - transect_se_safe, hi = mean + transect_se_safe,
+                                  value_label = mean_label_text(mean, se, N, unit_label), pct_label = NA_character_,
+                                  color = "grey30"),
+      user_transect %>% transmute(row_label = paste0(wb_label(), " — Median"),
+                                  center = `50%`, lo = `25%`, hi = `75%`,
+                                  value_label = median_label_text(`50%`, `25%`, `75%`, N, unit_label),
+                                  pct_label = paste0("~", transect_pct_rank, ordinal_suffix(transect_pct_rank), " percentile"),
+                                  color = "grey30")
+    )
+    # Topmost row first, working down to y = 1; the pooled total always
+    # anchors the bottom at y = 0, kept separate since it has no mean/median
+    # split of its own -- a single ratio isn't a distribution.
+    rows$y <- rev(seq_len(nrow(rows)))
+
+    total_row <- user_total %>%
+      transmute(row_label = paste0(wb_label(), " — ", cpue_method),
+               center = mean, value_label = paste0(round(mean, 1), " ", unit_label), y = 0)
+
+    axis_labels <- bind_rows(rows %>% select(y, row_label), total_row %>% select(y, row_label)) %>%
+      mutate(row_label = str_wrap(row_label, width = 28))
+
+    # Full x-range must include every error bar and the total's point, not
+    # just the central estimates, or this would underestimate the true
+    # data-units-per-inch and under-space the value labels.
+    full_x_min <- min(rows$lo, total_row$center)
+    full_x_max <- max(rows$hi, total_row$center)
+    x_range <- full_x_max - full_x_min
+    x_expand <- c(0.08, 0.1)
+    panel_width_units <- x_range * (1 + sum(x_expand))
+
+    # The y-axis category labels are now real axis text (not text drawn
+    # inside the panel, as in the previous design), so they claim their own
+    # share of the physical canvas -- a long area or waterbody name can take
+    # a couple of inches. Without subtracting that out, data_units_per_inch
+    # would assume more panel width than actually exists once axis text is
+    # laid out, letting a value label overflow the left edge undetected.
+    axis_label_width_in <- max(text_width_in(axis_labels$row_label, label_size))
+    available_panel_in <- plot_width_in - axis_label_width_in - 0.4
+    data_units_per_inch <- panel_width_units / available_panel_in
+    left_boundary <- full_x_min - x_expand[1] * x_range
+    right_boundary <- full_x_max + x_expand[2] * x_range
+
+    # Value labels stay centered above their point unless that would cross
+    # the y-axis (e.g. a very low CPUE for a rarely-caught species) or the
+    # panel's right edge (e.g. a high CPUE, or a long "(N=...)"-flagged
+    # label), in which case they're left- or right-aligned instead so the
+    # text extends away from whichever edge it was about to cross. Each
+    # row's label is independent now -- with one line per statistic instead
+    # of several stacked on one row, there's no longer a matching label at
+    # the same x that needs to share the decision.
+    rows <- rows %>%
+      mutate(hjust = safe_hjust(center, value_label, label_size, left_boundary, right_boundary, data_units_per_inch, fontface = "bold"))
+    total_row <- total_row %>%
+      mutate(hjust = safe_hjust(center, value_label, label_size, left_boundary, right_boundary, data_units_per_inch, fontface = "bold"))
+
+    # Percentile-rank text sits just below each median's point (the value
+    # label is above it), in its own italic style so it reads as a
+    # secondary, approximate note rather than a measured value like the
+    # median itself.
+    pct_rows <- rows %>%
+      filter(!is.na(pct_label)) %>%
+      mutate(pct_hjust = safe_hjust(center, pct_label, label_size, left_boundary, right_boundary, data_units_per_inch, fontface = "italic"))
+
     fig <- ggplot() +
-      geom_segment(data = stand_ticks, 
-                   aes(x = x, xend = x, 
-                       y = y_pos - ifelse(is_median, 0.16, 0.1), 
-                       yend = y_pos + ifelse(is_median, 0.16, 0.1), 
-                       linewidth = is_median), 
-                   color = "grey50") +
-      geom_text(data = stand_ticks, 
-                aes(x = x, y = y_pos + label_offset, label = percentile, hjust = label_hjust), 
-                size = 4, color = "grey50") +
-      geom_rect(data = stand_band, 
-               aes(xmin = mean - se, xmax = mean + se, 
-                   ymin = y_pos - 0.06, ymax = y_pos + 0.06), 
-               fill = "steelblue", alpha = 0.5) +
-      geom_segment(data = stand_band, 
-                   aes(x = mean, xend = mean, 
-                       y = y_pos - 0.06, yend = y_pos + 0.06), 
-                   color = "steelblue4", linewidth = 1.2) +
-      geom_rect(data = user_band, 
-               aes(xmin = mean - se, xmax = mean + se, 
-                   ymin = y_pos - 0.12, ymax = y_pos + 0.12), 
-               fill = "grey30", alpha = 0.4) +
-      geom_segment(data = user_band, 
-                   aes(x = mean, xend = mean, 
-                       y = y_pos - 0.12, yend = y_pos + 0.12), 
-                   color = "grey30", linewidth = 1.5) +
-      geom_text(data = user_band, 
-                aes(x = mean, y = y_pos - 0.2, 
-                    label = paste0("~", pct_rank, sapply(pct_rank, ordinal_suffix), " percentile"),
-                    hjust = ifelse(pct_rank > 50, 1, 0)), 
-                size = 4, color = "grey30", fontface = "italic") +
-      geom_text(data = stand_ticks %>% distinct(y_pos, area), 
-                aes(x = Inf, y = y_pos, label = str_wrap(area, width = 20)), 
-                hjust = 1, size = 4, color = "grey50", fontface = "bold", lineheight = 0.9) +
-      geom_text(data = user_band, 
-                aes(x = Inf, y = y_pos, label = str_wrap(wb_label(), width = 20)), 
-                hjust = 1, size = 4, color = "grey30", fontface = "bold", lineheight = 0.9) +
-      scale_x_continuous("CPUE", expand = expansion(mult = c(0.05, 0.55))) +
-      scale_y_continuous(breaks = NULL, expand = expansion(mult = c(0.15, 0.25))) +
-      scale_linewidth_manual(values = c("FALSE" = 0.6, "TRUE" = 1.3), guide = "none") +
-      theme_classic(base_size = 20) +
-      theme(axis.title.y = element_blank(),
-            axis.text.y = element_blank(),
-            axis.ticks.y = element_blank())
-    
+      geom_errorbar(data = rows, aes(xmin = lo, xmax = hi, y = y, color = I(color)),
+                    width = 0.15, linewidth = 0.7, orientation = "y") +
+      geom_point(data = rows, aes(x = center, y = y, color = I(color)), size = 3) +
+      geom_text(data = rows, aes(x = center, y = y + 0.28, label = value_label, hjust = hjust, color = I(color)),
+                size = label_size, fontface = "bold") +
+      geom_text(data = pct_rows, aes(x = center, y = y - 0.22, label = pct_label, hjust = pct_hjust, color = I(color)),
+                size = label_size * 0.85, fontface = "italic") +
+      # Pooled total: no error bar (single value, not a distribution) --
+      # diamond marker instead of the round point used for mean/median.
+      geom_point(data = total_row, aes(x = center, y = y), shape = 18, size = 4, color = "black") +
+      geom_text(data = total_row, aes(x = center, y = y + 0.28, label = value_label, hjust = hjust),
+                size = label_size, fontface = "bold", color = "black") +
+      scale_x_continuous(paste0("CPUE (", unit_label, ")"), expand = expansion(mult = x_expand)) +
+      scale_y_continuous(breaks = axis_labels$y, labels = axis_labels$row_label,
+                         expand = expansion(mult = c(0.18, 0.35))) +
+      theme_classic(base_size = label_size * 4) +
+      theme(axis.title.y = element_blank())
+
   }
-  
-  print(fig)
-  
+
+  # Returned rather than printed here: this function opens its own pdf(NULL)
+  # device above for text measurements, and printing while that device is
+  # still current would draw into it instead of whatever device the caller
+  # actually wants the plot on (Shiny's on-screen device, or ggsave's own
+  # output device for the download) -- both callers already handle
+  # printing/saving the returned object themselves.
+  fig
+}
+
+# The on-screen render adapts its internal label math to the plot's ACTUAL
+# rendered width (queried from the browser via clientData) instead of
+# assuming a fixed 900px/12.5in canvas. When the real on-screen plot area
+# ends up narrower than that -- a smaller browser window, more room taken by
+# the sidebar, etc. -- labels sized for the wider assumed canvas would run
+# past the true edges and get clipped by the y-axis, even though the same
+# math is fine at the download's fixed, guaranteed-12.5in size.
+output[["CPUE_plot_UU-plot"]] <- renderPlot({
+  width_px <- session$clientData[["output_CPUE_plot_UU-plot_width"]]
+  width_in <- if (!is.null(width_px) && width_px > 0) width_px / 72 else 12.5
+  # Font size scales with the actual rendered width, holding the
+  # text-to-canvas ratio roughly constant with the download's 12.5in/5.5pt
+  # reference (which is known to render safely). Without this, a narrower
+  # on-screen container keeps the same absolute font size while having less
+  # physical room for it, so text claims a disproportionately larger share
+  # of the canvas the narrower the window gets -- no amount of
+  # alignment-flipping alone can fully compensate for that. Clamped so a
+  # very narrow or very wide window doesn't make text illegibly small or
+  # oddly huge.
+  scaled_label_size <- pmin(pmax(5.5 * width_in / 12.5, 4), 6.5)
+  build_cpue_user_plot(label_size = scaled_label_size, plot_width_in = width_in)
 })
 
-callModule(plotDownload, "CPUE_plot_UU", plotCPUEuser, width = 10, height = 3.5)
+# Download always renders at a fixed 12.5 x 5.56in (900x400px @ 72dpi) so it
+# looks the same regardless of the uploader's screen/window size.
+output[["CPUE_plot_UU-download_plot"]] <- downloadHandler(
+  filename = function() "plot.jpg",
+  content = function(file) {
+    ggsave(file, build_cpue_user_plot(label_size = 5.5, plot_width_in = 12.5), width = 12.5, height = 5.56)
+  }
+)
 
 output$cpue_caption <- renderUI({
   temp <- uu_processed() %>% 
@@ -1587,13 +1824,11 @@ output$cpue_caption <- renderUI({
   if (is.null(stand_area) || length(stand_area) == 0) stand_area <- "the selected area"
   
   HTML(markdown::markdownToHTML(text = paste0(
-    "Catch per unit effort. The grey ticks above the ", stand_area, 
-    " row mark the 5th, 25th, 50th (median, bold tick), 75th, and 95th percentiles of CPUE across many sampled datasets in ", stand_area, 
-    ", so you can see roughly where ", wb_label(), "'s CPUE falls within that regional distribution. The blue line and band on that same row show the ", stand_area, 
-    " mean CPUE +/- 1 standard error. The dark vertical line and shaded band on the ", wb_label(), 
-    " row show the survey mean CPUE +/- 1 standard error, averaged across transects/net sets. The italic label below the ", wb_label(),
-    " line gives an approximate percentile rank (estimated by interpolating between the 5th/25th/50th/75th/95th percentile points above) showing roughly where ", wb_label(),
-    "'s mean CPUE falls within the ", stand_area, " distribution. CPUE units depend on collection method: boat and raft electrofishing are fish per hour, gill net is fish per net nights, drifting trammel net is fish per 100-m drift, large catfish hoopnet is fish per 24 hour set, bag seine is fish per 0.25 arc (small standing waters) or 0.5 arc (rivers), stream seine is fish per 10-15m haul, and backpack and tow barge electrofishing are fish per 100m²."
+    "Catch per unit effort, with units shown on the axis and next to each value (units depend on collection method — see below). Each line shows one statistic: **'", stand_area, " — Mean'** shows the mean CPUE across all standardized datasets in that area, +/- 1 standard error (SE). **'", stand_area,
+    " — Median'** shows the median (50th percentile) CPUE across those same datasets, with its interquartile range (IQR, the 25th-75th percentile spread) shown as the error bar -- a median's natural measure of spread, not a standard error. **'", wb_label(),
+    " — Per-Transect Mean'** shows your survey's mean CPUE calculated per transect or net set (the average of all the individual per-transect/net-set CPUEs in your survey), +/- 1 standard error. **'", wb_label(),
+    " — Median'** shows the median of those same per-transect/net-set CPUEs, with its interquartile range shown as the error bar. With only 1 or 2 transects/net sets, the median is mathematically identical to the mean (the middle of one point is itself; the middle of two is their average) -- still shown, but labeled with '(N=1)' or '(N=2)' as a reminder that it isn't an independent second estimate. **'", wb_label(),
+    " — Total Catch of [species]/Total Effort'** shows total fish caught divided by total effort, summed across all transects/net sets rather than averaged. This single ratio has no mean, median, or error bar, because it isn't a distribution of per-transect values -- it's one number. CPUE units depend on collection method: boat and raft electrofishing are fish per hour, gill net is fish per net nights, drifting trammel net is fish per 100-m drift, large catfish hoopnet is fish per 24 hour set, bag seine is fish per 0.25 arc (small standing waters) or 0.5 arc (rivers), stream seine is fish per 10-15m haul, and backpack and tow barge electrofishing are fish per 100m²."
   ), fragment.only = TRUE))
 })
 
