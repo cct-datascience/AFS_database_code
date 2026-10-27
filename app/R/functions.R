@@ -3,6 +3,60 @@ number_methods <- c("gill_net_fall", "gill_net_spring", "drifting_trammel_net",
                     "large_catfish_hoopnet", "bag_seine", "stream_seine",
                     "backpack_electrofishing", "tow_barge_electrofishing")
 
+# ---- Multi-year plot labeling -----------------------------------------------
+
+# Labels each row from bind_rows(uu_processed(), filtered3(), .id="id") as
+# "Standardized" or, for the user's own data, either ALL_YEARS_LABEL (the pooled
+# row) or the literal year -- lets the Results Plots show every year the
+# user selected side by side, the same as the Results Table, instead of
+# being restricted to a single series.
+# How the pooled all-years series is labeled on plots.
+ALL_YEARS_LABEL <- "All years combined"
+
+label_data_source <- function(df) {
+  df %>% mutate(data_source = case_when(
+    data_source == "1" & is.na(year) ~ ALL_YEARS_LABEL,
+    data_source == "1" ~ as.character(year),
+    data_source == "2" ~ "Standardized"
+  ))
+}
+
+# Stable order for the (possibly several) user-data series: ALL_YEARS_LABEL
+# first if present, then years ascending. Standardized is deliberately not
+# included -- each plot already has its own established neutral color for
+# it and lists it separately.
+user_source_levels <- function(df) {
+  labels <- df %>% filter(data_source != "Standardized") %>% distinct(data_source) %>% pull(data_source)
+  is_all <- labels == ALL_YEARS_LABEL
+  labels[order(!is_all, suppressWarnings(as.numeric(ifelse(is_all, NA, labels))))]
+}
+
+# ---- Publication-style plot colors ---------------------------------------------
+# Grayscale only, so plots print correctly in black-and-white journals and read
+# the same for colorblind viewers. The standardized (geographic average) series
+# is always solid black so it stands out; the user's own series are white (all
+# years combined, or a single survey) and then lighter-to-darker grays by year,
+# each outlined in black. Point plots also vary the marker shape per series, so
+# series stay distinguishable without relying on shade alone.
+STANDARDIZED_FILL <- "black"
+
+user_series_fills <- function(user_levels) {
+  fills <- setNames(rep("white", length(user_levels)), user_levels)
+  years <- user_levels[user_levels != ALL_YEARS_LABEL]
+  # A single series (one year, no pooled row) is plain white.
+  if (length(years) > 0 && length(user_levels) > 1) {
+    fills[years] <- if (length(years) == 1) "grey70" else grey.colors(length(years), start = 0.85, end = 0.45)
+  }
+  fills
+}
+
+# Marker shapes (21-25 take a fill and a black outline). The standardized
+# series uses a filled circle (21); user series use the other shapes in turn.
+STANDARDIZED_SHAPE <- 21
+user_series_shapes <- function(user_levels) {
+  setNames(rep(c(22, 24, 23, 25), length.out = length(user_levels)), user_levels)
+}
+
 # CPUE unit label for a given collection method (and waterbody type, for bag_seine
 # which uses a different unit in small standing waters vs. rivers)
 cpue_unit_label <- function(method, waterbody_type = NA_character_) {
@@ -40,14 +94,34 @@ cpue_unit_label <- function(method, waterbody_type = NA_character_) {
                    "Cutthroat Trout" = list(group = "lotic"),
                    "Rainbow Trout"   = list(group = "lotic"))
 
+# psdAdd() computes Gabelhouse/PSD length categories for a whole vector of
+# species at once; if any one of them hits a case it can't handle (a species
+# needing a `group=` this bucket didn't supply, a species with no PSDlit
+# entry at all, or any other internal FSA error), it throws for the ENTIRE
+# call -- which previously took down every metric, every plot, and every
+# download for the whole upload, not just the one problem species. Falling
+# back to NA (with a warning so the cause is still visible in the logs) lets
+# everything else compute normally instead.
+.psd_add_safe <- function(len, spec, group = NULL) {
+  tryCatch(
+    if (is.null(group)) {
+      FSA::psdAdd(len, spec, what = "incremental")
+    } else {
+      FSA::psdAdd(len, spec, what = "incremental", group = group)
+    },
+    error = function(e) {
+      warning("psdAdd() failed for species [", paste(unique(spec), collapse = ", "),
+              "]: ", conditionMessage(e), call. = FALSE)
+      factor(rep(NA_character_, length(len)),
+             levels = c("substock", "stock", "quality", "preferred", "memorable", "trophy"))
+    }
+  )
+}
+
 # Shared helper: filter by FSA_group and assign PSD length category
 .filter_gcat <- function(df, fsa_val, psd_grp = NULL) {
   df <- if (is.na(fsa_val)) filter(df, is.na(FSA_group)) else filter(df, FSA_group == fsa_val)
-  if (is.null(psd_grp)) {
-    mutate(df, gcat = FSA::psdAdd(total_length, common_name, what = "incremental"))
-  } else {
-    mutate(df, gcat = FSA::psdAdd(total_length, common_name, what = "incremental", group = psd_grp))
-  }
+  mutate(df, gcat = .psd_add_safe(total_length, common_name, psd_grp))
 }
 
 # ---- CPUE ----------------------------------------------------------------
@@ -79,14 +153,8 @@ cpue_unit_label <- function(method, waterbody_type = NA_character_) {
     mutate(n_fish = coalesce(n_fish, 0L))
 }
 
-.cpue_block <- function(df, fsa_val, psd_grp) {
-  filtered <- .filter_gcat(df, fsa_val, psd_grp) %>% filter(gcat != "substock")
-
-  .per_net_with_zeros(df, filtered) %>%
-    mutate(effort       = case_when(method %in% time_methods   ~ effort / 3600,
-                                    method %in% number_methods ~ effort),
-           cpue_transect = n_fish / effort) %>%
-    group_by(type, area, common_name, method, waterbody_type) %>%
+.summarize_cpue <- function(grouped) {
+  grouped %>%
     summarize(N     = n(),
               mean  = mean(cpue_transect, na.rm = TRUE),
               se    = se(cpue_transect, na.rm = TRUE),
@@ -95,7 +163,27 @@ cpue_unit_label <- function(method, waterbody_type = NA_character_) {
               `50%` = quantile(cpue_transect, probs = 0.50, na.rm = TRUE),
               `75%` = quantile(cpue_transect, probs = 0.75, na.rm = TRUE),
               `95%` = quantile(cpue_transect, probs = 0.95, na.rm = TRUE),
-              .groups = "drop") %>%
+              .groups = "drop")
+}
+
+# Produces both a pooled row (year = NA, identical to averaging across every
+# year in the upload -- unchanged from before per-year breakdowns existed)
+# and one row per year, so a multi-year upload can be viewed as one combined
+# trend or year by year without re-uploading.
+.cpue_block <- function(df, fsa_val, psd_grp) {
+  filtered <- .filter_gcat(df, fsa_val, psd_grp) %>% filter(gcat != "substock")
+
+  base <- .per_net_with_zeros(df, filtered) %>%
+    mutate(effort        = case_when(method %in% time_methods   ~ effort / 3600,
+                                     method %in% number_methods ~ effort),
+           cpue_transect = n_fish / effort)
+
+  pooled  <- base %>% group_by(type, area, common_name, method, waterbody_type) %>%
+    .summarize_cpue() %>% mutate(year = NA_integer_)
+  by_year <- base %>% group_by(type, area, common_name, method, waterbody_type, year) %>%
+    .summarize_cpue()
+
+  bind_rows(pooled, by_year) %>%
     mutate(metric = "CPUE", cpue_calc = "transect",
            cpue_method = "Per-Transect Mean (± SE)")
 }
@@ -121,13 +209,8 @@ calculate_cpue <- function(df) {
 
 # ---- CPUE (pooled total: total fish / total effort, no SE) ----------------
 
-.cpue_total_block <- function(df, fsa_val, psd_grp) {
-  filtered <- .filter_gcat(df, fsa_val, psd_grp) %>% filter(gcat != "substock")
-
-  .per_net_with_zeros(df, filtered) %>%
-    mutate(effort = case_when(method %in% time_methods   ~ effort / 3600,
-                              method %in% number_methods ~ effort)) %>%
-    group_by(type, area, common_name, method, waterbody_type) %>%
+.summarize_cpue_total <- function(grouped) {
+  grouped %>%
     summarize(total_fish   = sum(n_fish),
               total_effort = sum(effort),
               N            = total_fish,
@@ -139,7 +222,22 @@ calculate_cpue <- function(df) {
               `75%`        = NA_real_,
               `95%`        = NA_real_,
               .groups = "drop") %>%
-    select(-total_fish, -total_effort) %>%
+    select(-total_fish, -total_effort)
+}
+
+.cpue_total_block <- function(df, fsa_val, psd_grp) {
+  filtered <- .filter_gcat(df, fsa_val, psd_grp) %>% filter(gcat != "substock")
+
+  base <- .per_net_with_zeros(df, filtered) %>%
+    mutate(effort = case_when(method %in% time_methods   ~ effort / 3600,
+                              method %in% number_methods ~ effort))
+
+  pooled  <- base %>% group_by(type, area, common_name, method, waterbody_type) %>%
+    .summarize_cpue_total() %>% mutate(year = NA_integer_)
+  by_year <- base %>% group_by(type, area, common_name, method, waterbody_type, year) %>%
+    .summarize_cpue_total()
+
+  bind_rows(pooled, by_year) %>%
     mutate(metric = "CPUE", cpue_calc = "total",
            cpue_method = paste0("Total Catch of ", common_name, "/Total Effort"))
 }
@@ -166,17 +264,31 @@ calculate_cpue_total <- function(df) {
 # ---- Length Frequency -----------------------------------------------------
 
 .lf_block <- function(df, fsa_val, psd_grp) {
-  .filter_gcat(df, fsa_val, psd_grp) %>%
+  per_year <- .filter_gcat(df, fsa_val, psd_grp) %>%
     filter(gcat != "substock") %>%
     group_by(type, area, common_name, method, waterbody_type, year) %>%
     count(gcat) %>%
     mutate(lenfreq = (n / sum(n)) * 100) %>%
+    ungroup()
+
+  # Pooled: average of each year's proportion, same as before per-year
+  # breakdowns existed (se reflects year-to-year variability).
+  pooled <- per_year %>%
     group_by(type, area, common_name, method, waterbody_type, gcat) %>%
     summarize_at(vars(lenfreq), list(mean = mean, se = FSA::se), na.rm = TRUE) %>%
+    ungroup() %>%
+    mutate(year = NA_integer_)
+
+  # By year: that year's own proportion is the only value there is, so
+  # there's nothing to take a standard error across.
+  by_year <- per_year %>%
+    transmute(type, area, common_name, method, waterbody_type, gcat, year,
+              mean = lenfreq, se = NA_real_)
+
+  bind_rows(pooled, by_year) %>%
     mutate(metric = "Length Frequency",
            gcat   = factor(gcat, levels = c("stock", "quality", "preferred",
-                                            "memorable", "trophy"))) %>%
-    ungroup()
+                                            "memorable", "trophy")))
 }
 
 calculate_lf <- function(df) {
@@ -210,6 +322,20 @@ calculate_lf <- function(df) {
   )
 }
 
+.summarize_rw <- function(grouped) {
+  grouped %>%
+    summarize(N     = n(),
+              mean  = mean(relweight, na.rm = TRUE),
+              se    = FSA::se(relweight, na.rm = TRUE),
+              `5%`  = quantile(relweight, probs = 0.05, na.rm = TRUE),
+              `25%` = quantile(relweight, probs = 0.25, na.rm = TRUE),
+              `50%` = quantile(relweight, probs = 0.50, na.rm = TRUE),
+              `75%` = quantile(relweight, probs = 0.75, na.rm = TRUE),
+              `95%` = quantile(relweight, probs = 0.95, na.rm = TRUE),
+              .groups = "drop") %>%
+    mutate(mean = ifelse(is.nan(mean), NA, mean))
+}
+
 .rw_block <- function(df, fsa_val, psd_grp, wr_grp = NULL) {
   df2 <- .filter_gcat(df, fsa_val, psd_grp)
   df2 <- if (is.null(wr_grp)) {
@@ -220,19 +346,14 @@ calculate_lf <- function(df) {
   } else {
     mutate(df2, relweight = as.numeric(FSA::wrAdd(wt = weight, len = total_length, spec = common_name, WsOpts = wr_grp)))
   }
-  df2 %>%
-    group_by(type, area, common_name, method, waterbody_type, gcat) %>%
-    summarize(N     = n(),
-              mean  = mean(relweight, na.rm = TRUE),
-              se    = FSA::se(relweight, na.rm = TRUE),
-              `5%`  = quantile(relweight, probs = 0.05, na.rm = TRUE),
-              `25%` = quantile(relweight, probs = 0.25, na.rm = TRUE),
-              `50%` = quantile(relweight, probs = 0.50, na.rm = TRUE),
-              `75%` = quantile(relweight, probs = 0.75, na.rm = TRUE),
-              `95%` = quantile(relweight, probs = 0.95, na.rm = TRUE),
-              .groups = "drop") %>%
-    mutate(mean   = ifelse(is.nan(mean), NA, mean),
-           metric = "Relative Weight",
+
+  pooled  <- df2 %>% group_by(type, area, common_name, method, waterbody_type, gcat) %>%
+    .summarize_rw() %>% mutate(year = NA_integer_)
+  by_year <- df2 %>% group_by(type, area, common_name, method, waterbody_type, gcat, year) %>%
+    .summarize_rw()
+
+  bind_rows(pooled, by_year) %>%
+    mutate(metric = "Relative Weight",
            gcat   = factor(gcat, levels = c("stock", "quality", "preferred",
                                             "memorable", "trophy"))) %>%
     filter(!is.na(gcat))
@@ -259,12 +380,17 @@ calculate_rw <- function(df) {
 # ---- Total N (stock-size and above only) ----------------------------------
 
 calculate_total_n <- function(df) {
-  bind_rows(
+  base <- bind_rows(
     .filter_gcat(df, "overall", .psd_overall) %>% filter(gcat != "substock"),
     .filter_gcat(df, "lentic",  .psd_lentic)  %>% filter(gcat != "substock"),
     .filter_gcat(df, "lotic",   .psd_lotic)   %>% filter(gcat != "substock"),
     .filter_gcat(df, NA,        NULL)          %>% filter(gcat != "substock")
-  ) %>%
-    group_by(type, area, common_name, method, waterbody_type) %>%
+  )
+
+  pooled  <- base %>% group_by(type, area, common_name, method, waterbody_type) %>%
+    summarize(N = n(), .groups = "drop") %>% mutate(year = NA_integer_)
+  by_year <- base %>% group_by(type, area, common_name, method, waterbody_type, year) %>%
     summarize(N = n(), .groups = "drop")
+
+  bind_rows(pooled, by_year)
 }
